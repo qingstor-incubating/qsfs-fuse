@@ -1,0 +1,41 @@
+# NOTE! Please use 'git ls-files -i --exclude-standard'
+# command after changing this file, to see if there are
+# any tracked files which get ignored after the change.
+#
+# Normal rules
+#
+*.o
+*.a
+*.so
+!libboost_thread.a
+
+#
+# Build directory (make)
+#
+build/
+
+#
+# Generated directory of build targets
+#
+bin/
+lib/
+!third_party/*/lib/
+
+#
+# Generated cmake files
+#
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+#
+# Other folders
+#
+third_party/install
+.vscode/
