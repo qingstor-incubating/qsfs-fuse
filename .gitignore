@@ -7,7 +7,9 @@
 *.o
 *.a
 *.so
+*.DS_Store
 !libboost_thread.a
+!libosxboost_thread.a
 
 #
 # Build directory (make)

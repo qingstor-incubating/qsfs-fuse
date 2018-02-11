@@ -1,0 +1,30 @@
+language: cpp
+sudo: required
+dist: precise  #ubuntu 12.04
+
+# upgrade cmake to support more recent standard
+addons:
+  apt:
+    sources:
+      - george-edison55-precise-backports
+    packages:
+      - cmake-data
+      - cmake
+
+os:
+  - linux
+
+compiler:
+  - gcc
+
+before_install:
+  #- sudo apt-get update -qq
+  - sudo apt-get install -qy libfuse-dev
+
+script:
+  - mkdir build
+  - cd build
+  - cmake -DBUILD_TESTING=ON ..
+  - make
+  - make test
+  - modprobe fuse

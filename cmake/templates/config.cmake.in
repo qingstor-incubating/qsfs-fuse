@@ -1,0 +1,25 @@
+# - Config file for the @PACKAGE_NAME@ package
+
+set(@PACKAGE_PREFIX@_EXECUTABLE @PACKAGE_NAME@)
+
+# library version information
+set (@PACKAGE_PREFIX@_VERSION_STRING "@PACKAGE_VERSION@")
+set (@PACKAGE_PREFIX@_VERSION_MAJOR  @PACKAGE_VERSION_MAJOR@)
+set (@PACKAGE_PREFIX@_VERSION_MINOR  @PACKAGE_VERSION_MINOR@)
+set (@PACKAGE_PREFIX@_VERSION_PATCH  @PACKAGE_VERSION_PATCH@)
+
+# installation prefix
+get_filename_component (CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component (_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/@INSTALL_PREFIX_REL2CONFIG_DIR@" ABSOLUTE)
+
+# import targets
+include ("${CMAKE_CURRENT_LIST_DIR}/@EXPORT_NAME@.cmake")
+
+# include directory
+#
+# Newer versions of CMake set the INTERFACE_INCLUDE_DIRECTORIES property
+# of the imported targets. It is hence not necessary to add this path
+# manually to the include search path for targets which link to qsfs.
+set (@PACKAGE_PREFIX@_INCLUDE_DIR "${_INSTALL_PREFIX}/@INSTALL_INCLUDE_DIR@")
+
+set (@PACKAGE_PREFIX@_INCLUDE_DIRS ${@PACKAGE_PREFIX@_INCLUDE_DIRS} ${@PACKAGE_PREFIX@_INCLUDE_DIR})

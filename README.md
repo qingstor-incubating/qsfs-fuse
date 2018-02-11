@@ -10,10 +10,6 @@
 
 - Large subset of POSIX including reading/writing files, directories, symlinks, .etc,
   (chmod/chown/utimens will be supported later).
-- File Permissions:
-  - Default permission for a file is 0644 and for a directory is 0755.
-  - Default uid/gid of a file is the uid/gid of the user.
-  - Support for sticky bit in file permissions (if set, only owner can delete/rename).
 - File renames via server-side move.
 - File Transfer:
   - Large files uploads via multipart parallel uploads.
@@ -49,27 +45,35 @@ Make sure the file `/path/to/cred` has proper permissions (if you get 'permissio
 
 Run qsfs with an existing bucket `mybucket` and directory `/path/to/mountpoint`:
 ```sh
- $ [sudo] qsfs -b=mybucket -m=/path/to/mountpoint -c=/path/to/cred
+ $ [sudo] qsfs mybucket /path/to/mountpoint -c=/path/to/cred
 ```
 
 If you encounter any errors, enable debug output:
 ```sh
- $ [sudo] qsfs -b=mybucket -m=/path/to/mountpoint -c=/path/to/cred -d
+ $ [sudo] qsfs mybucket /path/to/mountpoint -c=/path/to/cred -d
 ```
+
+You can also mount on boot by entering the following line to /etc/fstab:
+
+```sh
+qsfs#mybucket /path/to/mountpoint fuse _netdev,-z=pek3a,-c=/path/to/cred,allow_other 0 0
+```
+
+> Notice: in /etc/fstab, you need to use short options (for example, use short option `-c` instead of long option `--credentials`) in order to pass them to qsfs.
 
 You can log messages to console:
 ```sh
- $ [sudo] qsfs -b=mybucket -m=/path/to/mountpoint -c=/path/to/cred -f
+ $ [sudo] qsfs mybucket /path/to/mountpoint -c=/path/to/cred -f
 ```
 
 Or you can log messages to log file by specifying a directory `/path/to/logdir/`:
 ```sh
- $ [sudo] qsfs -b=mybucket -m=/path/to/mountpoint -c=/path/to/cred -l=/path/to/logdir/
+ $ [sudo] qsfs mybucket /path/to/mountpoint -c=/path/to/cred -l=/path/to/logdir/
 ```
 
 Specify log level (INFO,WARN,ERROR and FATAL):
 ```sh
- $ [sudo] qsfs -b=mybucket -m=/path/to/mountpoint -c=/path/to/cred -L=INFO -d
+ $ [sudo] qsfs mybucket /path/to/mountpoint -c=/path/to/cred -L=INFO -d
 ```
 
 To umount:
@@ -91,9 +95,7 @@ Supported general options are listed as following,
 
 | short | full | type | required | usage |
 | ----- |------|:------:|:----------:|------ |
-| -b | --bucket      | string  | Y | Specify bucket name
-| -m | --mount       | string  | Y | Specify mount point (path)
-| -c | --credentials | string  | Y | Specify credentials file
+| -c | --credentials | string  | N | Specify credentials file, default path is `/etc/qsfs.cred`
 | -z | --zone        | string  | N | Specify zone or region, default value is `pek3a`
 | -l | --logdir      | string  | N | Specify log directory, default path is `/tmp/qsfs_log/`
 | -L | --loglevel    | string  | N | Specify min log level (INFO,WARN,ERROR or FATAL), message lower than this level don't logged; default value is `INFO`.

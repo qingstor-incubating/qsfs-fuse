@@ -9,17 +9,17 @@ These are the base requirements to build and use qsfs from a source package (as 
 
 **qsfs** is a fuse based filesystem, so you must have libfuse installed. QingStor SDK requires libcurl and libopenssl, so you also must have them installed. Typically, you'll find these packages in your system's package manager.
 
+You also need to install [git][git install link] in order to clone the source code from GitHub.
+
 To install these packages on Debian/Ubuntu-based systems:
 ```sh
- $ [sudo] apt-get install g++ fuse libfuse-dev libcurl4-openssl-dev libssl-dev
+ $ [sudo] apt-get install gcc g++ git fuse libfuse-dev libcurl4-openssl-dev libssl-dev
 ```
 
 To install these packages on Redhat/Fedora-based systems:
 ```sh
- $ [sudo] yum install gcc-c++ fuse fuse-devel libcurl-devel openssl-devel
+ $ [sudo] yum install gcc gcc-c++ git fuse fuse-devel libcurl-devel openssl-devel
 ```
-
-You may also need to install [git][git install link] in order to clone the source code from GitHub.
 
 # Build from Source using CMake
 

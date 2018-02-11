@@ -1,0 +1,47 @@
+# Per-generator CPack configuration file. See CPACK_PROJECT_CONFIG_FILE documented at
+# http://www.cmake.org/cmake/help/v2.8.12/cpack.html#variable:CPACK_PROJECT_CONFIG_FILE
+#
+# All common CPACK_* variables are set in CMakeLists.txt already. This file only
+# overrides some of these to provide package generator specific settings.
+
+# whether package contains all development files or only runtime files
+set (DEVEL @INSTALL_HEADERS@)
+
+# ------------------------------------------------------------------------------
+# Debian package
+if (CPACK_GENERATOR MATCHES "DEB")
+
+  set (CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${CPACK_PACKAGE_ARCHITECTURE}")
+  if (CPACK_PACKAGE_ARCHITECTURE MATCHES "x86_64")
+    set (CPACK_DEBIAN_PACKAGE_ARCHITECTURE amd64)
+  endif ()
+  set (CPACK_PACKAGE_FILE_NAME   "${CPACK_PACKAGE_NAME}")
+  if (DEVEL)
+    set (CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-dev")
+  else ()
+    set (CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}")
+  endif ()
+  set (CPACK_PACKAGE_FILE_NAME   "${CPACK_PACKAGE_FILE_NAME}_${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+
+  set (CPACK_DEBIAN_PACKAGE_DEPENDS)
+  set (CPACK_DEBIAN_PACKAGE_SECTION      "devel")
+  set (CPACK_DEBIAN_PACKAGE_PRIORITY     "optional")
+  set (CPACK_DEBIAN_PACKAGE_HOMEPAGE     "${CPACK_RPM_PACKAGE_URL}")
+  set (CPACK_DEBIAN_PACKAGE_MAINTAINER   "${CPACK_PACKAGE_VENDOR}")
+  
+  # make sure make install before make package in order to generate dependencies list
+  set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+# ------------------------------------------------------------------------------
+# RPM package
+elseif (CPACK_GENERATOR MATCHES "RPM")
+
+  set (CPACK_PACKAGE_FILE_NAME   "${CPACK_PACKAGE_NAME}")
+  if (DEVEL)
+    set (CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-devel")
+  endif ()
+  set (CPACK_PACKAGE_FILE_NAME   "${CPACK_PACKAGE_FILE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CPACK_PACKAGE_ARCHITECTURE}")
+
+  set (CPACK_RPM_PACKAGE_RELEASE "${CPACK_PACKAGE_RELEASE}")
+  set (CPACK_RPM_PACKAGE_AUTOREQPROV ON)  # cmake 3.4 or later
+endif ()
