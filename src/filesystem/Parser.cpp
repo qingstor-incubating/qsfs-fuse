@@ -93,6 +93,7 @@ static struct options {
   const char *protocol;
   int port;
   const char *addtionalAgent;
+  int contentMD5;          // default not enable content MD5
   int clearLogDir;         // default not clear log dir
   int foreground;          // default not foreground
   int singleThread;        // default FUSE multi-thread
@@ -117,19 +118,20 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-l=%s", logDirectory),   OPTION("--logdir=%s",      logDirectory),
     OPTION("-L=%s", logLevel),       OPTION("--loglevel=%s",    logLevel),
     OPTION("-r=%i", retries),        OPTION("--retries=%i",     retries),
-    OPTION("-R=%i", reqtimeout),     OPTION("--reqtimeout=%i", reqtimeout),
-    OPTION("-Z=%i", maxcache),       OPTION("--maxcache=%i",   maxcache),
-    OPTION("-D=%s",  diskdir),       OPTION("--diskdir=%s",     diskdir),
-    OPTION("-t=%i", maxstat),        OPTION("--maxstat=%i",    maxstat),
-    OPTION("-i=%i", maxlist),        OPTION("--maxlist=%i",    maxlist),
-    OPTION("-e=%i", statexpire),     OPTION("--statexpire=%i", statexpire),
-    OPTION("-n=%i",  numtransfer),   OPTION("--numtransfer=%i", numtransfer),
-    OPTION("-u=%i", bufsize),        OPTION("--bufsize=%i",    bufsize),
+    OPTION("-R=%i", reqtimeout),     OPTION("--reqtimeout=%i",  reqtimeout),
+    OPTION("-Z=%i", maxcache),       OPTION("--maxcache=%i",    maxcache),
+    OPTION("-D=%s", diskdir),        OPTION("--diskdir=%s",     diskdir),
+    OPTION("-t=%i", maxstat),        OPTION("--maxstat=%i",     maxstat),
+    OPTION("-i=%i", maxlist),        OPTION("--maxlist=%i",     maxlist),
+    OPTION("-e=%i", statexpire),     OPTION("--statexpire=%i",  statexpire),
+    OPTION("-n=%i", numtransfer),    OPTION("--numtransfer=%i", numtransfer),
+    OPTION("-u=%i", bufsize),        OPTION("--bufsize=%i",     bufsize),
     OPTION("-T=%i", threads),        OPTION("--threads=%i",     threads),
     OPTION("-H=%s", host),           OPTION("--host=%s",        host),
     OPTION("-p=%s", protocol),       OPTION("--protocol=%s",    protocol),
     OPTION("-P=%i", port),           OPTION("--port=%i",        port),
     OPTION("-a=%s", addtionalAgent), OPTION("--agent=%s",       addtionalAgent),
+    OPTION("-m",    contentMD5),     OPTION("--contentMD5",     contentMD5),
     OPTION("-C",    clearLogDir),    OPTION("--clearlogdir",    clearLogDir),
     OPTION("-f",    foreground),     OPTION("--foreground",     foreground),
     OPTION("-s",    singleThread),   OPTION("--single",         singleThread),
@@ -202,6 +204,7 @@ void Parse(int argc, char **argv) {
   options.protocol       = strdup(GetDefaultProtocolName().c_str());
   options.port           = GetDefaultPort(GetDefaultProtocolName());
   options.addtionalAgent = strdup("");
+  options.contentMD5     = 0;
   options.clearLogDir    = 0;
   options.foreground     = 0;
   options.singleThread   = 0;
@@ -303,6 +306,7 @@ void Parse(int argc, char **argv) {
   }
 
   qsOptions.SetAdditionalAgent(options.addtionalAgent);
+  qsOptions.SetEnableContentMD5(options.contentMD5 !=0);
   qsOptions.SetClearLogDir(options.clearLogDir != 0);
   qsOptions.SetForeground(options.foreground != 0);
   qsOptions.SetSingleThread(options.singleThread != 0);

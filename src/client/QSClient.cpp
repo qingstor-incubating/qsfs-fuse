@@ -41,6 +41,7 @@
 #include "boost/thread/once.hpp"
 
 #include "base/LogMacros.h"
+#include "base/MD5.h"
 #include "base/Size.h"
 #include "base/StringUtils.h"
 #include "base/TimeUtils.h"
@@ -444,6 +445,9 @@ ClientError<QSError::Value> QSClient::UploadMultipart(
   input.SetContentLength(contentLength);
   if (contentLength > 0) {
     input.SetBody(buffer.get());
+    if (ClientConfiguration::Instance().IsEnableContentMD5()) {
+      input.SetContentMD5(md5(buffer));  // set buffer content md5
+    }
   }
 
   UploadMultipartOutcome outcome =
@@ -505,6 +509,9 @@ ClientError<QSError::Value> QSClient::UploadFile(const string &filePath,
   input.SetContentType(LookupMimeType(filePath));
   if (fileSize > 0) {
     input.SetBody(buffer.get());
+    if (ClientConfiguration::Instance().IsEnableContentMD5()) {
+      input.SetContentMD5(md5(buffer));  // set buffer content md5
+    }
   }
 
   PutObjectOutcome outcome = GetQSClientImpl()->PutObject(filePath, &input);

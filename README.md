@@ -16,6 +16,7 @@
   - Large files downloads via parallel byte-range downloads.
   - Large files transfer in chunks (10MB chunks by default). If you are uploading large files (e.g. larger than 1GB), you can increase the transfer buffer size and the max
   parallel transfers.
+- Data integrity via MD5 hashes.
 - Cache:
   - In-memory metadata caching.
   - In-memory file data caching. For a big file, partial file data may been stored in a local disk file when the im-memory file cache is not available.
@@ -117,6 +118,7 @@ Supported miscellaneous options are list as following,
 
 | short | full | type | required | usage |
 | ----- |------|:------:|:----------:|------ |
+| -m | --contentMD5  | bool | N | Enable writes with MD5 hashs to ensure data integrity
 | -C | --clearlogdir | bool | N | Clear log directory at beginning
 | -f | --forground   | bool | N | Turn on log to STDERR and enable FUSE foreground mode
 | -s | --single      | bool | N | Turn on FUSE single threaded option - disable multi-threaded

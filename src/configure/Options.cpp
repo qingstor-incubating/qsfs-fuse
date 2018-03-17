@@ -133,6 +133,7 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[port: " << to_string(opts.m_port) << "] "
          << "[additional agent: " << opts.m_additionalAgent << "] "
          << std::boolalpha
+         << "[enable content md5: " << opts.m_enableContentMD5 << "] "
          << "[clear logdir: " << opts.m_clearLogDir << "] "
          << "[foreground: " << opts.m_foreground << "] "
          << "[FUSE single thread: " << opts.m_singleThread << "] "

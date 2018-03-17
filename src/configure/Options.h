@@ -75,6 +75,7 @@ class Options : public Singleton<Options> {
   const std::string &GetProtocol() const { return m_protocol; }
   uint16_t GetPort() const { return m_port; }
   const std::string &GetAdditionalAgent() const { return m_additionalAgent; }
+  bool IsEnableContentMD5() const { return m_enableContentMD5; }
   bool IsClearLogDir() const { return m_clearLogDir; }
   bool IsForeground() const { return m_foreground; }
   bool IsSingleThread() const { return m_singleThread; }
@@ -117,6 +118,7 @@ class Options : public Singleton<Options> {
   void SetProtocol(const char *protocol) { m_protocol = protocol; }
   void SetPort(unsigned port) { m_port = port; }
   void SetAdditionalAgent(const char *agent) { m_additionalAgent = agent; }
+  void SetEnableContentMD5(bool contentMD5) { m_enableContentMD5 = contentMD5 ;}
   void SetClearLogDir(bool clearLogDir) { m_clearLogDir = clearLogDir; }
   void SetForeground(bool foreground) { m_foreground = foreground; }
   void SetSingleThread(bool singleThread) { m_singleThread = singleThread; }
@@ -154,6 +156,7 @@ class Options : public Singleton<Options> {
   std::string m_protocol;
   uint16_t m_port;
   std::string m_additionalAgent;
+  bool m_enableContentMD5;
   bool m_clearLogDir;
   bool m_foreground;        // FUSE foreground option
   bool m_singleThread;      // FUSE single threaded option

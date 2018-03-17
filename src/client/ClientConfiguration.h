@@ -76,6 +76,7 @@ class ClientConfiguration {
   const std::string& GetAdditionalAgent() const {
     return m_additionalUserAgent;
   }
+  bool IsEnableContentMD5() const { return m_enableContentMD5; }
   ClientLogLevel::Value GetClientLogLevel() const { return m_logLevel; }
   const std::string& GetClientLogDirectory() const { return m_sdkLogDirectory; }
   uint16_t GetTransactionRetries() const { return m_transactionRetries; }
@@ -106,6 +107,7 @@ class ClientConfiguration {
   uint16_t m_port;
   bool m_debugCurl;
   std::string m_additionalUserAgent;
+  bool m_enableContentMD5;
   ClientLogLevel::Value m_logLevel;
   std::string m_sdkLogDirectory;  // log directory
 
