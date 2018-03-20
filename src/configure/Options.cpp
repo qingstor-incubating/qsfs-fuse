@@ -25,6 +25,7 @@
 
 #include "base/LogLevel.h"
 #include "base/Size.h"
+#include "base/StringUtils.h"
 #include "configure/Default.h"
 
 namespace QS {
@@ -50,6 +51,7 @@ using QS::Configure::Default::GetMaxStatCount;
 using QS::Configure::Default::GetDefaultTransactionTimeDuration;
 using QS::Logging::GetLogLevelName;
 using QS::Logging::GetLogLevelByName;
+using QS::StringUtils::ModeToString;
 using std::ostream;
 using std::string;
 
@@ -143,6 +145,7 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[show help: " << opts.m_showHelp << "] "
          << "[show version: " << opts.m_showVersion << "] "
          << "[allow other: " << opts.m_allowOther << "] "
+         << "[fallback mode: " << ModeToString(opts.m_fallbackMode) << "] "
          << "[fuse_args.argc: " << to_string(fuseArg.argc) << "] "
          << "[fuse_args.argv: " << CatArgv(fuseArg.argc, fuseArg.argv)() << "] "
          << "[fuse_args.allocated: " << static_cast<bool>(fuseArg.allocated) << "] "  // NOLINT

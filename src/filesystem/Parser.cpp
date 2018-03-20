@@ -107,6 +107,8 @@ static struct options {
   bool allowOther;
 
   int qsfsMultiThread;       // internal use only to turn on multi thread
+
+  mode_t fallbackMode;     // default fallback mode
 } options;
 
 #define OPTION(t, p) \
@@ -141,6 +143,7 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-h",    showHelp),       OPTION("--help",           showHelp),
     OPTION("-V",    showVersion),    OPTION("--version",        showVersion),
     OPTION("-M",    qsfsMultiThread),
+    OPTION("-F=%o", fallbackMode),   OPTION("--fallbackmode=%o",fallbackMode),
     {NULL, 0, 0}
 };
 
@@ -215,6 +218,8 @@ void Parse(int argc, char **argv) {
   options.showVersion    = 0;
   options.qsfsMultiThread = 0;
   options.allowOther     = false;
+
+  options.fallbackMode   = (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
   // Do Parse
   QS::Configure::Options &qsOptions = QS::Configure::Options::Instance();
@@ -318,6 +323,9 @@ void Parse(int argc, char **argv) {
   qsOptions.SetDebugCurl(options.curldbg != 0);
   qsOptions.SetShowHelp(options.showHelp != 0);
   qsOptions.SetShowVerion(options.showVersion !=0);
+
+
+  qsOptions.SetFallbackMode(options.fallbackMode);
 
   // Let MyFuseOptionProccess return 1 for mountpoint to keep it as first arg
   // if (!qsOptions.GetMountPoint().empty()) {

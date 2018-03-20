@@ -86,6 +86,8 @@ class Options : public Singleton<Options> {
   bool IsShowVersion() const { return m_showVersion; }
   bool IsAllowOther() const { return m_allowOther; }
 
+  mode_t GetFallbackMode() const { return m_fallbackMode; }
+
  private:
   Options();
 
@@ -130,6 +132,7 @@ class Options : public Singleton<Options> {
   void SetShowHelp(bool showHelp) { m_showHelp = showHelp; }
   void SetShowVerion(bool showVersion) { m_showVersion = showVersion; }
   void SetAllowOther(bool allowOther) { m_allowOther = allowOther; }
+  void SetFallbackMode(mode_t fallbackMode) { m_fallbackMode = fallbackMode; }
   void SetFuseArgs(int argc, char **argv) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     m_fuseArgs = args;
@@ -168,6 +171,8 @@ class Options : public Singleton<Options> {
   bool m_allowOther;
   struct fuse_args m_fuseArgs;
   bool m_fuseArgsInitialized;
+
+  mode_t m_fallbackMode; 
 
   friend class Singleton<Options>;
   friend class QS::FileSystem::Mounter;  // for DoMount
