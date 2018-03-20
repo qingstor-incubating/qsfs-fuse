@@ -57,7 +57,6 @@ using QS::Data::Node;
 using QS::Exception::QSException;
 using QS::Configure::Default::GetNameMaxLen;
 using QS::Configure::Default::GetPathMaxLen;
-using QS::Configure::Default::GetDefineFileMode;
 using QS::FileSystem::Drive;
 using QS::StringUtils::AccessMaskToString;
 using QS::StringUtils::FormatPath;
@@ -453,7 +452,7 @@ int qsfs_mknod(const char* path, mode_t mode, dev_t dev) {
     }
 
     // Create the new node
-    drive.MakeFile(path, mode | GetDefineFileMode(), dev);
+    drive.MakeFile(path, mode | QS::Configure::Options::Instance().GetFileMode(), dev);
   } catch (const QSException& err) {
     Error(err.get());
     if (ret == 0) {
@@ -987,7 +986,7 @@ int qsfs_open(const char* path, struct fuse_file_info* fi) {
           throw QSException("No write permission for path " + FormatPath(path));
         }
         // Create a empty file
-        drive.MakeFile(path, GetDefineFileMode());
+        drive.MakeFile(path, QS::Configure::Options::Instance().GetFileMode());
       }
 
       // Do Open

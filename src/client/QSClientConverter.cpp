@@ -40,6 +40,7 @@
 #include "base/TimeUtils.h"
 #include "base/Utils.h"
 #include "configure/Default.h"
+#include "configure/Options.h"
 #include "data/FileMetaData.h"
 #include "filesystem/MimeTypes.h"
 
@@ -59,8 +60,6 @@ using QS::Data::BuildDefaultDirectoryMeta;
 using QS::Data::FileMetaData;
 using QS::Data::FileType;
 using QS::Configure::Default::GetBlockSize;
-using QS::Configure::Default::GetDefineFileMode;
-using QS::Configure::Default::GetDefineDirMode;
 using QS::Configure::Default::GetFragmentSize;
 using QS::Configure::Default::GetNameMaxLen;
 using QS::FileSystem::GetDirectoryMimeType;
@@ -128,7 +127,7 @@ shared_ptr<FileMetaData> HeadObjectOutputToFileMetaData(
                                      : FileType::File;
 
   // TODO(jim): mode should do with meta when skd support this
-  mode_t mode = isDir ? GetDefineDirMode() : GetDefineFileMode();
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
 
   // head object should contain meta such as mtime, but we just do a double
   // check as it can be have no meta data e.g when response code=NOT_MODIFIED
@@ -156,7 +155,8 @@ shared_ptr<FileMetaData> ObjectKeyToFileMetaData(const KeyType &objectKey,
                                      ? FileType::SymLink
                                      : FileType::File;
   // TODO(jim): mode should do with meta when skd support this
-  mode_t mode = isDir ? GetDefineDirMode() : GetDefineFileMode();
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
+
   return shared_ptr<FileMetaData>(new FileMetaData(
       fullPath, static_cast<uint64_t>(key.GetSize()), atime,
       static_cast<time_t>(key.GetModified()), GetProcessEffectiveUserID(),
@@ -170,11 +170,13 @@ shared_ptr<FileMetaData> ObjectKeyToDirMetaData(const KeyType &objectKey,
   // Do const cast as sdk does not provide const-qualified accessors
   KeyType &key = const_cast<KeyType &>(objectKey);
   string fullPath = AppendPathDelim("/" + key.GetKey());  // build full path
+  // TODO(jim): mode should do with meta when skd support this
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
 
   return shared_ptr<FileMetaData>(new FileMetaData(
       fullPath, 0, atime, static_cast<time_t>(key.GetModified()),
       GetProcessEffectiveUserID(), GetProcessEffectiveGroupID(),
-      GetDefineDirMode(), FileType::Directory, GetDirectoryMimeType(),
+      mode, FileType::Directory, GetDirectoryMimeType(),
       key.GetEtag(), key.GetEncrypted()));
 }
 
@@ -185,10 +187,14 @@ shared_ptr<FileMetaData> CommonPrefixToFileMetaData(const string &commonPrefix,
   // Walk aroud, as ListObject return no meta for a dir, so set mtime=0.
   // This is ok, as any update based on the condition that if dir is modified
   // should still be available.
+
+  // TODO(jim): mode should do with meta when skd support this
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
+
   time_t mtime = 0;
   return make_shared<FileMetaData>(
       fullPath, 0, atime, mtime, GetProcessEffectiveUserID(),
-      GetProcessEffectiveGroupID(), GetDefineDirMode(),
+      GetProcessEffectiveGroupID(), mode,
       FileType::Directory);  // TODO(jim): sdk api (meta)
 }
 

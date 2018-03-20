@@ -22,7 +22,9 @@
 #include "boost/exception/to_string.hpp"
 
 #include "base/Size.h"
+#include "base/StringUtils.h"
 #include "configure/Default.h"
+#include "configure/Options.h"
 #include "configure/Version.h"
 
 namespace QS {
@@ -46,6 +48,7 @@ using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
 using QS::Configure::Default::GetDefaultTransactionTimeDuration;
+using QS::StringUtils::ModeToString;
 using std::cout;
 using std::endl;
 
@@ -75,6 +78,8 @@ void ShowQSFSHelp() {
   "  -L, --loglevel     Min log level, message lower than this level don't logged;\n"
   "                     Specify one of following log level: INFO,WARN,ERROR,FATAL;\n"
   "                     " << GetDefaultLogLevelName() << " is set by default\n"
+  "  -F, --filemode     Specify a file mode for all without mode in metadata, \n"
+  "                     default value is " << std::oct << QS::Configure::Options::Instance().GetFileMode() << "\n"
   "  -r, --retries      Number of times to retry a failed transaction, default value\n"
   "                     is " << to_string(GetDefaultTransactionRetries()) << " times\n"
   "  -R, --reqtimeout   Time(seconds) to wait before timing out a request, default value\n"
@@ -125,6 +130,7 @@ void ShowQSFSUsage() {
   "Usage: qsfs <BUCKET> <MOUNTPOINT>\n"
   "       [-c|--credentials=[file path]] [-z|--zone=[value]]\n"
   "       [-l|--logdir=[dir]] [-L|--loglevel=[INFO|WARN|ERROR|FATAL]] \n"
+  "       [-F|--filemode=[mode]] \n"
   "       [-r|--retries=[value]] [-R|reqtimeout=[value]]\n"
   "       [-Z|--maxcache=[value]] [-D|--diskdir=[value]]\n"
   "       [-t|--maxstat=[value]] [-e|--statexpire=[value]]\n"

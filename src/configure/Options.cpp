@@ -25,6 +25,7 @@
 
 #include "base/LogLevel.h"
 #include "base/Size.h"
+#include "base/StringUtils.h"
 #include "configure/Default.h"
 
 namespace QS {
@@ -50,6 +51,7 @@ using QS::Configure::Default::GetMaxStatCount;
 using QS::Configure::Default::GetDefaultTransactionTimeDuration;
 using QS::Logging::GetLogLevelName;
 using QS::Logging::GetLogLevelByName;
+using QS::StringUtils::ModeToString;
 using std::ostream;
 using std::string;
 
@@ -118,6 +120,7 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[credentials: " << opts.m_credentialsFile << "] "
          << "[log directory: " << opts.m_logDirectory << "] "
          << "[log level: " << GetLogLevelName(opts.m_logLevel) << "] "
+         << "[file mode: " << ModeToString(opts.m_fileMode) << "] "
          << "[retries: " << to_string(opts.m_retries) << "] "
          << "[req timeout(ms): " << to_string(opts.m_requestTimeOut) << "] "
          << "[max cache(MB): " << to_string(opts.m_maxCacheSizeInMB) << "] "

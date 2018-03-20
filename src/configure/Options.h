@@ -59,6 +59,7 @@ class Options : public Singleton<Options> {
   const std::string &GetCredentialsFile() const { return m_credentialsFile; }
   const std::string &GetLogDirectory() const { return m_logDirectory; }
   LogLevel::Value GetLogLevel() const { return m_logLevel; }
+  mode_t GetFileMode() const { return m_fileMode; }
   uint16_t GetRetries() const { return m_retries; }
   uint32_t GetRequestTimeOut() const { return m_requestTimeOut; }
   uint32_t GetMaxCacheSizeInMB() const { return m_maxCacheSizeInMB; }
@@ -100,6 +101,7 @@ class Options : public Singleton<Options> {
   void SetCredentialsFile(const char *file) { m_credentialsFile = file; }
   void SetLogDirectory(const std::string &path) { m_logDirectory = path; }
   void SetLogLevel(LogLevel::Value level) { m_logLevel = level; }
+  void SetFileMode(mode_t fileMode) { m_fileMode = fileMode; }
   void SetRetries(unsigned retries) { m_retries = retries; }
   void SetRequestTimeOut(uint32_t timeout) { m_requestTimeOut = timeout; }
   void SetMaxCacheSizeInMB(uint32_t maxcache) { m_maxCacheSizeInMB = maxcache; }
@@ -142,6 +144,7 @@ class Options : public Singleton<Options> {
   std::string m_credentialsFile;
   std::string m_logDirectory;
   LogLevel::Value m_logLevel;
+  mode_t m_fileMode; 
   uint16_t m_retries;         // transaction retries
   uint32_t m_requestTimeOut;  // in milliseconds
   uint32_t m_maxCacheSizeInMB;

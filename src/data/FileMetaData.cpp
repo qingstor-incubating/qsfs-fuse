@@ -35,7 +35,6 @@ namespace Data {
 using boost::make_shared;
 using boost::shared_ptr;
 using boost::to_string;
-using QS::Configure::Default::GetDefineDirMode;
 using QS::StringUtils::AccessMaskToString;
 using QS::StringUtils::FormatPath;
 using QS::StringUtils::ModeToString;
@@ -82,7 +81,7 @@ string GetFileTypeName(FileType::Value fileType) {
 shared_ptr<FileMetaData> BuildDefaultDirectoryMeta(const string &dirPath,
                                                         time_t mtime) {
   time_t atime = time(NULL);
-  mode_t mode = GetDefineDirMode();
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
   return make_shared<FileMetaData>(
       AppendPathDelim(dirPath), 0, atime, mtime, GetProcessEffectiveUserID(),
       GetProcessEffectiveGroupID(), mode, FileType::Directory);
