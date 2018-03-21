@@ -79,6 +79,7 @@ static struct options {
   const char *credentials;
   const char *logDirectory;
   const char *logLevel;        // INFO, WARN, ERROR, FATAL
+  mode_t fileMode;             // default file mode
   int retries;           // transaction retries
   int reqtimeout;    // in ms
   int maxcache;      // in MB
@@ -107,8 +108,6 @@ static struct options {
   bool allowOther;
 
   int qsfsMultiThread;       // internal use only to turn on multi thread
-
-  mode_t fallbackMode;     // default fallback mode
 } options;
 
 #define OPTION(t, p) \
@@ -119,6 +118,7 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-c=%s", credentials),    OPTION("--credentials=%s", credentials),
     OPTION("-l=%s", logDirectory),   OPTION("--logdir=%s",      logDirectory),
     OPTION("-L=%s", logLevel),       OPTION("--loglevel=%s",    logLevel),
+    OPTION("-F=%o", fileMode),       OPTION("--filemode=%o",    fileMode),
     OPTION("-r=%i", retries),        OPTION("--retries=%i",     retries),
     OPTION("-R=%i", reqtimeout),     OPTION("--reqtimeout=%i",  reqtimeout),
     OPTION("-Z=%i", maxcache),       OPTION("--maxcache=%i",    maxcache),
@@ -143,7 +143,6 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-h",    showHelp),       OPTION("--help",           showHelp),
     OPTION("-V",    showVersion),    OPTION("--version",        showVersion),
     OPTION("-M",    qsfsMultiThread),
-    OPTION("-F=%o", fallbackMode),   OPTION("--fallbackmode=%o",fallbackMode),
     {NULL, 0, 0}
 };
 
@@ -193,6 +192,7 @@ void Parse(int argc, char **argv) {
   options.credentials    = strdup(GetDefaultCredentialsFile().c_str());
   options.logDirectory   = strdup(GetDefaultLogDirectory().c_str());
   options.logLevel       = strdup(GetDefaultLogLevelName().c_str());
+  options.fileMode       = (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
   options.retries        = GetDefaultTransactionRetries();
   options.reqtimeout     = GetDefaultTransactionTimeDuration();
   options.maxcache       = GetMaxCacheSize() / QS::Size::MB1;
@@ -219,8 +219,6 @@ void Parse(int argc, char **argv) {
   options.qsfsMultiThread = 0;
   options.allowOther     = false;
 
-  options.fallbackMode   = (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-
   // Do Parse
   QS::Configure::Options &qsOptions = QS::Configure::Options::Instance();
   qsOptions.SetFuseArgs(argc, argv);
@@ -238,6 +236,7 @@ void Parse(int argc, char **argv) {
   qsOptions.SetLogDirectory(options.logDirectory);
   qsOptions.SetLogLevel(QS::Logging::GetLogLevelByName(options.logLevel));
   qsOptions.SetAllowOther(options.allowOther);
+  qsOptions.SetFileMode(options.fileMode);
 
   if (options.retries <= 0) {
     PrintWarnMsg("-r|--retries", options.retries, GetDefaultTransactionRetries());
@@ -323,9 +322,6 @@ void Parse(int argc, char **argv) {
   qsOptions.SetDebugCurl(options.curldbg != 0);
   qsOptions.SetShowHelp(options.showHelp != 0);
   qsOptions.SetShowVerion(options.showVersion !=0);
-
-
-  qsOptions.SetFallbackMode(options.fallbackMode);
 
   // Let MyFuseOptionProccess return 1 for mountpoint to keep it as first arg
   // if (!qsOptions.GetMountPoint().empty()) {

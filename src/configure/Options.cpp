@@ -120,6 +120,7 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[credentials: " << opts.m_credentialsFile << "] "
          << "[log directory: " << opts.m_logDirectory << "] "
          << "[log level: " << GetLogLevelName(opts.m_logLevel) << "] "
+         << "[file mode: " << ModeToString(opts.m_fileMode) << "] "
          << "[retries: " << to_string(opts.m_retries) << "] "
          << "[req timeout(ms): " << to_string(opts.m_requestTimeOut) << "] "
          << "[max cache(MB): " << to_string(opts.m_maxCacheSizeInMB) << "] "
@@ -145,7 +146,6 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[show help: " << opts.m_showHelp << "] "
          << "[show version: " << opts.m_showVersion << "] "
          << "[allow other: " << opts.m_allowOther << "] "
-         << "[fallback mode: " << ModeToString(opts.m_fallbackMode) << "] "
          << "[fuse_args.argc: " << to_string(fuseArg.argc) << "] "
          << "[fuse_args.argv: " << CatArgv(fuseArg.argc, fuseArg.argv)() << "] "
          << "[fuse_args.allocated: " << static_cast<bool>(fuseArg.allocated) << "] "  // NOLINT

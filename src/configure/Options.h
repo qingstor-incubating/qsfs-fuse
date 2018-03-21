@@ -59,6 +59,7 @@ class Options : public Singleton<Options> {
   const std::string &GetCredentialsFile() const { return m_credentialsFile; }
   const std::string &GetLogDirectory() const { return m_logDirectory; }
   LogLevel::Value GetLogLevel() const { return m_logLevel; }
+  mode_t GetFileMode() const { return m_fileMode; }
   uint16_t GetRetries() const { return m_retries; }
   uint32_t GetRequestTimeOut() const { return m_requestTimeOut; }
   uint32_t GetMaxCacheSizeInMB() const { return m_maxCacheSizeInMB; }
@@ -86,8 +87,6 @@ class Options : public Singleton<Options> {
   bool IsShowVersion() const { return m_showVersion; }
   bool IsAllowOther() const { return m_allowOther; }
 
-  mode_t GetFallbackMode() const { return m_fallbackMode; }
-
  private:
   Options();
 
@@ -102,6 +101,7 @@ class Options : public Singleton<Options> {
   void SetCredentialsFile(const char *file) { m_credentialsFile = file; }
   void SetLogDirectory(const std::string &path) { m_logDirectory = path; }
   void SetLogLevel(LogLevel::Value level) { m_logLevel = level; }
+  void SetFileMode(mode_t fileMode) { m_fileMode = fileMode; }
   void SetRetries(unsigned retries) { m_retries = retries; }
   void SetRequestTimeOut(uint32_t timeout) { m_requestTimeOut = timeout; }
   void SetMaxCacheSizeInMB(uint32_t maxcache) { m_maxCacheSizeInMB = maxcache; }
@@ -132,7 +132,6 @@ class Options : public Singleton<Options> {
   void SetShowHelp(bool showHelp) { m_showHelp = showHelp; }
   void SetShowVerion(bool showVersion) { m_showVersion = showVersion; }
   void SetAllowOther(bool allowOther) { m_allowOther = allowOther; }
-  void SetFallbackMode(mode_t fallbackMode) { m_fallbackMode = fallbackMode; }
   void SetFuseArgs(int argc, char **argv) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     m_fuseArgs = args;
@@ -145,6 +144,7 @@ class Options : public Singleton<Options> {
   std::string m_credentialsFile;
   std::string m_logDirectory;
   LogLevel::Value m_logLevel;
+  mode_t m_fileMode; 
   uint16_t m_retries;         // transaction retries
   uint32_t m_requestTimeOut;  // in milliseconds
   uint32_t m_maxCacheSizeInMB;
@@ -171,8 +171,6 @@ class Options : public Singleton<Options> {
   bool m_allowOther;
   struct fuse_args m_fuseArgs;
   bool m_fuseArgsInitialized;
-
-  mode_t m_fallbackMode; 
 
   friend class Singleton<Options>;
   friend class QS::FileSystem::Mounter;  // for DoMount

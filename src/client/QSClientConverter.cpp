@@ -130,7 +130,7 @@ shared_ptr<FileMetaData> HeadObjectOutputToFileMetaData(
 
   // TODO(jim): mode should do with meta when skd support this
   // mode_t mode = isDir ? GetDefineDirMode() : GetDefineFileMode();
-  mode_t mode = QS::Configure::Options::Instance().GetFallbackMode();
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
 
   // head object should contain meta such as mtime, but we just do a double
   // check as it can be have no meta data e.g when response code=NOT_MODIFIED
@@ -159,7 +159,7 @@ shared_ptr<FileMetaData> ObjectKeyToFileMetaData(const KeyType &objectKey,
                                      : FileType::File;
   // TODO(jim): mode should do with meta when skd support this
   // mode_t mode = isDir ? GetDefineDirMode() : GetDefineFileMode();
-  mode_t mode = QS::Configure::Options::Instance().GetFallbackMode();
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
 
   return shared_ptr<FileMetaData>(new FileMetaData(
       fullPath, static_cast<uint64_t>(key.GetSize()), atime,
