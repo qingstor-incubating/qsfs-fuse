@@ -79,7 +79,7 @@ void ShowQSFSHelp() {
   "                     Specify one of following log level: INFO,WARN,ERROR,FATAL;\n"
   "                     " << GetDefaultLogLevelName() << " is set by default\n"
   "  -F, --filemode     Specify a file mode for all without mode in metadata, default value\n"
-  "                     is " << ModeToString(QS::Configure::Options::Instance().GetFileMode()) << " times\n"
+  "                     is " << ModeToString(QS::Configure::Options::Instance().GetFileMode()) << "\n"
   "  -r, --retries      Number of times to retry a failed transaction, default value\n"
   "                     is " << to_string(GetDefaultTransactionRetries()) << " times\n"
   "  -R, --reqtimeout   Time(seconds) to wait before timing out a request, default value\n"
