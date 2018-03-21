@@ -60,8 +60,6 @@ using QS::Data::BuildDefaultDirectoryMeta;
 using QS::Data::FileMetaData;
 using QS::Data::FileType;
 using QS::Configure::Default::GetBlockSize;
-using QS::Configure::Default::GetDefineFileMode;
-using QS::Configure::Default::GetDefineDirMode;
 using QS::Configure::Default::GetFragmentSize;
 using QS::Configure::Default::GetNameMaxLen;
 using QS::FileSystem::GetDirectoryMimeType;
@@ -129,7 +127,6 @@ shared_ptr<FileMetaData> HeadObjectOutputToFileMetaData(
                                      : FileType::File;
 
   // TODO(jim): mode should do with meta when skd support this
-  // mode_t mode = isDir ? GetDefineDirMode() : GetDefineFileMode();
   mode_t mode = QS::Configure::Options::Instance().GetFileMode();
 
   // head object should contain meta such as mtime, but we just do a double
@@ -158,7 +155,6 @@ shared_ptr<FileMetaData> ObjectKeyToFileMetaData(const KeyType &objectKey,
                                      ? FileType::SymLink
                                      : FileType::File;
   // TODO(jim): mode should do with meta when skd support this
-  // mode_t mode = isDir ? GetDefineDirMode() : GetDefineFileMode();
   mode_t mode = QS::Configure::Options::Instance().GetFileMode();
 
   return shared_ptr<FileMetaData>(new FileMetaData(
@@ -194,7 +190,7 @@ shared_ptr<FileMetaData> CommonPrefixToFileMetaData(const string &commonPrefix,
 
   // TODO(jim): mode should do with meta when skd support this
   mode_t mode = QS::Configure::Options::Instance().GetFileMode();
-  
+
   time_t mtime = 0;
   return make_shared<FileMetaData>(
       fullPath, 0, atime, mtime, GetProcessEffectiveUserID(),
