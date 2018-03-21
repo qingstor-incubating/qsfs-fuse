@@ -191,10 +191,14 @@ shared_ptr<FileMetaData> CommonPrefixToFileMetaData(const string &commonPrefix,
   // Walk aroud, as ListObject return no meta for a dir, so set mtime=0.
   // This is ok, as any update based on the condition that if dir is modified
   // should still be available.
+
+  // TODO(jim): mode should do with meta when skd support this
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
+  
   time_t mtime = 0;
   return make_shared<FileMetaData>(
       fullPath, 0, atime, mtime, GetProcessEffectiveUserID(),
-      GetProcessEffectiveGroupID(), GetDefineDirMode(),
+      GetProcessEffectiveGroupID(), mode,
       FileType::Directory);  // TODO(jim): sdk api (meta)
 }
 
