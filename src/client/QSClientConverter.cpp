@@ -174,11 +174,13 @@ shared_ptr<FileMetaData> ObjectKeyToDirMetaData(const KeyType &objectKey,
   // Do const cast as sdk does not provide const-qualified accessors
   KeyType &key = const_cast<KeyType &>(objectKey);
   string fullPath = AppendPathDelim("/" + key.GetKey());  // build full path
+  // TODO(jim): mode should do with meta when skd support this
+  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
 
   return shared_ptr<FileMetaData>(new FileMetaData(
       fullPath, 0, atime, static_cast<time_t>(key.GetModified()),
       GetProcessEffectiveUserID(), GetProcessEffectiveGroupID(),
-      GetDefineDirMode(), FileType::Directory, GetDirectoryMimeType(),
+      mode, FileType::Directory, GetDirectoryMimeType(),
       key.GetEtag(), key.GetEncrypted()));
 }
 
