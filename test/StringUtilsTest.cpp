@@ -56,22 +56,22 @@ TEST(StringUtilsTest, FileMode) {
 
 TEST(StringUtilsTest, FilePermission) {
   using QS::StringUtils::ModeToString;
-  EXPECT_EQ(string("?r--------"), ModeToString(S_IRUSR));
-  EXPECT_EQ(string("?-w-------"), ModeToString(S_IWUSR));
-  EXPECT_EQ(string("?--x------"), ModeToString(S_IXUSR));
-  EXPECT_EQ(string("?rwx------"), ModeToString(S_IRWXU));
-  EXPECT_EQ(string("?---r-----"), ModeToString(S_IRGRP));
-  EXPECT_EQ(string("?----w----"), ModeToString(S_IWGRP));
-  EXPECT_EQ(string("?-----x---"), ModeToString(S_IXGRP));
-  EXPECT_EQ(string("?---rwx---"), ModeToString(S_IRWXG));
-  EXPECT_EQ(string("?------r--"), ModeToString(S_IROTH));
-  EXPECT_EQ(string("?-------w-"), ModeToString(S_IWOTH));
-  EXPECT_EQ(string("?--------x"), ModeToString(S_IXOTH));
-  EXPECT_EQ(string("?------rwx"), ModeToString(S_IRWXO));
-  EXPECT_EQ(string("?rwxrwx---"), ModeToString(S_IRWXU | S_IRWXG));
-  EXPECT_EQ(string("?rwx---rwx"), ModeToString(S_IRWXU | S_IRWXO));
-  EXPECT_EQ(string("?---rwxrwx"), ModeToString(S_IRWXG | S_IRWXO));
-  EXPECT_EQ(string("?rwxrwxrwx"), ModeToString(S_IRWXU | S_IRWXG | S_IRWXO));
+  EXPECT_EQ(string("r--------"), ModeToString(S_IRUSR));
+  EXPECT_EQ(string("-w-------"), ModeToString(S_IWUSR));
+  EXPECT_EQ(string("--x------"), ModeToString(S_IXUSR));
+  EXPECT_EQ(string("rwx------"), ModeToString(S_IRWXU));
+  EXPECT_EQ(string("---r-----"), ModeToString(S_IRGRP));
+  EXPECT_EQ(string("----w----"), ModeToString(S_IWGRP));
+  EXPECT_EQ(string("-----x---"), ModeToString(S_IXGRP));
+  EXPECT_EQ(string("---rwx---"), ModeToString(S_IRWXG));
+  EXPECT_EQ(string("------r--"), ModeToString(S_IROTH));
+  EXPECT_EQ(string("-------w-"), ModeToString(S_IWOTH));
+  EXPECT_EQ(string("--------x"), ModeToString(S_IXOTH));
+  EXPECT_EQ(string("------rwx"), ModeToString(S_IRWXO));
+  EXPECT_EQ(string("rwxrwx---"), ModeToString(S_IRWXU | S_IRWXG));
+  EXPECT_EQ(string("rwx---rwx"), ModeToString(S_IRWXU | S_IRWXO));
+  EXPECT_EQ(string("---rwxrwx"), ModeToString(S_IRWXG | S_IRWXO));
+  EXPECT_EQ(string("rwxrwxrwx"), ModeToString(S_IRWXU | S_IRWXG | S_IRWXO));
 }
 
 TEST(StringUtilsTest, FileType) {

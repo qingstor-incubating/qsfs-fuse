@@ -57,7 +57,7 @@ bool CreateDirectoryIfNotExists(const string &path) {
     if (success) {
       Info("Create directory " + FormatPath(path));
     } else {
-      DebugWarning("Fail to create directory " + PostErrMsg(path));
+      Warning("Fail to create directory " + PostErrMsg(path));
     }
     return success;
   }
@@ -70,7 +70,7 @@ bool RemoveDirectoryIfExists(const string &path) {
     if (success) {
       Info("Delete directory " + FormatPath(path));
     } else {
-      DebugWarning("Fail to delete directory " + PostErrMsg(path));
+      Warning("Fail to delete directory " + PostErrMsg(path));
     }
     return success;
   } else {
@@ -85,7 +85,7 @@ bool RemoveFileIfExists(const string &path) {
     if (success) {
       Info("Remove file " + FormatPath(path));
     } else {
-      DebugWarning("Fail to delete file " + PostErrMsg(path));
+      Warning("Fail to delete file " + PostErrMsg(path));
     }
     return success;
   } else {
@@ -156,7 +156,7 @@ bool HavePermission(struct stat *st) {
 // --------------------------------------------------------------------------
 uint64_t GetFreeDiskSpace(const string &absolutePath) {
   pair<uint64_t, string> outcome = QS::Utils::GetFreeDiskSpace(absolutePath);
-  DebugWarningIf(outcome.first == 0 && !outcome.second.empty(), outcome.second);
+  WarningIf(outcome.first == 0 && !outcome.second.empty(), outcome.second);
   return outcome.first;
 }
 
@@ -164,7 +164,7 @@ uint64_t GetFreeDiskSpace(const string &absolutePath) {
 bool IsSafeDiskSpace(const string &absolutePath, uint64_t freeSpace) {
   pair<bool, string> outcome =
       QS::Utils::IsSafeDiskSpace(absolutePath, freeSpace);
-  DebugWarningIf(!outcome.first && !outcome.second.empty(), outcome.second);
+  WarningIf(!outcome.first && !outcome.second.empty(), outcome.second);
   return outcome.first;
 }
 

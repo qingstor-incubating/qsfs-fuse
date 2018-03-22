@@ -136,7 +136,8 @@ Drive::Drive()
 
   m_transferManager->SetClient(m_client);
 
-  QS::Data::FileMetaDataManager::Instance().SetDirectoryTree(m_directoryTree.get());
+  QS::Data::FileMetaDataManager::Instance().SetDirectoryTree(
+      m_directoryTree.get());
 }
 
 // --------------------------------------------------------------------------
@@ -147,7 +148,7 @@ void Drive::CleanUp() {
   if (!GetCleanup()) {
     // abort unfinished multipart uploads
     if (!m_unfinishedMultipartUploadHandles.empty()) {
-      BOOST_FOREACH(StringToTransferHandleMap::value_type &p,
+      BOOST_FOREACH (StringToTransferHandleMap::value_type &p,
                      m_unfinishedMultipartUploadHandles) {
         m_transferManager->AbortMultipartUpload(p.second);
       }
@@ -202,7 +203,7 @@ void DoListRootDirectory(shared_ptr<Client> client,
 void Drive::DoConnect() {
   ClientError<QSError::Value> err = GetClient()->HeadBucket();
   if (!IsGoodQSError(err)) {
-    DebugError(GetMessageForQSError(err));
+    Error(GetMessageForQSError(err));
     m_connect = false;
     return;
   } else {
@@ -215,10 +216,9 @@ void Drive::DoConnect() {
   }
 
   // Build up the root level of directory tree asynchornizely.
-  boost::thread(bind(boost::type<void>(), DoListRootDirectory, m_client,
-                     m_directoryTree))
+  boost::thread(
+      bind(boost::type<void>(), DoListRootDirectory, m_client, m_directoryTree))
       .detach();
-
 }
 
 // --------------------------------------------------------------------------
@@ -229,9 +229,7 @@ bool Drive::Connect() {
 }
 
 // --------------------------------------------------------------------------
-shared_ptr<Node> Drive::GetRoot() {
-  return m_directoryTree->GetRoot();
-}
+shared_ptr<Node> Drive::GetRoot() { return m_directoryTree->GetRoot(); }
 
 // --------------------------------------------------------------------------
 pair<shared_ptr<Node>, bool> Drive::GetNode(const string &path,
@@ -265,7 +263,7 @@ pair<shared_ptr<Node>, bool> Drive::GetNode(const string &path,
             m_cache->Erase(path);
           }
         } else {
-          DebugError(GetMessageForQSError(err));
+          Error(GetMessageForQSError(err));
         }
       }
     }
@@ -278,7 +276,7 @@ pair<shared_ptr<Node>, bool> Drive::GetNode(const string &path,
       if (err.GetError() == QSError::NOT_FOUND) {
         DebugInfo("File not exist " + FormatPath(path));
       } else {
-        DebugError(GetMessageForQSError(err));
+        Error(GetMessageForQSError(err));
       }
     }
   }
@@ -363,7 +361,7 @@ struct PrintMsgForDeleteFile {
     if (IsGoodQSError(err)) {
       Info("Delete file " + FormatPath(filePath));
     } else {
-      DebugError(GetMessageForQSError(err));
+      Error(GetMessageForQSError(err));
     }
   }
 };
@@ -407,7 +405,7 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
   if (type == FileType::File) {
     ClientError<QSError::Value> err = GetClient()->MakeFile(filePath);
     if (!IsGoodQSError(err)) {
-      DebugError(GetMessageForQSError(err));
+      Error(GetMessageForQSError(err));
       return;
     }
 
@@ -433,7 +431,7 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
 void Drive::MakeDir(const string &dirPath, mode_t mode) {
   ClientError<QSError::Value> err = GetClient()->MakeDirectory(dirPath);
   if (!IsGoodQSError(err)) {
-    DebugError(GetMessageForQSError(err));
+    Error(GetMessageForQSError(err));
     return;
   }
 
@@ -524,7 +522,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
       handle->WaitUntilFinished();
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
         Info("Download file [offset:len=" + to_string(offset) + ":" +
-                  to_string(downloadSize) + "] " + FormatPath(filePath));
+             to_string(downloadSize) + "] " + FormatPath(filePath));
 
         bool success = m_cache->Write(filePath, offset, downloadSize, stream,
                                       mtime, isOpen);
@@ -559,7 +557,7 @@ void Drive::ReadSymlink(const std::string &linkPath) {
   if (IsGoodQSError(err)) {
     node->SetSymbolicLink(buffer->str());
   } else {
-    DebugError(GetMessageForQSError(err));
+    Error(GetMessageForQSError(err));
   }
 }
 
@@ -580,7 +578,7 @@ void Drive::RenameFile(const string &filePath, const string &newFilePath) {
     }
     return;
   } else {
-    DebugError(GetMessageForQSError(err));
+    Error(GetMessageForQSError(err));
     return;
   }
 }
@@ -609,7 +607,7 @@ struct RenameDirCallback {
       deque<string> childPaths = node->GetChildrenIdsRecursively();
       size_t len = dirPath.size();
       deque<string> childTargetPaths;
-      BOOST_FOREACH(const string &path, childPaths) {
+      BOOST_FOREACH (const string &path, childPaths) {
         if (path.substr(0, len) != dirPath) {
           DebugError("Directory has an invalid child file [path=" + dirPath +
                      " child=" + path + "]");
@@ -644,7 +642,7 @@ struct RenameDirCallback {
         }
       }
     } else {
-      DebugError(GetMessageForQSError(err));
+      Error(GetMessageForQSError(err));
     }
   }
 };
@@ -679,7 +677,7 @@ void Drive::SymLink(const string &filePath, const string &linkPath) {
   ClientError<QSError::Value> err = GetClient()->SymLink(filePath, linkPath);
   if (!IsGoodQSError(err)) {
     Error("Fail to create a symbolic link [path=" + filePath +
-               ", link=" + linkPath);
+          ", link=" + linkPath);
     Error(GetMessageForQSError(err));
     return;
   }
@@ -690,7 +688,7 @@ void Drive::SymLink(const string &filePath, const string &linkPath) {
   // with the created symlink node, So we call Stat synchronizely.
   err = GetClient()->Stat(linkPath, m_directoryTree);
   if (!IsGoodQSError(err)) {
-    DebugError(GetMessageForQSError(err));
+    Error(GetMessageForQSError(err));
     return;
   }
 
@@ -771,7 +769,7 @@ struct UploadFileCallback {
               cache->SetTime(handle->GetObjectKey(), node1->GetMTime());
             }
           } else {
-            DebugError(GetMessageForQSError(err));
+            Error(GetMessageForQSError(err));
           }
         }  // update Meta
       }    // Done Transfer
@@ -799,7 +797,8 @@ void Drive::UploadFile(const string &filePath, bool releaseFile,
   // but you need the completed file in order to upload it.
   if (!ranges.empty()) {
     bool fileOpen = node->IsFileOpen();
-    DownloadFileContentRanges(filePath, ranges, mtime, fileOpen, false);  // sync
+    DownloadFileContentRanges(filePath, ranges, mtime, fileOpen,
+                              false);  // sync
   }
 
   UploadFileCallback callback(filePath, node, m_cache, m_client,
@@ -855,8 +854,7 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
 
   bool isOpen = node->IsFileOpen();
   time_t mtime = node->GetMTime();
-  bool success =
-      m_cache->Write(filePath, offset, size, buf, mtime, isOpen);
+  bool success = m_cache->Write(filePath, offset, size, buf, mtime, isOpen);
   if (success) {
     node->SetNeedUpload(true);
     if (offset + size > node->GetFileSize()) {
@@ -871,7 +869,7 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
 void Drive::DownloadFileContentRanges(const string &filePath,
                                       const ContentRangeDeque &ranges,
                                       time_t mtime, bool open, bool async) {
-  BOOST_FOREACH(const ContentRangeDeque::value_type &range, ranges) {
+  BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
     DownloadFileContentRange(filePath, range, mtime, open, async);
   }
 }
@@ -889,8 +887,7 @@ struct DownloadFileContentRangeCallback {
   DownloadFileContentRangeCallback(const string &filePath_, off_t offset_,
                                    size_t downloadSize_,
                                    const shared_ptr<IOStream> &stream_,
-                                   time_t mtime_,
-                                   bool open_,
+                                   time_t mtime_, bool open_,
                                    const shared_ptr<Cache> &cache_)
       : filePath(filePath_),
         offset(offset_),
@@ -904,8 +901,8 @@ struct DownloadFileContentRangeCallback {
     if (handle) {
       handle->WaitUntilFinished();
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
-        bool success =
-            cache->Write(filePath, offset, downloadSize, stream, mtime, fileOpen);
+        bool success = cache->Write(filePath, offset, downloadSize, stream,
+                                    mtime, fileOpen);
         DebugErrorIf(!success,
                      "Fail to write cache [file:offset:len=" + filePath + ":" +
                          to_string(offset) + ":" + to_string(downloadSize) +

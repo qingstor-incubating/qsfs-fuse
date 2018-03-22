@@ -244,8 +244,8 @@ bool FileMetaData::FileAccess(uid_t uid, gid_t gid, int amode) const {
   }
 
   if (!ret) {
-    DebugWarning("Check access permission " + FormatPath(m_filePath));
-    DebugWarning("[uid:gid:mode process=" + to_string(uid) + ":" +
+    Warning("No access permission " + FormatPath(m_filePath));
+    Warning("[uid:gid:mode process=" + to_string(uid) + ":" +
                  to_string(gid) + ":" + AccessMaskToString(amode) +
                  ", file=" + to_string(m_uid) + ":" + to_string(m_gid) + ":" +
                  ModeToString(m_fileMode) + "]");

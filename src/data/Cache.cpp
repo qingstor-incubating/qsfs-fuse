@@ -334,13 +334,13 @@ pair<bool, shared_ptr<File> > Cache::PrepareWrite(const string &fileId,
       string diskfolder =
           QS::Configure::Options::Instance().GetDiskCacheDirectory();
       if (!CreateDirectoryIfNotExists(diskfolder)) {
-        DebugError("Unable to mkdir for folder " + FormatPath(diskfolder));
+        Error("Unable to mkdir for folder " + FormatPath(diskfolder));
         return make_pair(false, shared_ptr<File>());
       }
       if (!IsSafeDiskSpace(diskfolder, len)) {
         if (!FreeDiskCacheFiles(diskfolder, len, fileId)) {
-          DebugError("No available free space (" + to_string(len) +
-                     "bytes) for folder " + FormatPath(diskfolder));
+          Error("No available free space (" + to_string(len) +
+                "bytes) for folder " + FormatPath(diskfolder));
           return make_pair(false, shared_ptr<File>());
         }
       }  // check safe disk space
@@ -405,10 +405,10 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
   }
 
   if (freedSpace > 0) {
-    DebugInfo("Has freed cache of " + to_string(freedSpace) + " bytes");
+    Info("Has freed cache of " + to_string(freedSpace) + " bytes");
   }
   if (freedDiskSpace > 0) {
-    DebugInfo(
+    Info(
         "Has freed disk file of " + to_string(freedDiskSpace) + " bytes" +
         FormatPath(QS::Configure::Options::Instance().GetDiskCacheDirectory()));
   }

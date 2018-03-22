@@ -177,7 +177,7 @@ pair<bool, string> DefaultCredentialsProvider::ReadCredentialsFile(
 
         if (firstPos == lastPos) {  // Found default key
           if (HasDefaultKey()) {
-            DebugWarning(
+            Warning(
                 "More than one default key pairs are provided in credentials "
                 "file " +
                 FormatPath(file) + ". Only set with the first one");

@@ -38,7 +38,7 @@ string ProtocolToString(Protocol::Value protocol) {
   } else if (protocol == Protocol::HTTPS) {
     return HTTPS_NAME;
   } else {
-    DebugWarning(
+    Warning(
         "Trying to get protocol name with unrecognized protocol type, default "
         "protocol of https returned");
   }
@@ -53,7 +53,7 @@ Protocol::Value StringToProtocol(const string& name) {
   } else if (str == HTTPS_NAME) {
     return Protocol::HTTPS;
   } else {
-    DebugWarning(
+    Warning(
         "Trying to get protocol with unrecognized protocol name, default "
         "protocol of https returned");
   }

@@ -298,7 +298,7 @@ ClientError<QSError::Value> QSClient::MoveDirectory(const string &sourceDirPath,
       &listObjInput, NULL, NULL, 0);
 
   if (!outcome.IsSuccess()) {
-    DebugError("Fail to list objects " + FormatPath(sourceDir));
+    Error("Fail to list objects " + FormatPath(sourceDir));
     return outcome.GetError();
   }
 

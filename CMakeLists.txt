@@ -33,6 +33,16 @@ if (IS_MACH_64)
       CACHE PATH "library path env variable")
 endif()
 
+execute_process(COMMAND head -1 /etc/issue OUTPUT_VARIABLE DISTROS_ISSUE)
+string (STRIP "${DISTROS_ISSUE}" DISTROS_ISSUE)
+string (FIND "${DISTROS_ISSUE}" " " POS1)
+string (SUBSTRING "${DISTROS_ISSUE}" 0 ${POS1} OS_NAME)
+string (REGEX MATCH "([0-9]+\\.[0-9]+)" OS_VERSION "${DISTROS_ISSUE}")
+if (OS_NAME MATCHES "CentOS" OR OS_NAME MATCHES "RedHat")
+  set(OS_NAME "el")
+  string (REPLACE "." "_" OS_VERSION "${OS_VERSION}")
+endif ()
+string (CONCAT OS_NAME_VERSION ${OS_NAME} ${OS_VERSION})
 
 #
 # project information
@@ -40,7 +50,7 @@ endif()
 set (PACKAGE_NAME          "qsfs")
 set (PACKAGE_VERSION_MAJOR 1)
 set (PACKAGE_VERSION_MINOR 0)
-set (PACKAGE_VERSION_PATCH 0)
+set (PACKAGE_VERSION_PATCH 1)
 set (PACKAGE_VERSION       ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
 set (PACKAGE_RELEASE       1)
 set (PACKAGE_STRING        "${QSFS_NAME} ${QSFS_VERSION}")
@@ -79,8 +89,8 @@ configure_file (cmake/templates/VersionConfig.h.in
 #
 find_package (Threads REQUIRED)
 if (NOT Threads_FOUND)
-  message (FATAL_ERROR "Could not find pthread. Check the log file"
-  "\n\t${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log")
+message (FATAL_ERROR "Could not find pthread. Check the log file"
+"\n\t${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log")
 endif ()
 
 # Not call find_package to check dependencies, instead
@@ -128,11 +138,14 @@ add_custom_target (lint COMMAND ${CMAKE_COMMAND} -P
 #   which is not in export set.
 add_compile_options (-fPIC)
 
-# do not specify -g, instead specify -DCMAKE_BUILD_TYPE=Debug/Release in command line
 # add_compile_options (-Wall)  # for dev
 # disable warnings for boost, this is only for gcc 4.8 or later
 # add_compile_options (-Wno-unused-local-typedefs -Wno-delete-non-virtual-dtor)
+# do not specify -g, instead specify -DCMAKE_BUILD_TYPE=Debug/Release in command line
 # add_compile_options (-g -o0 -fno-inline)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set (CMAKE_INSTALL_DO_STRIP 0)
+endif()
 
 # fuse need to uses 64 bit off_t *
 add_compile_options(-D_FILE_OFFSET_BITS=64)
@@ -319,6 +332,7 @@ if (BUILD_PACKAGING)
   set (CPACK_PACKAGE_VERSION_MINOR       "${PACKAGE_VERSION_MINOR}")
   set (CPACK_PACKAGE_VERSION_PATCH       "${PACKAGE_VERSION_PATCH}")
   set (CPACK_PACKAGE_RELEASE             "${PACKAGE_RELEASE}")
+  set (CPACK_OS_NAME_VERSION             "${OS_NAME_VERSION}")  # cpack var must begin with CPACK
   set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PACKAGE_DESCRIPTION}")
   set (CPACK_RESOURCE_FILE_WELCOME       "${PROJECT_SOURCE_DIR}/README.md")
   set (CPACK_RESOURCE_FILE_LICENSE       "${PROJECT_SOURCE_DIR}/COPYING")
@@ -330,11 +344,16 @@ if (BUILD_PACKAGING)
   set (CPACK_MONOLITHIC_INSTALL          TRUE)
 
   # RPM package information -- used in cmake/package.cmake.in also for DEB
+  # following variables must defined here instead of cmake/package.cmake.in
   set (CPACK_RPM_PACKAGE_GROUP   "Applications/System")
   set (CPACK_RPM_PACKAGE_LICENSE "Apache")
   set (CPACK_RPM_PACKAGE_URL     "${PACKAGE_URL}")
   set (CPACK_RPM_PACKAGE_RELEASE "${CPACK_PACKAGE_RELEASE}")
   set (CPACK_RPM_CHANGELOG_FILE  "${PROJECT_SOURCE_DIR}/ChangeLog")
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # to prevent rpmbuild strip debug symbols
+    set (CPACK_RPM_SPEC_MORE_DEFINE "%define __spec_install_post /bin/true")
+  endif()
 
   # unix system/architecture
   string (TOLOWER "${CMAKE_SYSTEM_NAME}" CPACK_SYSTEM_NAME)

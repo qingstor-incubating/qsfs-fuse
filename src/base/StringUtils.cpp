@@ -93,7 +93,7 @@ string AccessMaskToString(int amode) {
 // --------------------------------------------------------------------------
 std::string ModeToString(mode_t mode) {
   string modeStr;
-  modeStr.append(1, GetFileTypeLetter(mode));
+  // modeStr.append(1, GetFileTypeLetter(mode));
 
   // access MODE bits          000    001    010    011
   //                           100    101    110    111

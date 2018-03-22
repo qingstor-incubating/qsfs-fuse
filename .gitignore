@@ -41,3 +41,4 @@ CTestTestfile.cmake
 #
 third_party/install
 .vscode/
+.gdb_history

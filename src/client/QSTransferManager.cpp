@@ -91,7 +91,7 @@ struct ReceivedHandlerSingleDownload {
       handle->ChangePartToFailed(part);
       handle->UpdateStatus(TransferStatus::Failed);
       handle->SetError(err);
-      DebugError(GetMessageForQSError(err));
+      Error(GetMessageForQSError(err));
     }
   }
 };
@@ -123,7 +123,7 @@ struct ReceivedHandlerMultipleDownload {
     } else {
       handle->ChangePartToFailed(part);
       handle->SetError(err);
-      DebugError(GetMessageForQSError(err));
+      Error(GetMessageForQSError(err));
     }
 
     // release part buffer back to resource manager
@@ -177,7 +177,7 @@ struct ReceivedHandlerSingleUpload {
       handle->ChangePartToFailed(part);
       handle->UpdateStatus(TransferStatus::Failed);
       handle->SetError(err);
-      DebugError(GetMessageForQSError(err));
+      Error(GetMessageForQSError(err));
     }
   }
 };
@@ -208,7 +208,7 @@ struct ReceivedHandlerMultipleUpload {
     } else {
       handle->ChangePartToFailed(part);
       handle->SetError(err);
-      DebugError(GetMessageForQSError(err));
+      Error(GetMessageForQSError(err));
     }
 
     // release part buffer back to resouce manager
@@ -237,7 +237,7 @@ struct ReceivedHandlerMultipleUpload {
         } else {
           handle->UpdateStatus(TransferStatus::Failed);
           handle->SetError(err);
-          DebugError(GetMessageForQSError(err));
+          Error(GetMessageForQSError(err));
         }
       } else {
         handle->UpdateStatus(TransferStatus::Failed);
@@ -348,7 +348,7 @@ void QSTransferManager::AbortMultipartUpload(
       handle->UpdateStatus(TransferStatus::Aborted);
     } else {
       handle->SetError(err);
-      DebugError(GetMessageForQSError(err));
+      Error(GetMessageForQSError(err));
     }
   }
 }
@@ -502,7 +502,7 @@ bool QSTransferManager::PrepareUpload(
       } else {
         handle->SetError(err);
         handle->UpdateStatus(TransferStatus::Failed);
-        DebugError(GetMessageForQSError(err));
+        Error(GetMessageForQSError(err));
         initSuccess = false;
       }
       if (!initSuccess) {

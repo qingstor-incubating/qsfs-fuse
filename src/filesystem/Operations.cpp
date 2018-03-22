@@ -327,7 +327,7 @@ int qsfs_getattr(const char* path, struct stat* statbuf) {
       DebugInfo("No such file or directory " + FormatPath(path));
     }
   } catch (const QSException& err) {
-    DebugWarning(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1507,8 +1507,8 @@ void* qsfs_init(struct fuse_conn_info* conn) {
   // will reproduce error by making an https request.
   Drive& drive = Drive::Instance();
   if (!drive.IsMountable()) {
-    DebugError("Unable to connect bucket " + 
-               QS::Configure::Options::Instance().GetBucket());
+    Error("Unable to connect bucket " +
+          QS::Configure::Options::Instance().GetBucket());
     ExitQsfsFuseLoop();
     return NULL;
   }

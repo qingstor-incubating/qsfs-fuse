@@ -36,7 +36,7 @@
 namespace QS {
 
 namespace FileSystem {
-  class Drive;
+class Drive;
 }
 
 namespace Data {

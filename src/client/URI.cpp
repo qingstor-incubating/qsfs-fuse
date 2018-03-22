@@ -49,7 +49,7 @@ std::string HostToString(Host::Value host) {
   unordered_map<Host::Value, string, EnumHash>::iterator it =
       hostToNameMap.find(host);
   if (it == hostToNameMap.end()) {
-    DebugWarning(
+    Warning(
         "Trying to get host name with unrecognized host type, null returned");
     return HOST_NULL;
   }
@@ -65,7 +65,7 @@ Host::Value StringToHost(const string& name) {
   unordered_map<string, Host::Value, StringHash>::iterator it =
       nameToHostMap.find(name);
   if (it == nameToHostMap.end()) {
-    DebugWarning(
+    Warning(
         "Trying to get host with unrecognized host name, null returned");
     return Host::Null;
   }
