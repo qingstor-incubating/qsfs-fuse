@@ -22,7 +22,6 @@
 #include "boost/exception/to_string.hpp"
 
 #include "base/Size.h"
-#include "base/StringUtils.h"
 #include "configure/Default.h"
 #include "configure/Options.h"
 #include "configure/Version.h"
@@ -36,6 +35,8 @@ namespace HelpText {
 using boost::to_string;
 using QS::Configure::Default::GetDefaultCredentialsFile;
 using QS::Configure::Default::GetDefaultDiskCacheDirectory;
+using QS::Configure::Default::GetDefaultDirMode;
+using QS::Configure::Default::GetDefaultFileMode;
 using QS::Configure::Default::GetDefaultLogDirectory;
 using QS::Configure::Default::GetDefaultLogLevelName;
 using QS::Configure::Default::GetDefaultHostName;
@@ -48,7 +49,6 @@ using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
 using QS::Configure::Default::GetDefaultTransactionTimeDuration;
-using QS::StringUtils::ModeToString;
 using std::cout;
 using std::endl;
 
@@ -78,8 +78,17 @@ void ShowQSFSHelp() {
   "  -L, --loglevel     Min log level, message lower than this level don't logged;\n"
   "                     Specify one of following log level: INFO,WARN,ERROR,FATAL;\n"
   "                     " << GetDefaultLogLevelName() << " is set by default\n"
-  "  -F, --filemode     Specify a file mode for all without mode in metadata, \n"
-  "                     default value is " << std::oct << QS::Configure::Options::Instance().GetFileMode() << "\n"
+  "  -F, --filemode     Specify the permission bits in st_mode for file objects without\n"
+  "                     x-qs-meta-mode header. The value is given in octal representation,\n"
+  "                     default value is " << std::oct << GetDefaultFileMode() << "\n"
+  "  -D, --dirmode      Specify the permission bits in st_mode for directory objects without\n"
+  "                     x-qs-meta-mode header. The value is given in octal representation,\n"
+  "                     default value is " << GetDefaultDirMode() << std::dec << "\n"
+  "  -u, --umaskmp      Specify the permission bits in st_mode for the mount point directory.\n"
+  "                     This option only works when you set with the fuse allow_other option.\n"
+  "                     The resulting permission bits are the ones missing from the given \n"
+  "                     umask value. The value is given in octal representation,\n"
+  "                     default value is 0000\n"
   "  -r, --retries      Number of times to retry a failed transaction, default value\n"
   "                     is " << to_string(GetDefaultTransactionRetries()) << " times\n"
   "  -R, --reqtimeout   Time(seconds) to wait before timing out a request, default value\n"
@@ -87,7 +96,7 @@ void ShowQSFSHelp() {
                                           << " seconds\n"
   "  -Z, --maxcache     Max in-memory cache size(MB) for files, default value is "
                         << to_string(GetMaxCacheSize() / QS::Size::MB1) << "MB\n"
-  "  -D, --diskdir      Specify the directory to store file data when in-memory cache\n"
+  "  -k, --diskdir      Specify the directory to store file data when in-memory cache\n"
   "                     is not availabe, default path is " << GetDefaultDiskCacheDirectory() << "\n"
   "  -t, --maxstat      Max count(K) of cached stat entrys, default value is "
                         << to_string(GetMaxStatCount() / QS::Size::K1) << "K\n"
@@ -98,7 +107,7 @@ void ShowQSFSHelp() {
   "  -n, --numtransfer  Max number file tranfers to run in parallel, you can increase\n"
   "                     the value when transfer large files, default value is "
                         << to_string(GetDefaultParallelTransfers()) << "\n"
-  "  -u, --bufsize      File transfer buffer size(MB), this should be larger than 8MB,\n"
+  "  -b, --bufsize      File transfer buffer size(MB), this should be larger than 8MB.\n"
   "                     default value is " 
                         << to_string(GetDefaultTransferBufSize() / QS::Size::MB1) << "MB\n"
   "  -H, --host         Host name, default value is " << GetDefaultHostName() << "\n" <<
@@ -130,12 +139,13 @@ void ShowQSFSUsage() {
   "Usage: qsfs <BUCKET> <MOUNTPOINT>\n"
   "       [-c|--credentials=[file path]] [-z|--zone=[value]]\n"
   "       [-l|--logdir=[dir]] [-L|--loglevel=[INFO|WARN|ERROR|FATAL]] \n"
-  "       [-F|--filemode=[mode]] \n"
+  "       [-F|--filemode=[octal-mode]] [-D|--dirmode=[octal-mode]]\n"
+  "       [-u|--umaskmp=[octal-mode]]\n"
   "       [-r|--retries=[value]] [-R|reqtimeout=[value]]\n"
-  "       [-Z|--maxcache=[value]] [-D|--diskdir=[value]]\n"
+  "       [-Z|--maxcache=[value]] [-k|--diskdir=[value]]\n"
   "       [-t|--maxstat=[value]] [-e|--statexpire=[value]]\n"
   "       [-i|--maxlist=[value]]\n"
-  "       [-n|--numtransfer=[value]] [-u|--bufsize=value]]\n"
+  "       [-n|--numtransfer=[value]] [-b|--bufsize=value]]\n"
   "       [-H|--host=[value]] [-p|--protocol=[value]]\n"
   "       [-P|--port=[value]] [-a|--agent=[value]]\n"
   "       [-m|--contentMD5]\n"

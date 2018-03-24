@@ -81,7 +81,7 @@ string GetFileTypeName(FileType::Value fileType) {
 shared_ptr<FileMetaData> BuildDefaultDirectoryMeta(const string &dirPath,
                                                         time_t mtime) {
   time_t atime = time(NULL);
-  mode_t mode = QS::Configure::Options::Instance().GetFileMode();
+  mode_t mode = QS::Configure::Options::Instance().GetDirMode();
   return make_shared<FileMetaData>(
       AppendPathDelim(dirPath), 0, atime, mtime, GetProcessEffectiveUserID(),
       GetProcessEffectiveGroupID(), mode, FileType::Directory);
@@ -155,38 +155,34 @@ struct stat FileMetaData::ToStat() const {
 // --------------------------------------------------------------------------
 mode_t FileMetaData::GetFileTypeAndMode() const {
   mode_t stmode;
-  if (IsRootDirectory(m_filePath) || m_filePath == ".") {
-    stmode = S_IFDIR | (QS::Configure::Options::Instance().IsAllowOther()
-                            ? (S_IRWXU | S_IRWXG | S_IRWXO)
-                            : S_IRWXU);
-  } else {
-    switch (m_fileType) {
-      case FileType::File:
-        stmode = S_IFREG | m_fileMode;
-        break;
-      case FileType::Directory:
-        stmode = S_IFDIR | m_fileMode;
-        break;
-      case FileType::SymLink:
-        stmode = S_IFLNK | m_fileMode;
-        break;
-      case FileType::Block:
-        stmode = S_IFBLK | m_fileMode;
-        break;
-      case FileType::Character:
-        stmode = S_IFCHR | m_fileMode;
-        break;
-      case FileType::FIFO:
-        stmode = S_IFIFO | m_fileMode;
-        break;
-      case FileType::Socket:
-        stmode = S_IFSOCK | m_fileMode;
-        break;
-      default:
-        stmode = S_IFREG | m_fileMode;
-        break;
-    }
+
+  switch (m_fileType) {
+    case FileType::File:
+      stmode = S_IFREG | m_fileMode;
+      break;
+    case FileType::Directory:
+      stmode = S_IFDIR | m_fileMode;
+      break;
+    case FileType::SymLink:
+      stmode = S_IFLNK | m_fileMode;
+      break;
+    case FileType::Block:
+      stmode = S_IFBLK | m_fileMode;
+      break;
+    case FileType::Character:
+      stmode = S_IFCHR | m_fileMode;
+      break;
+    case FileType::FIFO:
+      stmode = S_IFIFO | m_fileMode;
+      break;
+    case FileType::Socket:
+      stmode = S_IFSOCK | m_fileMode;
+      break;
+    default:
+      stmode = S_IFREG | m_fileMode;
+      break;
   }
+
   return stmode;
 }
 
@@ -208,12 +204,37 @@ bool FileMetaData::FileAccess(uid_t uid, gid_t gid, int amode) const {
     return false;
   }
 
+  if (uid == 0) {
+    // root is allowed all accessing
+    return true;
+  }
+
+  QS::Configure::Options &options = QS::Configure::Options::Instance();
+
+  if (options.IsOverrideUID() && uid == options.GetUID()) {
+    // overrided uid user is allowed all accessing
+    return true;
+  }
+
+  if (options.IsOverrideUID()) {
+    uid = options.GetUID();
+  }
+
+  if (options.IsOverrideGID()) {
+    gid = options.GetGID();
+  }
+
   // Check file existence
   if (amode & F_OK) {
     return true;  // there is a file, always allowed
   }
 
-  mode_t mode = GetFileTypeAndMode();
+  // umask behavior keep same as FUSE
+  // FUSE set permission as (0777 & ~umask) for both files and directories
+  // https://github.com/libfuse/libfuse/blob/fuse-2_9_bugfix/lib/fuse.c#L1386-L1388
+  mode_t mode = options.IsUmask()
+                    ? ((S_IRWXU | S_IRWXG | S_IRWXO) & ~options.GetUmask())
+                    : GetFileTypeAndMode();
   mode_t base_mask = S_IRWXO;
   if (uid == m_uid) {
     base_mask |= S_IRWXU;

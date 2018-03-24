@@ -18,17 +18,22 @@
 
 #include <assert.h>
 #include <stddef.h>  // for offsetof
+#include <stdlib.h>  // for strtoul
 #include <stdint.h>
 #include <string.h>  // for strdup
+
+#include <sys/stat.h>
 
 #include <iostream>
 #include <string>
 
 #include "boost/exception/to_string.hpp"
+#include "boost/lexical_cast.hpp"
 
 #include "base/Exception.h"
 #include "base/LogLevel.h"
 #include "base/Size.h"
+#include "base/Utils.h"
 #include "client/Protocol.h"
 #include "configure/Default.h"
 #include "configure/IncludeFuse.h"  // for fuse.h
@@ -48,6 +53,8 @@ using boost::to_string;
 using QS::Configure::Default::GetClientDefaultPoolSize;
 using QS::Configure::Default::GetDefaultCredentialsFile;
 using QS::Configure::Default::GetDefaultDiskCacheDirectory;
+using QS::Configure::Default::GetDefaultDirMode;
+using QS::Configure::Default::GetDefaultFileMode;
 using QS::Configure::Default::GetDefaultLogDirectory;
 using QS::Configure::Default::GetDefaultLogLevelName;
 using QS::Configure::Default::GetDefaultHostName;
@@ -61,12 +68,24 @@ using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
 using QS::Configure::Default::GetDefaultTransactionTimeDuration;
+using QS::Utils::GetProcessEffectiveUserID;
+using QS::Utils::GetProcessEffectiveGroupID;
+using std::string;
 
-void PrintWarnMsg(const char *opt, int invalidVal, int defaultVal) {
+void PrintWarnMsg(const char *opt, int invalidVal, int defaultVal,
+                  const char *extraMsg = NULL) {
   if (opt == NULL) return;
   std::cerr << "[qsfs] invalid parameter in option " << opt << "="
-            << to_string(invalidVal) << ", "
-            << to_string(defaultVal) << " is used" << std::endl;
+            << to_string(invalidVal) << ", " << to_string(defaultVal)
+            << " is used.";
+  if (extraMsg != NULL) {
+    std::cerr << " " << extraMsg;
+  }
+  std::cerr << std::endl;
+}
+
+static int String2NCompare(const char *str1, const char *str2) {
+  return strncmp(str1, str2, strlen(str2));
 }
 
 static struct options {
@@ -78,8 +97,10 @@ static struct options {
   const char *zone;
   const char *credentials;
   const char *logDirectory;
-  const char *logLevel;        // INFO, WARN, ERROR, FATAL
-  mode_t fileMode;             // default file mode
+  const char *logLevel;  // INFO, WARN, ERROR, FATAL
+  mode_t fileMode;       // Mode of file
+  mode_t dirMode;        // Mode of directory
+  mode_t umaskmp;        // umask of mount point
   int retries;           // transaction retries
   int reqtimeout;    // in ms
   int maxcache;      // in MB
@@ -106,6 +127,9 @@ static struct options {
 
   // some opts for fuse
   bool allowOther;
+  uid_t uid;             // User ID of file
+  gid_t gid;             // Group ID of file
+  mode_t umask;          // umask of permission bits in st_mode
 
   int qsfsMultiThread;       // internal use only to turn on multi thread
 } options;
@@ -119,15 +143,17 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-l=%s", logDirectory),   OPTION("--logdir=%s",      logDirectory),
     OPTION("-L=%s", logLevel),       OPTION("--loglevel=%s",    logLevel),
     OPTION("-F=%o", fileMode),       OPTION("--filemode=%o",    fileMode),
+    OPTION("-D=%o", dirMode),        OPTION("--dirmode=%o",     dirMode),
+    OPTION("-u=%o", umaskmp),        OPTION("--umaskmp=%o",     umaskmp),
     OPTION("-r=%i", retries),        OPTION("--retries=%i",     retries),
     OPTION("-R=%i", reqtimeout),     OPTION("--reqtimeout=%i",  reqtimeout),
     OPTION("-Z=%i", maxcache),       OPTION("--maxcache=%i",    maxcache),
-    OPTION("-D=%s", diskdir),        OPTION("--diskdir=%s",     diskdir),
+    OPTION("-k=%s", diskdir),        OPTION("--diskdir=%s",     diskdir),
     OPTION("-t=%i", maxstat),        OPTION("--maxstat=%i",     maxstat),
     OPTION("-i=%i", maxlist),        OPTION("--maxlist=%i",     maxlist),
     OPTION("-e=%i", statexpire),     OPTION("--statexpire=%i",  statexpire),
     OPTION("-n=%i", numtransfer),    OPTION("--numtransfer=%i", numtransfer),
-    OPTION("-u=%i", bufsize),        OPTION("--bufsize=%i",     bufsize),
+    OPTION("-b=%i", bufsize),        OPTION("--bufsize=%i",     bufsize),
     OPTION("-T=%i", threads),        OPTION("--threads=%i",     threads),
     OPTION("-H=%s", host),           OPTION("--host=%s",        host),
     OPTION("-p=%s", protocol),       OPTION("--protocol=%s",    protocol),
@@ -163,16 +189,39 @@ static int MyFuseOptionProccess(void *data, const char *arg, int key,
       return 0;
     }
 
-    // the second NONPOT option is the mountpoint
+    // the second NONOPT option is the mountpoint
     if (strlen(options.mountPoint) == 0) {
       options.mountPoint = strdup(arg);
       return 1;  // continue for fuse option
     }
 
+    std::cerr << "[qsfs] specify unknown NONOPT option " << arg << std::endl;
     return -1;  // error
   } else if (key == FUSE_OPT_KEY_OPT) {
     if (strcmp(arg, "allow_other") == 0) {
       options.allowOther = true;
+      return 1;  // continue for fuse option
+    }
+
+    if (String2NCompare(arg, "uid=") == 0) {
+      string str = string(arg).substr(4);
+      options.uid = boost::lexical_cast<uid_t>(str);
+
+      return 1;  // continue for fuse option
+    }
+
+    if (String2NCompare(arg, "gid=") == 0) {
+      string str = string(arg).substr(4);
+      options.gid = boost::lexical_cast<gid_t>(str);
+
+      return 1;  // continue for fuse option
+    }
+
+    if (String2NCompare(arg, "umask=") == 0) {
+      string str = string(arg).substr(6);
+      // umask is in octal representation
+      options.umask = static_cast<mode_t>(strtoul(str.c_str(), NULL, 8));
+
       return 1;  // continue for fuse option
     }
   }
@@ -192,7 +241,9 @@ void Parse(int argc, char **argv) {
   options.credentials    = strdup(GetDefaultCredentialsFile().c_str());
   options.logDirectory   = strdup(GetDefaultLogDirectory().c_str());
   options.logLevel       = strdup(GetDefaultLogLevelName().c_str());
-  options.fileMode       = (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+  options.fileMode       = GetDefaultFileMode();
+  options.dirMode        = GetDefaultDirMode();
+  options.umaskmp        = 0;  // default 0000
   options.retries        = GetDefaultTransactionRetries();
   options.reqtimeout     = GetDefaultTransactionTimeDuration();
   options.maxcache       = GetMaxCacheSize() / QS::Size::MB1;
@@ -218,6 +269,9 @@ void Parse(int argc, char **argv) {
   options.showVersion    = 0;
   options.qsfsMultiThread = 0;
   options.allowOther     = false;
+  options.uid            = GetProcessEffectiveUserID();
+  options.gid            = GetProcessEffectiveGroupID();
+  options.umask          = 0;  // default 0000
 
   // Do Parse
   QS::Configure::Options &qsOptions = QS::Configure::Options::Instance();
@@ -235,8 +289,14 @@ void Parse(int argc, char **argv) {
   qsOptions.SetCredentialsFile(options.credentials);
   qsOptions.SetLogDirectory(options.logDirectory);
   qsOptions.SetLogLevel(QS::Logging::GetLogLevelByName(options.logLevel));
-  qsOptions.SetAllowOther(options.allowOther);
+  options.fileMode &= (S_IRWXU | S_IRWXG | S_IRWXO);
   qsOptions.SetFileMode(options.fileMode);
+  options.dirMode &= (S_IRWXU | S_IRWXG | S_IRWXO);
+  qsOptions.SetDirMode(options.dirMode);
+  options.umaskmp &= (S_IRWXU | S_IRWXG | S_IRWXO);
+  if (options.umaskmp != 0) {
+    qsOptions.SetUmaskMountPoint(options.umaskmp);
+  }
 
   if (options.retries <= 0) {
     PrintWarnMsg("-r|--retries", options.retries, GetDefaultTransactionRetries());
@@ -283,7 +343,7 @@ void Parse(int argc, char **argv) {
   }
 
   if (options.bufsize <= 0) {
-    PrintWarnMsg("-u|--bufsize", options.bufsize,
+    PrintWarnMsg("-b|--bufsize", options.bufsize,
                  GetDefaultTransferBufSize() / QS::Size::MB1);
     qsOptions.SetTransferBufferSizeInMB(GetDefaultTransferBufSize() /
                                         QS::Size::MB1);
@@ -322,6 +382,32 @@ void Parse(int argc, char **argv) {
   qsOptions.SetDebugCurl(options.curldbg != 0);
   qsOptions.SetShowHelp(options.showHelp != 0);
   qsOptions.SetShowVerion(options.showVersion !=0);
+
+  qsOptions.SetAllowOther(options.allowOther);
+
+  if (GetProcessEffectiveUserID() != 0 && options.uid == 0) {
+    PrintWarnMsg("-o uid", options.uid, GetProcessEffectiveUserID(),
+                 "Only root user can specify uid=0.");
+    qsOptions.SetUID(GetProcessEffectiveUserID());
+  } else {
+    qsOptions.SetUID(options.uid);
+    qsOptions.SetOverrideUID(true);
+  }
+
+  if (GetProcessEffectiveGroupID() != 0 && options.gid == 0) {
+    PrintWarnMsg("-o gid", options.gid, GetProcessEffectiveGroupID(),
+                 "Only root user can specify gid=0.");
+    qsOptions.SetGID(GetProcessEffectiveGroupID());
+  } else {
+    qsOptions.SetGID(options.gid);
+    qsOptions.SetOverrideGID(true);
+  }
+
+  options.umask &= (S_IRWXU | S_IRWXG | S_IRWXO);
+  if (umask != 0) {
+    qsOptions.SetUmask(options.umask);
+  }
+
 
   // Let MyFuseOptionProccess return 1 for mountpoint to keep it as first arg
   // if (!qsOptions.GetMountPoint().empty()) {

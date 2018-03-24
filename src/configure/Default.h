@@ -47,8 +47,8 @@ uint16_t GetPathMaxLen();
 uint16_t GetNameMaxLen();
 
 mode_t GetRootMode();
-mode_t GetDefineFileMode();
-mode_t GetDefineDirMode();
+mode_t GetDefaultFileMode();
+mode_t GetDefaultDirMode();
 
 uint16_t GetBlockSize();  // Block size for filesystem I/O
 uint16_t GetFragmentSize();

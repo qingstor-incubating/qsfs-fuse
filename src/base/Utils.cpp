@@ -75,7 +75,7 @@ bool CreateDirectoryIfNotExists(const string &path) {
     // if parent dir exist or created
     if (CreateDirectoryIfNotExists(GetDirName(path))) {
       int errorCode =
-          mkdir(path.c_str(), QS::Configure::Default::GetDefineDirMode());
+          mkdir(path.c_str(), QS::Configure::Default::GetDefaultDirMode());
       bool success = (errorCode == 0 || errno == EEXIST);
       return success;
     } else {

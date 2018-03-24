@@ -124,15 +124,21 @@ Drive::Drive()
       m_client(ClientFactory::Instance().MakeClient()),
       m_transferManager(
           TransferManagerFactory::Create(TransferManagerConfigure())) {
-  uint64_t cacheSize = static_cast<uint64_t>(
-      QS::Configure::Options::Instance().GetMaxCacheSizeInMB() * QS::Size::MB1);
+  QS::Configure::Options &options = QS::Configure::Options::Instance();
+  uint64_t cacheSize =
+      static_cast<uint64_t>(options.GetMaxCacheSizeInMB() * QS::Size::MB1);
   m_cache = make_shared<Cache>(cacheSize);
 
-  uid_t uid = GetProcessEffectiveUserID();
-  gid_t gid = GetProcessEffectiveGroupID();
-
-  m_directoryTree = make_shared<DirectoryTree>(
-      time(NULL), uid, gid, QS::Configure::Default::GetRootMode());
+  uid_t uid =
+      options.IsOverrideUID() ? options.GetUID() : GetProcessEffectiveUserID();
+  gid_t gid =
+      options.IsOverrideGID() ? options.GetGID() : GetProcessEffectiveGroupID();
+  mode_t mode = options.IsAllowOther() ? (options.IsUmaskMountPoint()
+                                              ? ((S_IRWXU | S_IRWXG | S_IRWXO) &
+                                                 ~options.GetUmaskMountPoint())
+                                              : (S_IRWXU | S_IRWXG | S_IRWXO))
+                                       : S_IRWXU;
+  m_directoryTree = make_shared<DirectoryTree>(time(NULL), uid, gid, mode);
 
   m_transferManager->SetClient(m_client);
 

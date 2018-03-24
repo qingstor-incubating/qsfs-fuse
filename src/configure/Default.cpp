@@ -87,8 +87,8 @@ uint16_t GetPathMaxLen() {
 uint16_t GetNameMaxLen() { return 255; }
 
 mode_t GetRootMode() { return (S_IRWXU | S_IRWXG | S_IRWXO); }
-mode_t GetDefineFileMode() { return (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); }
-mode_t GetDefineDirMode() {
+mode_t GetDefaultFileMode() { return (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); }
+mode_t GetDefaultDirMode() {
   return (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 }
 

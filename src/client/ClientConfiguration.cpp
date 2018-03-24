@@ -54,7 +54,6 @@ using QS::Configure::Default::GetDefaultHostName;
 using QS::Configure::Default::GetDefaultPort;
 using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultZone;
-using QS::Configure::Default::GetDefineFileMode;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetSDKLogFolderBaseName;
 using QS::Configure::Default::GetDefaultTransactionTimeDuration;

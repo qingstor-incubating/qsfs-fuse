@@ -1,3 +1,13 @@
+* Sun Mar 25 2018 - Yunify Inc.
+
+- qsfs: version 1.0.1
+- Support to enable writes with MD5 hashs to ensure data integrity
+- Add option to specify the permission bits in st_mode for file/directory objects without x-qs-meta-mode header
+- Add option to umask the permission bits in st_mode for the mount point diretory
+- Support fuse options of uid, gid and umask
+- Prevent rpmbuild from stripping debuginfo when specify CMAKE_BUILD_TYPE with Debug
+- Modify some log message level
+- Fix some lint warnings
 
 * Mon Feb 5 2018 - Yunify Inc.
 

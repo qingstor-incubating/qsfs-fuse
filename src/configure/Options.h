@@ -19,6 +19,8 @@
 
 #include <stdint.h>  // for uint16_t
 
+#include <sys/stat.h>
+
 #include <ostream>
 #include <string>
 
@@ -60,6 +62,11 @@ class Options : public Singleton<Options> {
   const std::string &GetLogDirectory() const { return m_logDirectory; }
   LogLevel::Value GetLogLevel() const { return m_logLevel; }
   mode_t GetFileMode() const { return m_fileMode; }
+  mode_t GetDirMode() const { return m_dirMode; }
+  mode_t GetUmaskMountPoint() const { return m_umaskMountPoint; }
+  bool IsUmaskMountPoint() const {
+    return (m_umaskMountPoint & (S_IRWXU | S_IRWXG | S_IRWXO)) != 0;
+  }
   uint16_t GetRetries() const { return m_retries; }
   uint32_t GetRequestTimeOut() const { return m_requestTimeOut; }
   uint32_t GetMaxCacheSizeInMB() const { return m_maxCacheSizeInMB; }
@@ -86,6 +93,14 @@ class Options : public Singleton<Options> {
   bool IsShowHelp() const { return m_showHelp; }
   bool IsShowVersion() const { return m_showVersion; }
   bool IsAllowOther() const { return m_allowOther; }
+  uid_t GetUID() const { return m_uid; }
+  gid_t GetGID() const { return m_gid; }
+  bool IsOverrideUID() const { return m_isOverrideUID; }
+  bool IsOverrideGID() const { return m_isOverrideGID; }
+  mode_t GetUmask() const { return m_umask; }
+  bool IsUmask() const {
+    return (m_umask & (S_IRWXU | S_IRWXG | S_IRWXO)) != 0;
+  }
 
  private:
   Options();
@@ -102,6 +117,8 @@ class Options : public Singleton<Options> {
   void SetLogDirectory(const std::string &path) { m_logDirectory = path; }
   void SetLogLevel(LogLevel::Value level) { m_logLevel = level; }
   void SetFileMode(mode_t fileMode) { m_fileMode = fileMode; }
+  void SetDirMode(mode_t dirMode) { m_dirMode = dirMode; }
+  void SetUmaskMountPoint(mode_t umask) { m_umaskMountPoint = umask; }
   void SetRetries(unsigned retries) { m_retries = retries; }
   void SetRequestTimeOut(uint32_t timeout) { m_requestTimeOut = timeout; }
   void SetMaxCacheSizeInMB(uint32_t maxcache) { m_maxCacheSizeInMB = maxcache; }
@@ -120,7 +137,7 @@ class Options : public Singleton<Options> {
   void SetProtocol(const char *protocol) { m_protocol = protocol; }
   void SetPort(unsigned port) { m_port = port; }
   void SetAdditionalAgent(const char *agent) { m_additionalAgent = agent; }
-  void SetEnableContentMD5(bool contentMD5) { m_enableContentMD5 = contentMD5 ;}
+  void SetEnableContentMD5(bool contentMD5) { m_enableContentMD5 = contentMD5; }
   void SetClearLogDir(bool clearLogDir) { m_clearLogDir = clearLogDir; }
   void SetForeground(bool foreground) { m_foreground = foreground; }
   void SetSingleThread(bool singleThread) { m_singleThread = singleThread; }
@@ -132,6 +149,11 @@ class Options : public Singleton<Options> {
   void SetShowHelp(bool showHelp) { m_showHelp = showHelp; }
   void SetShowVerion(bool showVersion) { m_showVersion = showVersion; }
   void SetAllowOther(bool allowOther) { m_allowOther = allowOther; }
+  void SetUID(uid_t uid) { m_uid = uid; }
+  void SetGID(gid_t gid) { m_gid = gid; }
+  void SetOverrideUID(bool overrideUID) { m_isOverrideUID = overrideUID; }
+  void SetOverrideGID(bool overrideGID) { m_isOverrideGID = overrideGID; }
+  void SetUmask(mode_t umask) { m_umask = umask; }
   void SetFuseArgs(int argc, char **argv) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     m_fuseArgs = args;
@@ -144,7 +166,9 @@ class Options : public Singleton<Options> {
   std::string m_credentialsFile;
   std::string m_logDirectory;
   LogLevel::Value m_logLevel;
-  mode_t m_fileMode; 
+  mode_t m_fileMode;
+  mode_t m_dirMode;
+  mode_t m_umaskMountPoint;
   uint16_t m_retries;         // transaction retries
   uint32_t m_requestTimeOut;  // in milliseconds
   uint32_t m_maxCacheSizeInMB;
@@ -168,7 +192,14 @@ class Options : public Singleton<Options> {
   bool m_debugCurl;
   bool m_showHelp;
   bool m_showVersion;
+
+  // Fuse opts
   bool m_allowOther;
+  uid_t m_uid;
+  gid_t m_gid;
+  bool m_isOverrideUID;
+  bool m_isOverrideGID;
+  mode_t m_umask;
   struct fuse_args m_fuseArgs;
   bool m_fuseArgsInitialized;
 

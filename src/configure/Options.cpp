@@ -26,6 +26,7 @@
 #include "base/LogLevel.h"
 #include "base/Size.h"
 #include "base/StringUtils.h"
+#include "base/Utils.h"
 #include "configure/Default.h"
 
 namespace QS {
@@ -36,6 +37,8 @@ using boost::to_string;
 using QS::Configure::Default::GetClientDefaultPoolSize;
 using QS::Configure::Default::GetDefaultCredentialsFile;
 using QS::Configure::Default::GetDefaultDiskCacheDirectory;
+using QS::Configure::Default::GetDefaultDirMode;
+using QS::Configure::Default::GetDefaultFileMode;
 using QS::Configure::Default::GetDefaultLogDirectory;
 using QS::Configure::Default::GetDefaultLogLevelName;
 using QS::Configure::Default::GetDefaultHostName;
@@ -52,6 +55,8 @@ using QS::Configure::Default::GetDefaultTransactionTimeDuration;
 using QS::Logging::GetLogLevelName;
 using QS::Logging::GetLogLevelByName;
 using QS::StringUtils::ModeToString;
+using QS::Utils::GetProcessEffectiveUserID;
+using QS::Utils::GetProcessEffectiveGroupID;
 using std::ostream;
 using std::string;
 
@@ -63,6 +68,9 @@ Options::Options()
       m_credentialsFile(GetDefaultCredentialsFile()),
       m_logDirectory(GetDefaultLogDirectory()),
       m_logLevel(GetLogLevelByName(GetDefaultLogLevelName())),
+      m_fileMode(GetDefaultFileMode()),
+      m_dirMode(GetDefaultDirMode()),
+      m_umaskMountPoint(0),
       m_retries(GetDefaultTransactionRetries()),
       m_requestTimeOut(GetDefaultTransactionTimeDuration()),
       m_maxCacheSizeInMB(GetMaxCacheSize() / QS::Size::MB1),
@@ -86,6 +94,12 @@ Options::Options()
       m_debugCurl(false),
       m_showHelp(false),
       m_showVersion(false),
+      m_allowOther(false),
+      m_uid(GetProcessEffectiveUserID()),
+      m_gid(GetProcessEffectiveGroupID()),
+      m_isOverrideUID(false),
+      m_isOverrideGID(false),
+      m_umask(0),
       m_fuseArgsInitialized(false) {}
 
 // --------------------------------------------------------------------------
@@ -120,7 +134,9 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[credentials: " << opts.m_credentialsFile << "] "
          << "[log directory: " << opts.m_logDirectory << "] "
          << "[log level: " << GetLogLevelName(opts.m_logLevel) << "] "
-         << "[file mode: " << ModeToString(opts.m_fileMode) << "] "
+         << "[file mode: " << std::oct << opts.m_fileMode << "] "
+         << "[dir mode: " << opts.m_dirMode << "] "
+         << "[umask mp: " << opts.m_umaskMountPoint << std::dec << "] "
          << "[retries: " << to_string(opts.m_retries) << "] "
          << "[req timeout(ms): " << to_string(opts.m_requestTimeOut) << "] "
          << "[max cache(MB): " << to_string(opts.m_maxCacheSizeInMB) << "] "
@@ -146,6 +162,11 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[show help: " << opts.m_showHelp << "] "
          << "[show version: " << opts.m_showVersion << "] "
          << "[allow other: " << opts.m_allowOther << "] "
+         << "[uid: " << to_string(opts.m_uid) << "] "
+         << "[gid: " << to_string(opts.m_gid) << "]"
+         << "[override uid: " << opts.m_isOverrideUID << "] "
+         << "[override gid: " << opts.m_isOverrideGID << "] "
+         << "[umask: " << std::oct << opts.m_umask << std::boolalpha << "] "
          << "[fuse_args.argc: " << to_string(fuseArg.argc) << "] "
          << "[fuse_args.argv: " << CatArgv(fuseArg.argc, fuseArg.argv)() << "] "
          << "[fuse_args.allocated: " << static_cast<bool>(fuseArg.allocated) << "] "  // NOLINT
