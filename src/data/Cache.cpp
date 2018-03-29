@@ -28,6 +28,7 @@
 #include "boost/exception/to_string.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/shared_ptr.hpp"
+#include "boost/thread/locks.hpp"
 #include "boost/tuple/tuple.hpp"
 
 #include "base/LogMacros.h"
@@ -44,7 +45,9 @@ namespace QS {
 
 namespace Data {
 
+using boost::lock_guard;
 using boost::make_shared;
+using boost::recursive_mutex;
 using boost::shared_ptr;
 using boost::to_string;
 using boost::tuple;
@@ -68,6 +71,7 @@ bool Cache::HasFreeSpace(size_t size) const {
 
 // --------------------------------------------------------------------------
 bool Cache::IsLastFileOpen() const {
+  lock_guard<recursive_mutex> locker(m_mutex);
   if (m_cache.empty()) {
     return false;
   }
@@ -77,6 +81,7 @@ bool Cache::IsLastFileOpen() const {
 // --------------------------------------------------------------------------
 bool Cache::HasFileData(const string &filePath, off_t start,
                         size_t size) const {
+  lock_guard<recursive_mutex> locker(m_mutex);
   if (!HasFile(filePath)) {
     return false;
   }
@@ -93,6 +98,7 @@ bool Cache::HasFileData(const string &filePath, off_t start,
 ContentRangeDeque Cache::GetUnloadedRanges(const string &filePath, off_t start,
                                            size_t size) const {
   ContentRangeDeque ranges;
+  lock_guard<recursive_mutex> locker(m_mutex);
   if (!HasFile(filePath)) {
     ranges.push_back(make_pair(start, size));
     return ranges;
@@ -106,14 +112,19 @@ ContentRangeDeque Cache::GetUnloadedRanges(const string &filePath, off_t start,
 
 // --------------------------------------------------------------------------
 bool Cache::HasFile(const string &filePath) const {
+  lock_guard<recursive_mutex> locker(m_mutex);
   return m_map.find(filePath) != m_map.end();
 }
 
 // --------------------------------------------------------------------------
-size_t Cache::GetNumFile() const { return m_map.size(); }
+size_t Cache::GetNumFile() const {
+  lock_guard<recursive_mutex> locker(m_mutex);
+  return m_map.size();
+}
 
 // --------------------------------------------------------------------------
 time_t Cache::GetTime(const string &fileId) const {
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapConstIterator it = m_map.find(fileId);
   if (it != m_map.end()) {
     shared_ptr<File> &file = it->second->second;
@@ -125,6 +136,7 @@ time_t Cache::GetTime(const string &fileId) const {
 
 // --------------------------------------------------------------------------
 uint64_t Cache::GetFileSize(const std::string &filePath) const {
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapConstIterator it = m_map.find(filePath);
   if (it != m_map.end()) {
     shared_ptr<File> &file = it->second->second;
@@ -136,21 +148,29 @@ uint64_t Cache::GetFileSize(const std::string &filePath) const {
 
 // --------------------------------------------------------------------------
 CacheListIterator Cache::Find(const string &filePath) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(filePath);
   return it != m_map.end() ? it->second : m_cache.end();
 }
 
 // --------------------------------------------------------------------------
-CacheListIterator Cache::Begin() { return m_cache.begin(); }
+CacheListIterator Cache::Begin() {
+  lock_guard<recursive_mutex> locker(m_mutex);
+  return m_cache.begin();
+}
 
 // --------------------------------------------------------------------------
-CacheListIterator Cache::End() { return m_cache.end(); }
+CacheListIterator Cache::End() {
+  lock_guard<recursive_mutex> locker(m_mutex);
+  return m_cache.end();
+}
 
 // --------------------------------------------------------------------------
 pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
                                             size_t len, char *buffer,
                                             time_t mtimeSince) {
   ContentRangeDeque unloadedRanges;
+  lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
     return make_pair(0, unloadedRanges);  // do nothing, this case could happen
                                           // for truncate file to empty
@@ -239,6 +259,7 @@ pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,
                   const char *buffer, time_t mtime, bool open) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
     CacheMapIterator it = m_map.find(fileId);
     if (it != m_map.end()) {
@@ -278,6 +299,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,
                   const shared_ptr<iostream> &stream, time_t mtime, bool open) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
     CacheMapIterator it = m_map.find(fileId);
     if (it != m_map.end()) {
@@ -364,6 +386,7 @@ pair<bool, shared_ptr<File> > Cache::PrepareWrite(const string &fileId,
 
 // --------------------------------------------------------------------------
 bool Cache::Free(size_t size, const string &fileUnfreeable) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   if (size > GetCapacity()) {
     DebugInfo("Try to free cache of " + to_string(size) +
               " bytes which surpass the maximum cache size(" +
@@ -417,9 +440,10 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
 
 // --------------------------------------------------------------------------
 bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
-                              const string &fileUnfreeable) {
+                               const string &fileUnfreeable) {
   assert(diskfolder ==
          QS::Configure::Options::Instance().GetDiskCacheDirectory());
+  lock_guard<recursive_mutex> locker(m_mutex);
   // diskfolder should be cache disk dir
   if (IsSafeDiskSpace(diskfolder, size)) {
     return true;
@@ -466,6 +490,7 @@ bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
 
 // --------------------------------------------------------------------------
 CacheListIterator Cache::Erase(const string &fileId) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
   if (it != m_map.end()) {
     DebugInfo("Erase cache " + FormatPath(fileId));
@@ -482,7 +507,7 @@ void Cache::Rename(const string &oldFileId, const string &newFileId) {
     DebugInfo("File exists, no rename " + FormatPath(oldFileId));
     return;
   }
-
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator iter = m_map.find(newFileId);
   if (iter != m_map.end()) {
     DebugWarning("File exist, Just remove it from cache " +
@@ -507,6 +532,7 @@ void Cache::Rename(const string &oldFileId, const string &newFileId) {
 
 // --------------------------------------------------------------------------
 void Cache::SetTime(const string &fileId, time_t mtime) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
   if (it != m_map.end()) {
     shared_ptr<File> &file = it->second->second;
@@ -520,6 +546,7 @@ void Cache::SetTime(const string &fileId, time_t mtime) {
 
 // --------------------------------------------------------------------------
 void Cache::SetFileOpen(const std::string &fileId, bool open) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
   if (it != m_map.end()) {
     shared_ptr<File> &file = it->second->second;
@@ -531,6 +558,7 @@ void Cache::SetFileOpen(const std::string &fileId, bool open) {
 
 // --------------------------------------------------------------------------
 void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
   if (it != m_map.end()) {
     shared_ptr<File> &file = it->second->second;

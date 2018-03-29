@@ -30,6 +30,8 @@
 
 #include "boost/noncopyable.hpp"
 #include "boost/shared_ptr.hpp"
+#include "boost/thread/mutex.hpp"
+#include "boost/thread/recursive_mutex.hpp"
 #include "boost/unordered_map.hpp"
 
 #include "base/HashUtils.h"
@@ -244,6 +246,7 @@ class Cache : private boost::noncopyable {
 
   uint64_t m_capacity;  // in bytes
 
+  mutable boost::recursive_mutex m_mutex;
   // Most recently used File is put at front,
   // Least recently used File is put at back.
   CacheList m_cache;
