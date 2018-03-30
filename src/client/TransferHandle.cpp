@@ -29,6 +29,7 @@
 #include "boost/thread/recursive_mutex.hpp"
 
 #include "base/LogMacros.h"
+#include "client/QSError.h"
 
 namespace QS {
 
@@ -94,6 +95,39 @@ void Part::OnDataTransferred(uint64_t amount,
 }
 
 // --------------------------------------------------------------------------
+std::string TransferStatusToString(TransferStatus::Value trasferstatus) {
+  string status;
+  switch (trasferstatus) {
+    case TransferStatus::NotStarted:
+      status = "NotStarted";
+      break;
+    case TransferStatus::InProgress:
+      status = "InProgress";
+      break;
+    case TransferStatus::Cancelled:
+      status = "Cancelled";
+      break;
+    case TransferStatus::Failed:
+      status = "Failed";
+      break;
+    case TransferStatus::Completed:
+      status = "Completed";
+      break;
+    case TransferStatus::Aborted:
+      status = "Aborted";
+      break;
+    default:
+      break;
+  }
+  return status;
+}
+
+// --------------------------------------------------------------------------
+std::string TransferDirectionToString(TransferDirection::Value direction) {
+  return direction == TransferDirection::Upload ? "Upload" : "Download";
+}
+
+// --------------------------------------------------------------------------
 TransferHandle::TransferHandle(const string &bucket, const string &objKey,
                                size_t contentRangeBegin,
                                uint64_t totalTransferSize,
@@ -111,7 +145,8 @@ TransferHandle::TransferHandle(const string &bucket, const string &objKey,
       m_bucket(bucket),
       m_objectKey(objKey),
       m_contentRangeBegin(contentRangeBegin),
-      m_contentType() {}
+      m_contentType(),
+      m_error(ClientError<QSError::Value>(QSError::GOOD, false)) {}
 
 // --------------------------------------------------------------------------
 PartIdToPartMap TransferHandle::GetQueuedParts() const {
@@ -160,6 +195,26 @@ bool TransferHandle::HasParts() const {
   lock_guard<mutex> lock(m_partsLock);
   return !m_failedParts.empty() || !m_queuedParts.empty() ||
          !m_pendingParts.empty();
+}
+
+// --------------------------------------------------------------------------
+string TransferHandle::ToString() const {
+  string str = "[object key: " + m_objectKey;
+  if (m_isMultipart) {
+    str += ", multipart id: " + m_multipartId;
+  }
+
+  str += ", status: " + TransferStatusToString(m_status) +
+         ", direction: " + TransferDirectionToString(m_direction) +
+         ", transferred bytes: " + to_string(m_bytesTransferred) +
+         ", totoal bytes: " + to_string(m_bytesTotalSize) +
+         ", content range begin: " + to_string(m_contentRangeBegin);
+
+  if (!IsGoodQSError(m_error)) {
+    str += ", error: " + GetMessageForQSError(m_error);
+  }
+  str += "]";
+  return str;
 }
 
 // --------------------------------------------------------------------------

@@ -240,6 +240,7 @@ struct ReceivedHandlerMultipleUpload {
           Error(GetMessageForQSError(err));
         }
       } else {
+        Error("Fail to upload " + handle->ToString());
         handle->UpdateStatus(TransferStatus::Failed);
       }
     }
@@ -524,13 +525,20 @@ bool QSTransferManager::PrepareUpload(
             handle->GetContentRangeBegin() + (i - 1) * bufferSize));
       }
 
-      size_t sz = needAverageLastTwoPart ? (lastCuttingSize + bufferSize) / 2
-                                         : lastCuttingSize;
-      for (size_t i = count; i <= partCount; ++i) {
-        handle->AddQueuePart(make_shared<Part>(i, 0, sz,
-                                               handle->GetContentRangeBegin() +
-                                                   (count - 1) * bufferSize +
-                                                   (i - count) * sz));
+      // fix issue: average may lost 1 bytes data if lastCuttingSize is odd
+      if (!needAverageLastTwoPart) {
+        handle->AddQueuePart(make_shared<Part>(
+            partCount, 0, lastCuttingSize,
+            handle->GetContentRangeBegin() + (partCount - 1) * bufferSize));
+      } else {
+        size_t sz1 = (lastCuttingSize + bufferSize) / 2;
+        size_t sz2 = lastCuttingSize + bufferSize - sz1;
+        handle->AddQueuePart(make_shared<Part>(
+            count, 0, sz1,
+            handle->GetContentRangeBegin() + (count - 1) * bufferSize));
+        handle->AddQueuePart(make_shared<Part>(
+            partCount, 0, sz2,
+            handle->GetContentRangeBegin() + (count - 1) * bufferSize + sz1));
       }
     } else {  // single upload
       handle->SetIsMultiPart(false);

@@ -117,6 +117,8 @@ struct TransferDirection {
   enum Value { Upload, Download };
 };
 
+std::string TransferStatusToString(TransferStatus::Value status);
+std::string TransferDirectionToString(TransferDirection::Value direction);
 
 class TransferHandle : private boost::noncopyable {
  public:
@@ -139,6 +141,8 @@ class TransferHandle : private boost::noncopyable {
   bool HasPendingParts() const;
   bool HasFailedParts() const;
   bool HasParts() const;
+
+  std::string ToString() const;
 
   // Notes the transfer progress 's two invariants
   uint64_t GetBytesTransferred() const {
