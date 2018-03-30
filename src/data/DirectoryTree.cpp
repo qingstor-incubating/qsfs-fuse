@@ -135,7 +135,7 @@ shared_ptr<Node> DirectoryTree::Grow(const shared_ptr<FileMetaData> &fileMeta) {
       node->SetEntry(Entry(fileMeta));  // update entry
     } else if (timein < timecur) {
       if(!node->IsDirectory()) {
-        DebugWarning("file mtime too old " + FormatPath(filePath) +
+        DebugWarning("file mtime too old, no update " + FormatPath(filePath) +
                      "[input mtime:" + SecondsToRFC822GMT(timein) +
                      ", current mtime:" + SecondsToRFC822GMT(timecur) + "]");
       }
@@ -147,7 +147,7 @@ shared_ptr<Node> DirectoryTree::Grow(const shared_ptr<FileMetaData> &fileMeta) {
     node = make_shared<Node>(Entry(fileMeta));
     pair<TreeNodeMapIterator, bool> res = m_map.emplace(filePath, node);
     if(!res.second) {
-      DebugError("Fail to add node " + FormatPath(filePath));
+      DebugError("Fail to add node " + fileMeta->ToString());
       return shared_ptr<Node>();
     }
 
@@ -182,7 +182,7 @@ shared_ptr<Node> DirectoryTree::Grow(const shared_ptr<FileMetaData> &fileMeta) {
     // record parent to children map
     if (m_parentToChildrenMap.emplace(dirName, node) ==
         m_parentToChildrenMap.end()) {
-      DebugError("Fail to add node " + FormatPath(filePath));
+      DebugError("Fail to add node " + fileMeta->ToString());
       return shared_ptr<Node>();
     }
   }
@@ -222,13 +222,12 @@ shared_ptr<Node> DirectoryTree::UpdateDirectory(
     string childDirName = child->MyDirName();
     string childFilePath = child->GetFilePath();
     if (childDirName.empty()) {
-      DebugWarning("Invalid child Node " + FormatPath(childFilePath) +
-                   " has empty dirname");
+      DebugWarning("Invalid node with empty dirname " + child->ToString());
       continue;
     }
     if (childDirName != path) {
-      DebugWarning("Invalid child Node " + FormatPath(childFilePath) +
-                   " has different dir with " + path);
+      DebugWarning("Invalid child Node with dirname different with " + path +
+                   child->ToString());
       continue;
     }
     newChildrenIds.insert(childFilePath);

@@ -119,6 +119,8 @@ struct TransferDirection {
 
 std::string TransferStatusToString(TransferStatus::Value status);
 std::string TransferDirectionToString(TransferDirection::Value direction);
+std::string PartMapToString(const PartIdToPartMap &map,
+                            const std::string &title = std::string());
 
 class TransferHandle : private boost::noncopyable {
  public:

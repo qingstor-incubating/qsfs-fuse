@@ -35,6 +35,7 @@
 #include "qingstor/types/ObjectPartType.h"
 
 #include "boost/bind.hpp"
+#include "boost/exception/to_string.hpp"
 #include "boost/foreach.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/shared_ptr.hpp"
@@ -68,6 +69,7 @@ using boost::bind;
 using boost::call_once;
 using boost::make_shared;
 using boost::shared_ptr;
+using boost::to_string;
 using QingStor::AbortMultipartUploadInput;
 using QingStor::Bucket;
 using QingStor::CompleteMultipartUploadInput;
@@ -184,6 +186,7 @@ ClientError<QSError::Value> QSClient::DeleteFile(
     if (cache && cache->HasFile(filePath)) {
       cache->Erase(filePath);
     }
+    DebugInfo("Deleted file " + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -208,6 +211,7 @@ ClientError<QSError::Value> QSClient::MakeFile(const string &filePath) {
     // if (dirTree) {
     //   dirTree->Grow(PutObjectOutputToFileMeta());  // no implementation
     // }
+    DebugInfo("Created file " + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -233,6 +237,7 @@ ClientError<QSError::Value> QSClient::MakeDirectory(const string &dirPath) {
     // if (dirTree) {
     //   dirTree->Grow(PutObjectOutputToFileMeta());  // no implementation
     // }
+    DebugInfo("Created dir " + FormatPath(dirPath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -254,6 +259,7 @@ ClientError<QSError::Value> QSClient::MoveFile(
     if (cache && cache->HasFile(sourceFilePath)) {
       cache->Rename(sourceFilePath, destFilePath);
     }
+    DebugInfo("Renamed file" + FormatPath(sourceFilePath, destFilePath));
   } else {
     // Handle following special case
     // As for object storage, there is no concept of directory.
@@ -360,6 +366,7 @@ ClientError<QSError::Value> QSClient::MoveDirectory(const string &sourceDirPath,
     receivedHandler(MoveObject(sourceDir, targetDir));
   }
 
+  DebugInfo("Renamed dir " + FormatPath(sourceDirPath, targetDirPath));
   return ClientError<QSError::Value>(QSError::GOOD, false);
 }
 
@@ -409,6 +416,12 @@ ClientError<QSError::Value> QSClient::DownloadFile(const string &filePath,
     if (eTag != NULL) {
       *eTag = res.GetETag();
     }
+    string msg = "Downloaded file ";
+    if (!range.empty()) {
+      msg += "[range: " + range + "]";
+    }
+    msg += "[etag: " + res.GetETag() + "]";
+    DebugInfo(msg + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -429,6 +442,8 @@ ClientError<QSError::Value> QSClient::InitiateMultipartUpload(
     if (uploadId != NULL) {
       *uploadId = res.GetUploadID();
     }
+    DebugInfo("Initiated multipart upload [id: " + res.GetUploadID() + "] " +
+              FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -454,6 +469,9 @@ ClientError<QSError::Value> QSClient::UploadMultipart(
       GetQSClientImpl()->UploadMultipart(filePath, &input);
 
   if (outcome.IsSuccess()) {
+    DebugInfo("Uploaded mulitipart [upload id: " + uploadId +
+              ", part number: " + to_string(partNumber) + ", content len: " +
+              to_string(contentLength) + "] " + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -478,6 +496,13 @@ ClientError<QSError::Value> QSClient::CompleteMultipartUpload(
       GetQSClientImpl()->CompleteMultipartUpload(filePath, &input);
 
   if (outcome.IsSuccess()) {
+    string msg = "Completed multipart upload [id: " + uploadId;
+    if (!sortedPartIds.empty()) {
+      msg += ", part ids:";
+      BOOST_FOREACH (int id, sortedPartIds) { msg += " " + to_string(id); }
+    }
+    msg += "]";
+    DebugInfo(msg + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -494,6 +519,8 @@ ClientError<QSError::Value> QSClient::AbortMultipartUpload(
       GetQSClientImpl()->AbortMultipartUpload(filePath, &input);
 
   if (outcome.IsSuccess()) {
+    DebugInfo("Aborted multipart upload [id: " + uploadId + "] " +
+              FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -526,6 +553,7 @@ ClientError<QSError::Value> QSClient::UploadFile(const string &filePath,
     // if (dirTree) {
     //   dirTree->Grow(PutObjectOutputToFileMeta());  // no implementation
     // }
+    DebugInfo("Uploaded file " + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -553,6 +581,7 @@ ClientError<QSError::Value> QSClient::SymLink(const string &filePath,
     // if (dirTree) {
     //   dirTree->Grow(PutObjectOutputToFileMeta());  // no implementation
     // }
+    DebugInfo("Created symlink " + FormatPath(filePath, linkPath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();

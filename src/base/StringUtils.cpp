@@ -117,6 +117,9 @@ std::string ModeToString(mode_t mode) {
 }
 
 // --------------------------------------------------------------------------
+std::string BoolToString(bool b) { return b ? "true" : "false"; }
+
+// --------------------------------------------------------------------------
 char GetFileTypeLetter(mode_t mode) {
   char c = '?';
 

@@ -122,11 +122,11 @@ MetaDataListIterator FileMetaDataManager::AddNoLock(
       if(res.second) {
         return m_metaDatas.begin();
       } else {
-        DebugWarning("Fail to add file "+ FormatPath(filePath));
+        DebugWarning("Fail to add file "+ fileMetaData->ToString());
         return m_metaDatas.end();
       }
     } else {
-      DebugWarning("Fail to add file " + FormatPath(filePath));
+      DebugWarning("Fail to add file " + fileMetaData->ToString());
       return m_metaDatas.end();
     }
   } else {  // exist already, update it

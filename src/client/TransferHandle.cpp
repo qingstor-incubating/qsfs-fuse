@@ -23,6 +23,7 @@
 
 #include "boost/bind.hpp"
 #include "boost/exception/to_string.hpp"
+#include "boost/foreach.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/thread/locks.hpp"
 #include "boost/thread/mutex.hpp"
@@ -128,6 +129,24 @@ std::string TransferDirectionToString(TransferDirection::Value direction) {
 }
 
 // --------------------------------------------------------------------------
+string PartMapToString(const PartIdToPartMap &map, const string &title) {
+  string str;
+  if (!map.empty()) {
+    str = "{";
+    if (!title.empty()) {
+      str += title;
+      str += ": ";
+    }
+    BOOST_FOREACH (const PartIdToPartMap::value_type &p, map) {
+      str += p.second->ToString();
+      str += " ";
+    }
+    str += "}";
+  }
+  return str;
+}
+
+// --------------------------------------------------------------------------
 TransferHandle::TransferHandle(const string &bucket, const string &objKey,
                                size_t contentRangeBegin,
                                uint64_t totalTransferSize,
@@ -214,6 +233,9 @@ string TransferHandle::ToString() const {
     str += ", error: " + GetMessageForQSError(m_error);
   }
   str += "]";
+  str += PartMapToString(m_failedParts,"failed parts");
+  str += PartMapToString(m_pendingParts, "pending parts");
+  str += PartMapToString(m_completedParts, "completed parts");
   return str;
 }
 

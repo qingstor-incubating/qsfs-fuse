@@ -59,6 +59,12 @@ std::string AccessMaskToString(int amode);
 // @return : string in form of [-rwxXst]
 std::string ModeToString(mode_t mode);
 
+// Convert bool to string
+//
+// @param  : bool
+// @return : "true" or "false"
+std::string BoolToString(bool b);
+
 // Get file type letter
 //
 // @param  : file mode

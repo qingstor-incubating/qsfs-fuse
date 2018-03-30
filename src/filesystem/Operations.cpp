@@ -284,7 +284,7 @@ void InitializeFUSECallbacks(struct fuse_operations* fuseOps) {
   // fuseOps->ftruncate = NULL;
   // fuseOps->fgetattr = NULL;
   // fuseOps->lock = NULL;
-  // fuseOps->utimens = qsfs_utimens;  // TODO(jim):
+  fuseOps->utimens = qsfs_utimens;  // TODO(jim):
   // fuseOps->write_buf = NULL;
   // fuseOps->read_buf = NULL;
   // fuseOps->fallocate = NULL;
@@ -586,8 +586,8 @@ int qsfs_rmdir(const char* path) {
     shared_ptr<Node> dir = CheckParentDir(path, W_OK | X_OK, &ret, false);
 
     string path_ = AppendPathDelim(path);
-    pair<shared_ptr<Node>, bool> res =
-        drive.GetNode(path_, false, false);  // no update dir
+    // need to update dir node, as currently it may not grow its child
+    pair<shared_ptr<Node>, bool> res = drive.GetNode(path_, true, true, false);
     shared_ptr<Node> node = res.first;
     if (!(node && *node)) {
       ret = -ENOENT;
@@ -1676,6 +1676,9 @@ int qsfs_lock(const char* path, struct fuse_file_info* fi, int cmd,
 //
 // See the utimensat(2) man page for details.
 int qsfs_utimens(const char* path, const struct timespec tv[2]) {
+  // to mute fuse warning, just return currently
+  return 0;
+
   DebugInfo("qsfs_utimens " + FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");

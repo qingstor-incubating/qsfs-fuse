@@ -91,7 +91,7 @@ struct ReceivedHandlerSingleDownload {
       handle->ChangePartToFailed(part);
       handle->UpdateStatus(TransferStatus::Failed);
       handle->SetError(err);
-      Error(GetMessageForQSError(err));
+      Error("Fail to download " + handle->ToString());
     }
   }
 };
@@ -123,7 +123,6 @@ struct ReceivedHandlerMultipleDownload {
     } else {
       handle->ChangePartToFailed(part);
       handle->SetError(err);
-      Error(GetMessageForQSError(err));
     }
 
     // release part buffer back to resource manager
@@ -143,6 +142,7 @@ struct ReceivedHandlerMultipleDownload {
         handle->UpdateStatus(TransferStatus::Completed);
       } else {
         handle->UpdateStatus(TransferStatus::Failed);
+        Error("Fail to download " + handle->ToString());
       }
     }
   }
@@ -177,7 +177,7 @@ struct ReceivedHandlerSingleUpload {
       handle->ChangePartToFailed(part);
       handle->UpdateStatus(TransferStatus::Failed);
       handle->SetError(err);
-      Error(GetMessageForQSError(err));
+      Error("Fail to upload " + handle->ToString());
     }
   }
 };
@@ -208,7 +208,6 @@ struct ReceivedHandlerMultipleUpload {
     } else {
       handle->ChangePartToFailed(part);
       handle->SetError(err);
-      Error(GetMessageForQSError(err));
     }
 
     // release part buffer back to resouce manager
@@ -237,11 +236,11 @@ struct ReceivedHandlerMultipleUpload {
         } else {
           handle->UpdateStatus(TransferStatus::Failed);
           handle->SetError(err);
-          Error(GetMessageForQSError(err));
+          Error("Fail to upload " + handle->ToString());
         }
       } else {
-        Error("Fail to upload " + handle->ToString());
         handle->UpdateStatus(TransferStatus::Failed);
+        Error("Fail to upload " + handle->ToString());
       }
     }
   }
@@ -274,7 +273,7 @@ shared_ptr<TransferHandle> QSTransferManager::RetryDownload(
   if (handle->GetStatus() == TransferStatus::InProgress ||
       handle->GetStatus() == TransferStatus::Completed ||
       handle->GetStatus() == TransferStatus::NotStarted) {
-    DebugWarning("Input handle is not avaialbe to retry");
+    DebugWarning("Input handle is not avaialbe to retry" + handle->ToString());
     return handle;
   }
 
@@ -312,7 +311,7 @@ shared_ptr<TransferHandle> QSTransferManager::RetryUpload(
   if (handle->GetStatus() == TransferStatus::InProgress ||
       handle->GetStatus() == TransferStatus::Completed ||
       handle->GetStatus() == TransferStatus::NotStarted) {
-    DebugWarning("Input handle is not avaialbe to retry");
+    DebugWarning("Input handle is not avaialbe to retry" + handle->ToString());
     return handle;
   }
 
@@ -349,7 +348,7 @@ void QSTransferManager::AbortMultipartUpload(
       handle->UpdateStatus(TransferStatus::Aborted);
     } else {
       handle->SetError(err);
-      Error(GetMessageForQSError(err));
+      Error("Fail to abort multipart upload " + handle->ToString());
     }
   }
 }

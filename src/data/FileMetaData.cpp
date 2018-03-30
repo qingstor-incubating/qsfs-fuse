@@ -24,6 +24,7 @@
 
 #include "base/LogMacros.h"
 #include "base/StringUtils.h"
+#include "base/TimeUtils.h"
 #include "base/Utils.h"
 #include "configure/Default.h"
 #include "configure/Options.h"
@@ -37,7 +38,9 @@ using boost::shared_ptr;
 using boost::to_string;
 using QS::StringUtils::AccessMaskToString;
 using QS::StringUtils::FormatPath;
+using QS::StringUtils::BoolToString;
 using QS::StringUtils::ModeToString;
+using QS::TimeUtils::SecondsToRFC822GMT;
 using QS::Utils::AppendPathDelim;
 using QS::Utils::GetProcessEffectiveUserID;
 using QS::Utils::GetProcessEffectiveGroupID;
@@ -150,6 +153,27 @@ struct stat FileMetaData::ToStat() const {
   }
 
   return st;
+}
+
+// --------------------------------------------------------------------------
+string FileMetaData::ToString() const {
+  string s =
+      "[path: " + m_filePath +
+      ", size: " + to_string(m_fileSize) +
+      ", atime: " + SecondsToRFC822GMT(m_atime) +
+      ", mtime: " + SecondsToRFC822GMT(m_mtime) +
+      ", ctime: " + SecondsToRFC822GMT(m_ctime) +
+      ", uid: " + to_string(m_uid) +
+      ", gid: " + to_string(m_gid) +
+      ", mode: " + ModeToString(m_fileMode) +
+      ", type: " + GetFileTypeName(m_fileType) +
+      ", mime: " + m_mimeType +
+      ", etag: " + m_eTag +
+      ", numlink: " + to_string(m_numLink) +
+      ", encrypted: " + BoolToString(m_encrypted) +
+      ", need upload: " + BoolToString(m_needUpload) +
+      ", file open: " + BoolToString(m_fileOpen);
+  return s;
 }
 
 // --------------------------------------------------------------------------
