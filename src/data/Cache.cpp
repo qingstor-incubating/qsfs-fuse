@@ -534,13 +534,15 @@ void Cache::Rename(const string &oldFileId, const string &newFileId) {
 void Cache::SetTime(const string &fileId, time_t mtime) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
+  CacheListIterator pos;
   if (it != m_map.end()) {
-    shared_ptr<File> &file = it->second->second;
-    if (mtime > file->GetTime()) {
-      file->SetTime(mtime);
-    }
+    pos = it->second;
   } else {
-    DebugInfo("File not exists, no set time " + FormatPath(fileId));
+    pos = UnguardedNewEmptyFile(fileId, mtime);
+  }
+  shared_ptr<File> &file = pos->second;
+  if (mtime > file->GetTime()) {
+    file->SetTime(mtime);
   }
 }
 
@@ -560,34 +562,37 @@ void Cache::SetFileOpen(const std::string &fileId, bool open) {
 void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
+  CacheListIterator pos;
   if (it != m_map.end()) {
-    shared_ptr<File> &file = it->second->second;
-    size_t oldFileSize = file->GetSize();
-    size_t oldFileCacheSize = file->GetCachedSize();
-    if (newFileSize == oldFileSize) {
-      return;  // do nothing
-    } else if (newFileSize > oldFileSize) {
-      // fill the hole
-      size_t holeSize = newFileSize - oldFileSize;
-      vector<char> hole(holeSize);  // value initialization with '\0'
-      DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
-                to_string(holeSize) + "] " + FormatPath(fileId));
-      bool fileOpen = file->IsOpen();
-      Write(fileId, oldFileSize, holeSize, &hole[0], mtime, fileOpen);
-    } else {
-      file->ResizeToSmallerSize(newFileSize);
-      file->SetTime(mtime);
-    }
-    m_size += file->GetCachedSize() - oldFileCacheSize;
-
-    DebugInfoIf(file->GetSize() != newFileSize,
-                "Try to resize file from size " + to_string(oldFileSize) +
-                    " to " + to_string(newFileSize) +
-                    ". But now file size is " + to_string(file->GetSize()) +
-                    FormatPath(fileId));
+    pos = it->second;
   } else {
-    DebugWarning("Unable to resize non existing file " + FormatPath(fileId));
+    // File not cached yet, maybe because its content's empty
+    pos = UnguardedNewEmptyFile(fileId, mtime);
   }
+
+  shared_ptr<File> &file = pos->second;
+  size_t oldFileSize = file->GetSize();
+  size_t oldFileCacheSize = file->GetCachedSize();
+  if (newFileSize == oldFileSize) {
+    return;  // do nothing
+  } else if (newFileSize > oldFileSize) {
+    // fill the hole
+    size_t holeSize = newFileSize - oldFileSize;
+    vector<char> hole(holeSize);  // value initialization with '\0'
+    DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
+              to_string(holeSize) + "] " + FormatPath(fileId));
+    bool fileOpen = file->IsOpen();
+    Write(fileId, oldFileSize, holeSize, &hole[0], mtime, fileOpen);
+  } else {
+    file->ResizeToSmallerSize(newFileSize);
+    file->SetTime(mtime);
+  }
+  m_size += file->GetCachedSize() - oldFileCacheSize;
+
+  DebugInfoIf(file->GetSize() != newFileSize,
+              "Try to resize file from size " + to_string(oldFileSize) +
+                  " to " + to_string(newFileSize) + ". But now file size is " +
+                  to_string(file->GetSize()) + FormatPath(fileId));
 }
 
 // --------------------------------------------------------------------------

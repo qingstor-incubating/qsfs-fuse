@@ -421,6 +421,8 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
     // with the created file node, So we call Stat synchronizely.
     err = GetClient()->Stat(filePath, m_directoryTree);
     DebugErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
+    shared_ptr<Node> node = GetNodeSimple(filePath);
+    GetCache()->UnguardedNewEmptyFile(filePath, node->GetMTime());
   } else {
     Error("Not support to create a special file (block, char, FIFO, etc.)");
     // This only make file of other types in local dir tree, nothing happens
