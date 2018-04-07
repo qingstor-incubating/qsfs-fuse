@@ -219,10 +219,6 @@ tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> File::Read(
       // File is just created, update mtime.
       if (m_mtime == 0) {
         SetTime(mtimeSince);
-      } else if (mtimeSince > m_mtime) {
-        // Detected modification in the file
-        unloadedRanges.push_back(make_pair(offset, len));
-        return make_tuple(outcomeSize, outcomePages, unloadedRanges);
       }
     }
 

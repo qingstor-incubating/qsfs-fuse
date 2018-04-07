@@ -117,7 +117,6 @@ class File : private boost::noncopyable {
   // @param  : file offset, len of bytes, modified time since from
   // @return : a pair of {read size, page list containing data, unloaded ranges}
   //
-  // If the file mtime is newer than m_mtime, clear cache and download file.
   // If any bytes is not present, download it as a new page.
   // Pagelist of outcome is sorted by page offset.
   //

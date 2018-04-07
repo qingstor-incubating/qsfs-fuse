@@ -203,11 +203,6 @@ pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
 
   assert(pos != m_cache.end());
   shared_ptr<File> &file = pos->second;
-  if (mtimeSince > file->GetTime()) {
-    DebugWarning("File too old, read no bytes " + FormatPath(fileId) +
-                 "[mtime:" + SecondsToRFC822GMT(mtimeSince) +
-                 ", file time:" + SecondsToRFC822GMT(file->GetTime()) + "]");
-  }
   tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> outcome =
       file->Read(offset, len, mtimeSince);
   size_t readedFileSize = boost::get<0>(outcome);
