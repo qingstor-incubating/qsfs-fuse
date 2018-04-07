@@ -115,8 +115,13 @@ shared_ptr<Node> CheckParentDir(const string& path, int amode, int* ret,
   }
 
   if (!(parent && *parent)) {
-    *ret = -EINVAL;
-    throw QSException("No parent directory " + FormatPath(path));
+    // *ret = -EINVAL;
+    // throw QSException("No parent directory " + FormatPath(path));
+    // If we have get the child level, it usually means we have accessed parent
+    // in the pass, so we just return directly instead of thread exception.
+    // This also helps the FileMetaData LRU invalidation, e.g, some dir node
+    // could be removed from FileMetaDataManager when hit max stat cache.
+    return shared_ptr<Node>();
   }
 
   // Check whether parent is directory
@@ -143,6 +148,10 @@ bool CheckOwner(uid_t uid) {
 // --------------------------------------------------------------------------
 void CheckStickyBit(const shared_ptr<Node>& dir, const shared_ptr<Node>& file,
                     int* ret) {
+  if (!dir || !file) {
+    return;
+  }
+
   // When a directory's sticky bit is set, the filesystem treats the files in
   // such directories in a special way so only the file's owner, the
   // directory's owner, or root user can rename or delete the file.
