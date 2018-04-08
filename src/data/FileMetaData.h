@@ -75,7 +75,6 @@ class FileMetaData {
   const std::string &GetFilePath() const { return m_filePath; }
   time_t GetMTime() const { return m_mtime; }
   bool IsFileOpen() const { return m_fileOpen; }
-  bool IsNeedUpload() const {return m_needUpload;}
 
  private:
   FileMetaData() {}
@@ -97,7 +96,6 @@ class FileMetaData {
   bool m_encrypted;
   dev_t m_dev;  // device number (file system)
   int m_numLink;
-  bool m_needUpload;
   bool m_fileOpen;
 
   friend class Entry;

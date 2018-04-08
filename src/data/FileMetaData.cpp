@@ -111,7 +111,6 @@ FileMetaData::FileMetaData(const string &filePath, uint64_t fileSize,
       m_encrypted(encrypted),
       m_dev(dev),
       m_numLink(numlink),
-      m_needUpload(false),
       m_fileOpen(false) {
   m_numLink = fileType == FileType::Directory ? 2 : 1;
   if (fileType == FileType::Directory) {
@@ -128,8 +127,7 @@ bool FileMetaData::operator==(const FileMetaData &rhs) const {
          m_fileMode == rhs.m_fileMode && m_fileType == rhs.m_fileType &&
          m_mimeType == rhs.m_mimeType && m_eTag == rhs.m_eTag &&
          m_encrypted == rhs.m_encrypted && m_dev == rhs.m_dev &&
-         m_numLink == rhs.m_numLink && m_needUpload == rhs.m_needUpload &&
-         m_fileOpen == rhs.m_fileOpen;
+         m_numLink == rhs.m_numLink && m_fileOpen == rhs.m_fileOpen;
 }
 
 // --------------------------------------------------------------------------
@@ -171,7 +169,6 @@ string FileMetaData::ToString() const {
       ", etag: " + m_eTag +
       ", numlink: " + to_string(m_numLink) +
       ", encrypted: " + BoolToString(m_encrypted) +
-      ", need upload: " + BoolToString(m_needUpload) +
       ", file open: " + BoolToString(m_fileOpen);
   return s;
 }

@@ -83,7 +83,6 @@ class Entry {
   time_t GetMTime() const { return m_metaData.lock()->m_mtime; }
   time_t GetCachedTime() const { return m_metaData.lock()->m_cachedTime; }
   uid_t GetUID() const { return m_metaData.lock()->m_uid; }
-  bool IsNeedUpload() const { return m_metaData.lock()->m_needUpload; }
   bool IsFileOpen() const { return m_metaData.lock()->m_fileOpen; }
 
   std::string MyDirName() const { return m_metaData.lock()->MyDirName(); }
@@ -101,9 +100,6 @@ class Entry {
   void DecreaseNumLink() { --m_metaData.lock()->m_numLink; }
   void IncreaseNumLink() { ++m_metaData.lock()->m_numLink; }
   void SetFileSize(uint64_t size) { m_metaData.lock()->m_fileSize = size; }
-  void SetNeedUpload(bool needUpload) {
-    m_metaData.lock()->m_needUpload = needUpload;
-  }
   void SetFileOpen(bool fileOpen) { m_metaData.lock()->m_fileOpen = fileOpen; }
 
   void Rename(const std::string &newFilePath);

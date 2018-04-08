@@ -721,7 +721,6 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
          ":" + to_string(newSize) + "]" + FormatPath(filePath));
     // To gurantee the data consistency, file size has been set in Cache
     m_cache->Resize(filePath, newSize, node->GetMTime(), m_directoryTree);
-    node->SetNeedUpload(true);
   }
 }
 
@@ -752,7 +751,6 @@ struct UploadFileCallback {
 
   void operator()(const shared_ptr<TransferHandle> &handle) {
     if (handle && cache && client && drive) {
-      node->SetNeedUpload(false);
       if (releaseFile) {
         // To gurantee the data consistency, file open state has been set in
         // Cache
@@ -836,7 +834,6 @@ void Drive::ReleaseFile(const string &filePath) {
   }
 
   Info("Close file " + FormatPath(filePath));
-  node->SetNeedUpload(false);
   // To gurantee the data consistency, file open state has been set in Cache
   m_cache->SetFileOpen(filePath, false, m_directoryTree);
 }
@@ -865,9 +862,6 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
   time_t mtime = node->GetMTime();
   bool success = m_cache->Write(filePath, offset, size, buf, mtime,
                                 m_directoryTree, isOpen);
-  if (success) {
-    node->SetNeedUpload(true);
-  }
 
   return success ? size : 0;
 }

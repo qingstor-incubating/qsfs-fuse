@@ -127,7 +127,6 @@ class Node : private boost::noncopyable {
   time_t GetMTime() const { return m_entry ? m_entry.GetMTime() : 0; }
   time_t GetCachedTime() const { return m_entry ? m_entry.GetCachedTime() : 0; }
   uid_t GetUID() const { return m_entry ? m_entry.GetUID() : -1; }
-  bool IsNeedUpload() const { return m_entry ? m_entry.IsNeedUpload() : false; }
   bool IsFileOpen() const { return m_entry ? m_entry.IsFileOpen() : false; }
 
   std::string MyDirName() const {
@@ -145,12 +144,6 @@ class Node : private boost::noncopyable {
   Entry &GetEntry() { return m_entry; }
 
   FilePathToNodeUnorderedMap &GetChildren();
-
-  void SetNeedUpload(bool needUpload) {
-    if (m_entry) {
-      m_entry.SetNeedUpload(needUpload);
-    }
-  }
 
   void SetFileOpen(bool fileOpen) {
     if (m_entry) {

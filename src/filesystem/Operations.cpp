@@ -1205,16 +1205,14 @@ int qsfs_flush(const char* path, struct fuse_file_info* fi) {
     }
 
     // Write the file to object storage
-    if (node->IsNeedUpload()) {
-      try {
-        bool releasefile = false;
-        bool updatemeta = true;
-        bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
-        Drive::Instance().UploadFile(path_, releasefile, updatemeta, async);
-      } catch (const QSException& err) {
-        Error(err.get());
-        return -EAGAIN;  // Try again
-      }
+    try {
+      bool releasefile = false;
+      bool updatemeta = true;
+      bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
+      Drive::Instance().UploadFile(path_, releasefile, updatemeta, async);
+    } catch (const QSException& err) {
+      Error(err.get());
+      return -EAGAIN;  // Try again
     }
 
   } catch (const QSException& err) {
@@ -1297,16 +1295,14 @@ int qsfs_fsync(const char* path, int datasync, struct fuse_file_info* fi) {
       throw QSException("No such file or directory " + FormatPath(path_));
     }
     // Write the file to object storage
-    if (node->IsNeedUpload()) {
-      try {
-        bool releasefile = false;
-        bool updatemeta = datasync == 0;
-        bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
-        Drive::Instance().UploadFile(path_, releasefile, updatemeta, async);
-      } catch (const QSException& err) {
-        Error(err.get());
-        return -EAGAIN;  // Try again
-      }
+    try {
+      bool releasefile = false;
+      bool updatemeta = datasync == 0;
+      bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
+      Drive::Instance().UploadFile(path_, releasefile, updatemeta, async);
+    } catch (const QSException& err) {
+      Error(err.get());
+      return -EAGAIN;  // Try again
     }
 
   } catch (const QSException& err) {

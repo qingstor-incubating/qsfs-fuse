@@ -255,7 +255,7 @@ bool FileMetaDataManager::FreeNoLock(size_t needCount, string fileUnfreeable) {
       continue;
     }
     if (it->second) {
-      if (it->second->IsFileOpen() || it->second->IsNeedUpload()) {
+      if (it->second->IsFileOpen()) {
         ++it;
         continue;
       }
