@@ -231,10 +231,21 @@ pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
   pagelist.pop_front();
   if (pagelist.empty()) {  // Only a single page.
     size_t sz = std::min(len, readedFileSize);
-    return make_pair(page->Read(offset, sz, buffer), unloadedRanges);
+    size_t readSize = 0;
+    if(page->Offset() > offset) {
+      readSize += page->Read(sz, buffer + page->Offset() - offset);
+    } else {
+      readSize += page->Read(offset, sz, buffer);
+    }
+    return make_pair(readSize, unloadedRanges);
   } else {  // Have Multipule pages.
+    size_t readSize = 0;
     // read first page
-    size_t readSize = page->Read(static_cast<off_t>(offset), buffer);
+    if (page->Offset() > offset) {
+      readSize += page->Read(buffer + page->Offset() - offset);
+    } else {
+      readSize += page->Read(static_cast<off_t>(offset), buffer);
+    }
     page = pagelist.front();
     pagelist.pop_front();
     // read middle pages
