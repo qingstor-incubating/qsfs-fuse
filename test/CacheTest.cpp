@@ -28,6 +28,7 @@
 #include "base/Logging.h"
 #include "base/Utils.h"
 #include "data/Cache.h"
+#include "data/DirectoryTree.h"
 
 namespace QS {
 
@@ -50,6 +51,7 @@ void InitLog() {
 uid_t uid_ = 1000U;
 gid_t gid_ = 1000U;
 mode_t fileMode_ = S_IRWXU | S_IRWXG | S_IROTH;
+shared_ptr<DirectoryTree> dirTree = shared_ptr<DirectoryTree>();
 
 class CacheTest : public Test {
  protected:
@@ -77,7 +79,7 @@ class CacheTest : public Test {
     const char *page1 = "012";
     size_t len1 = strlen(page1);
     off_t off1 = 0;
-    cache.Write("file1", off1, len1, page1, 0);
+    cache.Write("file1", off1, len1, page1, 0, dirTree);
     EXPECT_FALSE(cache.HasFreeSpace(cacheCap));
     EXPECT_TRUE(cache.HasFreeSpace(cacheCap - len1));
     EXPECT_EQ(cache.GetSize(), len1);
@@ -100,12 +102,12 @@ class CacheTest : public Test {
     cache.SetTime("file1", newtime);
     EXPECT_EQ(cache.GetTime("file1"), newtime);
     EXPECT_FALSE(cache.IsLastFileOpen());
-    cache.SetFileOpen("file1", true);
+    cache.SetFileOpen("file1", true, dirTree);
     EXPECT_TRUE(cache.IsLastFileOpen());
-    cache.SetFileOpen("file1", false);
+    cache.SetFileOpen("file1", false, dirTree);
 
     size_t newSize = 2;
-    cache.Resize("file1", newSize, newtime);
+    cache.Resize("file1", newSize, newtime, dirTree);
     EXPECT_EQ(cache.GetSize(), newSize);
 
     cache.Rename("file1", "newfile1");
@@ -117,19 +119,21 @@ class CacheTest : public Test {
     EXPECT_FALSE(cache.HasFile("newfile1"));
 
     EXPECT_TRUE(cache.HasFreeSpace(cacheCap));
-    cache.Write("file1", off1, len1, page1, 0);  // write again after free
+    cache.Write("file1", off1, len1, page1, 0,
+                dirTree);  // write again after free
     EXPECT_TRUE(cache.HasFile("file1"));
     EXPECT_EQ(cache.Erase("file1"), cache.End());
     EXPECT_FALSE(cache.HasFile("file1"));
     EXPECT_TRUE(cache.HasFreeSpace(cacheCap));
-    cache.Write("file1", off1, len1, page1, 0);  // write again after erase
+    cache.Write("file1", off1, len1, page1, 0,
+                dirTree);  // write again after erase
     EXPECT_TRUE(cache.HasFile("file1"));
 
     const char *data = "abc";
     size_t len2 = strlen(data);
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    cache.Write("file1", off2, len2, page2, 0);
+    cache.Write("file1", off2, len2, page2, 0, dirTree);
     EXPECT_EQ(cache.GetNumFile(), 1u);
     EXPECT_EQ(cache.GetSize(), len1 + len2);
     EXPECT_TRUE(cache.GetUnloadedRanges("file1", 0, len1 + len2).empty());
@@ -141,7 +145,7 @@ class CacheTest : public Test {
     size_t len3 = strlen(page3);
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    cache.Write("file1", off3, len3, page3, 0);
+    cache.Write("file1", off3, len3, page3, 0, dirTree);
     EXPECT_EQ(cache.GetSize(), len1 + len2 + len3);
     EXPECT_TRUE(cache.HasFileData("file1", off1, len1 + len2));
     EXPECT_FALSE(cache.HasFileData("file1", off1, len1 + len2 + 1));
@@ -151,7 +155,7 @@ class CacheTest : public Test {
     EXPECT_EQ(cache.GetUnloadedRanges("file1", 0, len1 + len2 + holeLen + len3),
               range3);
 
-    cache.Write("file2", off1, len1, page1, 0);
+    cache.Write("file2", off1, len1, page1, 0, dirTree);
     EXPECT_EQ(cache.GetNumFile(), 2u);
     EXPECT_EQ(cache.GetSize(), 2 * len1 + len2 + len3);
     EXPECT_EQ(cache.Find("file2"), cache.Begin());
@@ -170,7 +174,7 @@ class CacheTest : public Test {
     const char *page1 = "012";
     size_t len1 = strlen(page1);
     off_t off1 = 0;
-    cache.Write("file1", off1, len1, page1, 0);
+    cache.Write("file1", off1, len1, page1, 0, dirTree);
 
     CacheListIterator pfile = cache.Find("file1");
     EXPECT_EQ(pfile, cache.Begin());
@@ -179,12 +183,12 @@ class CacheTest : public Test {
     size_t len2 = strlen(data);
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    cache.Write("file1", off2, len2, page2, 0);
+    cache.Write("file1", off2, len2, page2, 0, dirTree);
     const char *page3 = "ABC";
     size_t len3 = strlen(page3);
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    cache.Write("file1", off3, len3, page3, 0);
+    cache.Write("file1", off3, len3, page3, 0, dirTree);
 
     EXPECT_EQ(cache.GetFileSize("file1"), len1 + len2 + len3);
     pfile = cache.Find("file1");
@@ -199,7 +203,7 @@ class CacheTest : public Test {
     EXPECT_EQ(cache.GetUnloadedRanges("file1", 0, len1 + len2 + holeLen + len3),
               range3);
 
-    cache.Write("file2", off1, len1, page1, 0);
+    cache.Write("file2", off1, len1, page1, 0, dirTree);
     EXPECT_FALSE(cache.HasFile("file1"));
     EXPECT_EQ(cache.GetNumFile(), 1u);
     EXPECT_EQ(cache.GetSize(), len1);
@@ -217,27 +221,27 @@ class CacheTest : public Test {
     const char *page1 = "012";
     size_t len1 = strlen(page1);
     off_t off1 = 0;
-    cache.Write("file1", off1, len1, page1, 0);
+    cache.Write("file1", off1, len1, page1, 0, dirTree);
     const char *data = "abc";
     size_t len2 = strlen(data);
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    cache.Write("file1", off2, len2, page2, 0);
+    cache.Write("file1", off2, len2, page2, 0, dirTree);
     const char *page3 = "ABC";
     size_t len3 = strlen(page3);
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    cache.Write("file1", off3, len3, page3, 0);
-    cache.Write("file2", off1, len1, page1, 0);
+    cache.Write("file1", off3, len3, page3, 0, dirTree);
+    cache.Write("file2", off1, len1, page1, 0, dirTree);
 
     EXPECT_EQ(cache.GetFileSize("file1"), len1 + len2 + len3);
     EXPECT_EQ(cache.GetFileSize("file2"), len1);
 
     size_t newFile1Sz = len1 + len2 + 1;
-    cache.Resize("file1", newFile1Sz, 0);
+    cache.Resize("file1", newFile1Sz, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file1"), newFile1Sz);
     size_t newFile2Sz = len1 - 1;
-    cache.Resize("file2", newFile2Sz, 0);
+    cache.Resize("file2", newFile2Sz, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file2"), newFile2Sz);
   }
 
@@ -249,27 +253,27 @@ class CacheTest : public Test {
     const char *page1 = "012";
     size_t len1 = strlen(page1);
     off_t off1 = 0;
-    cache.Write("file1", off1, len1, page1, 0);
+    cache.Write("file1", off1, len1, page1, 0, dirTree);
     const char *data = "abc";
     size_t len2 = strlen(data);
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    cache.Write("file1", off2, len2, page2, 0);
+    cache.Write("file1", off2, len2, page2, 0, dirTree);
     const char *page3 = "ABC";
     size_t len3 = strlen(page3);
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    cache.Write("file1", off3, len3, page3, 0);
+    cache.Write("file1", off3, len3, page3, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file1"), len1 + len2 + len3);
     size_t newFile1Sz = len1 + len2 + 1;
-    cache.Resize("file1", newFile1Sz, 0);
+    cache.Resize("file1", newFile1Sz, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file1"), newFile1Sz);
 
-    cache.Write("file2", off1, len1, page1, 0);
+    cache.Write("file2", off1, len1, page1, 0, dirTree);
     EXPECT_FALSE(cache.HasFile("file1"));
     EXPECT_EQ(cache.GetFileSize("file2"), len1);
     size_t newFile2Sz = len1 - 1;
-    cache.Resize("file2", newFile2Sz, 0);
+    cache.Resize("file2", newFile2Sz, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file2"), newFile2Sz);
   }
 
@@ -281,24 +285,24 @@ class CacheTest : public Test {
     const char *page1 = "012";
     size_t len1 = strlen(page1);
     off_t off1 = 0;
-    cache.Write("file1", off1, len1, page1, 0);
+    cache.Write("file1", off1, len1, page1, 0, dirTree);
     const char *data = "abc";
     size_t len2 = strlen(data);
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    cache.Write("file1", off2, len2, page2, 0);
+    cache.Write("file1", off2, len2, page2, 0, dirTree);
     const char *page3 = "ABC";
     size_t len3 = strlen(page3);
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    cache.Write("file1", off3, len3, page3, 0);
-    cache.Write("file2", off1, len1, page1, 0);
+    cache.Write("file1", off3, len3, page3, 0, dirTree);
+    cache.Write("file2", off1, len1, page1, 0, dirTree);
 
     EXPECT_EQ(cache.GetFileSize("file1"), len1 + len2 + len3);
     EXPECT_EQ(cache.GetFileSize("file2"), len1);
 
     size_t newFile1Sz = len1 + len2 + 1;
-    cache.Resize("file1", newFile1Sz, 0);
+    cache.Resize("file1", newFile1Sz, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file1"), newFile1Sz);
     vector<char> buf1(newFile1Sz);
     cache.Read("file1", 0, newFile1Sz, &buf1[0]);
@@ -340,7 +344,7 @@ class CacheTest : public Test {
     EXPECT_EQ(buf3, arr3);
 
     size_t newFile1Sz_ = len1 + len2 + len3;
-    cache.Resize("file1", newFile1Sz_, 0);  // resize to larger
+    cache.Resize("file1", newFile1Sz_, 0, dirTree);  // resize to larger
     EXPECT_EQ(cache.GetFileSize("file1"), newFile1Sz_);
     vector<char> buf1_(newFile1Sz_);
     cache.Read("file1", 0, newFile1Sz_, &buf1_[0]);
@@ -373,7 +377,7 @@ class CacheTest : public Test {
     EXPECT_EQ(buf2_, arr2_);
 
     size_t newFile2Sz = len1 - 1;
-    cache.Resize("file2", newFile2Sz, 0);
+    cache.Resize("file2", newFile2Sz, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file2"), newFile2Sz);
     vector<char> buf4(newFile2Sz);
     cache.Read("file2", 0, newFile2Sz, &buf4[0]);
@@ -391,26 +395,26 @@ class CacheTest : public Test {
     const char *page1 = "012";
     size_t len1 = strlen(page1);
     off_t off1 = 0;
-    cache.Write("file1", off1, len1, page1, 0);
-    cache.SetFileOpen("file1", true);
+    cache.Write("file1", off1, len1, page1, 0, dirTree);
+    cache.SetFileOpen("file1", true, dirTree);
 
     const char *data = "abc";
     size_t len2 = strlen(data);
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    cache.Write("file1", off2, len2, page2, 0, true);
+    cache.Write("file1", off2, len2, page2, 0, dirTree, true);
     const char *page3 = "ABC";
     size_t len3 = strlen(page3);
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    cache.Write("file1", off3, len3, page3, 0, true);
-    cache.Write("file2", off1, len1, page1, 0);
+    cache.Write("file1", off3, len3, page3, 0, dirTree, true);
+    cache.Write("file2", off1, len1, page1, 0, dirTree);
 
     EXPECT_EQ(cache.GetFileSize("file1"), len1 + len2 + len3);
     EXPECT_EQ(cache.GetFileSize("file2"), len1);
 
     size_t newFile1Sz = len1 + len2 + 1;
-    cache.Resize("file1", newFile1Sz, 0);
+    cache.Resize("file1", newFile1Sz, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file1"), newFile1Sz);
     vector<char> buf1(newFile1Sz);
     cache.Read("file1", 0, newFile1Sz, &buf1[0]);
@@ -452,7 +456,7 @@ class CacheTest : public Test {
     EXPECT_EQ(buf3, arr3);
 
     size_t newFile2Sz = len1 - 1;
-    cache.Resize("file2", newFile2Sz, 0);
+    cache.Resize("file2", newFile2Sz, 0, dirTree);
     EXPECT_EQ(cache.GetFileSize("file2"), newFile2Sz);
     vector<char> buf4(newFile2Sz);
     cache.Read("file2", 0, newFile2Sz, &buf4[0]);

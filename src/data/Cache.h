@@ -53,6 +53,8 @@ struct UploadFileCallback;
 
 namespace Data {
 
+class DirectoryTree;
+
 typedef std::pair<std::string, boost::shared_ptr<File> > FileIdToFilePair;
 typedef std::list<FileIdToFilePair> CacheList;
 typedef CacheList::iterator CacheListIterator;
@@ -155,7 +157,9 @@ class Cache : private boost::noncopyable {
   // If File of fileId doesn't exist, create one.
   // From pointer of buffer, number of len bytes will be writen.
   bool Write(const std::string &fileId, off_t offset, size_t len,
-             const char *buffer, time_t mtime, bool open = false);
+             const char *buffer, time_t mtime,
+             const boost::shared_ptr<DirectoryTree> &dirTree,
+             bool open = false);
 
   // Write stream into file cache
   //
@@ -166,6 +170,7 @@ class Cache : private boost::noncopyable {
   // Stream will be moved to cache.
   bool Write(const std::string &fileId, off_t offset, size_t len,
              const boost::shared_ptr<std::iostream> &stream, time_t mtime,
+             const boost::shared_ptr<DirectoryTree> &dirTree,
              bool open = false);
 
   // Prepare for Write
@@ -219,13 +224,15 @@ class Cache : private boost::noncopyable {
   //
   // @param  : file id, open state
   // @return : void
-  void SetFileOpen(const std::string &fileId, bool open);
+  void SetFileOpen(const std::string &fileId, bool open,
+                   const boost::shared_ptr<DirectoryTree> &dirTree);
 
   // Resize a file
   //
   // @param  : file id, new file size, mtime
   // @return : void
-  void Resize(const std::string &fileId, size_t newSize, time_t mtime);
+  void Resize(const std::string &fileId, size_t newSize, time_t mtime,
+              const boost::shared_ptr<DirectoryTree> &dirTree);
 
  private:
   // Create an empty File with fileId in cache, without checking input.

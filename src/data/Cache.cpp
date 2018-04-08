@@ -37,7 +37,9 @@
 #include "base/Utils.h"
 #include "base/UtilsWithLog.h"
 #include "configure/Options.h"
+#include "data/DirectoryTree.h"
 #include "data/File.h"
+#include "data/Node.h"
 #include "data/Page.h"
 #include "data/StreamUtils.h"
 
@@ -264,7 +266,8 @@ pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
 
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,
-                  const char *buffer, time_t mtime, bool open) {
+                  const char *buffer, time_t mtime,
+                  const shared_ptr<DirectoryTree> &dirTree, bool open) {
   lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
     CacheMapIterator it = m_map.find(fileId);
@@ -299,12 +302,26 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
       m_size += boost::get<1>(res);  // added size in cache
     }
   }
+
+  // update file size in meta data
+  if (success && dirTree) {
+    shared_ptr<Node> node = dirTree->Find(fileId);
+    if (node) {
+      uint64_t oldFileSize = node->GetFileSize();
+      if (offset + len > oldFileSize) {
+        node->SetFileSize(offset + len);
+      }
+      node->SetFileOpen(open);
+    }
+  }
+
   return success;
 }
 
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,
-                  const shared_ptr<iostream> &stream, time_t mtime, bool open) {
+                  const shared_ptr<iostream> &stream, time_t mtime,
+                  const shared_ptr<DirectoryTree> &dirTree, bool open) {
   lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
     CacheMapIterator it = m_map.find(fileId);
@@ -348,6 +365,19 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
       m_size += boost::get<1>(res);  // added size in cache
     }
   }
+
+  // update file size in meta data
+  if (success && dirTree) {
+    shared_ptr<Node> node = dirTree->Find(fileId);
+    if (node) {
+      uint64_t oldFileSize = node->GetFileSize();
+      if (offset + len > oldFileSize) {
+        node->SetFileSize(offset + len);
+      }
+      node->SetFileOpen(open);
+    }
+  }
+
   return success;
 }
 
@@ -553,7 +583,8 @@ void Cache::SetTime(const string &fileId, time_t mtime) {
 }
 
 // --------------------------------------------------------------------------
-void Cache::SetFileOpen(const std::string &fileId, bool open) {
+void Cache::SetFileOpen(const std::string &fileId, bool open,
+                        const shared_ptr<DirectoryTree> &dirTree) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
   if (it != m_map.end()) {
@@ -562,10 +593,18 @@ void Cache::SetFileOpen(const std::string &fileId, bool open) {
   } else {
     DebugInfo("File not exists, no set open" + FormatPath(fileId));
   }
+
+  if (dirTree) {
+    shared_ptr<Node> node = dirTree->Find(fileId);
+    if (node) {
+      node->SetFileOpen(open);
+    }
+  }
 }
 
 // --------------------------------------------------------------------------
-void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime) {
+void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime,
+                   const shared_ptr<DirectoryTree> &dirTree) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
   CacheListIterator pos;
@@ -588,17 +627,25 @@ void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime) {
     DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
               to_string(holeSize) + "] " + FormatPath(fileId));
     bool fileOpen = file->IsOpen();
-    Write(fileId, oldFileSize, holeSize, &hole[0], mtime, fileOpen);
+    Write(fileId, oldFileSize, holeSize, &hole[0], mtime, dirTree, fileOpen);
   } else {
     file->ResizeToSmallerSize(newFileSize);
     file->SetTime(mtime);
   }
   m_size += file->GetCachedSize() - oldFileCacheSize;
 
-  DebugInfoIf(file->GetSize() != newFileSize,
-              "Try to resize file from size " + to_string(oldFileSize) +
-                  " to " + to_string(newFileSize) + ". But now file size is " +
-                  to_string(file->GetSize()) + FormatPath(fileId));
+  if (file->GetSize() == newFileSize) {
+    if (dirTree) {
+      shared_ptr<Node> node = dirTree->Find(fileId);
+      if (node) {
+        node->SetFileSize(newFileSize);
+      }
+    }
+  } else {
+    DebugWarning("Try to resize file from size " + to_string(oldFileSize) +
+                 " to " + to_string(newFileSize) + ". But now file size is " +
+                 to_string(file->GetSize()) + FormatPath(fileId));
+  }
 }
 
 // --------------------------------------------------------------------------

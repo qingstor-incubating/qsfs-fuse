@@ -150,10 +150,13 @@ if (BUILD_TESTING)
     ${QSFS_SOURCE_DIR}/data/Page.cpp
     ${QSFS_SOURCE_DIR}/data/File.cpp
     ${QSFS_SOURCE_DIR}/data/Cache.cpp
+    ${QSFS_SOURCE_DIR}/data/DirectoryTree.cpp
+    ${QSFS_SOURCE_DIR}/data/Entry.cpp
+    ${QSFS_SOURCE_DIR}/data/Node.cpp
     ${QSFS_SOURCE_DIR}/base/UtilsWithLog.cpp
     ${QSFS_SOURCE_DIR}/base/TimeUtils.cpp
-    ${QSFS_SOURCE_DIR}/configure/Options.cpp
     $<TARGET_OBJECTS:qsfsStream>
+    $<TARGET_OBJECTS:qsfsFileMetaData>
     $<TARGET_OBJECTS:qsfsLogging>
   )
   if (APPLE)
