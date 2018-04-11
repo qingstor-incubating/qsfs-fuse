@@ -1528,6 +1528,10 @@ void qsfs_destroy(void* userdata) {
   // Drive get clean by itself. Just print an info here.
   Info("Disconnecting qsfs...");
 
+  if (userdata == NULL) {
+    return;
+  }
+
   Drive* drive = static_cast<QS::FileSystem::Drive*>(userdata);
   if (drive != NULL) {
     drive->CleanUp();
