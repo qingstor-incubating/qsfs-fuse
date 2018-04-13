@@ -1,3 +1,16 @@
+* Fri Apr 13 2018 - Yunify Inc.
+
+- qsfs: version 1.0.2
+- To synchronize Cache operations to avoid data race
+- Fix failure to truncate a new created empty file
+- Fix failure to upload big file with odd bytes
+- Fix wrong data position when read from cache
+- No log message in Drive Cleanup to avoid dead reference to Log
+- Set connection timeout to 300s as same as curl default
+- Refactor to gurantee data consistency
+- Add more log messages
+- Add CMake option UPDATE_CONNECT to automatically update external project from remote repo
+
 * Sun Mar 25 2018 - Yunify Inc.
 
 - qsfs: version 1.0.1
