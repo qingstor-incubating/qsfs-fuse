@@ -104,7 +104,7 @@ Supported general options are listed as following,
 | -D | --dirmode     | octal   | N | Specify the permission bits in st_mode for directory objects without x-qs-meta-mode header. The value is given in octal representation; default value is `0755`
 | -u | --umaskmp     | octal   | N | Specify the permission bits in st_mode for the mount point directory. This option only works when you set with the fuse allow_other option. The resulting permission bits are the ones missing from the given umask value. The value is given in octal representation; default value is `0000`
 | -r | --retries     | integer | N | Specify number of times to retry a failed transaction, default value is `3 times`
-| -R | --reqtimeout  | integer | N | Specify time(seconds) to wait before timing out a request, default value is `30 seconds`
+| -R | --reqtimeout  | integer | N | Specify time(seconds) to wait before giving up connection, default value is `300 seconds`
 | -Z | --maxcache    | integer | N | Specify max in-memory cache size(MB) for files, default value is `200 MB`
 | -k | --diskdir     | string  | N | Specify the directory to store file data when in-memory cache is not availabe, default path is `/tmp/qsfs_cache/`
 | -t | --maxstat     | integer | N | Specify max count(K) of cached stat entrys, default value is `20 K`

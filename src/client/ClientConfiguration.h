@@ -80,8 +80,8 @@ class ClientConfiguration {
   ClientLogLevel::Value GetClientLogLevel() const { return m_logLevel; }
   const std::string& GetClientLogDirectory() const { return m_sdkLogDirectory; }
   uint16_t GetTransactionRetries() const { return m_transactionRetries; }
-  uint32_t GetTransactionTimeDuration() const {
-    return m_transactionTimeDuration;
+  uint32_t GetConnectTimeOut() const {
+    return m_connectTimeOut;
   }
   int32_t GetMaxListCount() const { return m_maxListCount; }
   uint16_t GetPoolSize() const { return m_clientPoolSize; }
@@ -112,8 +112,7 @@ class ClientConfiguration {
   std::string m_sdkLogDirectory;  // log directory
 
   uint16_t m_transactionRetries;       // retry times for one transaction
-  uint32_t m_transactionTimeDuration;  // default time duration for one
-                                       // transaction in milliseconds
+  uint32_t m_connectTimeOut;           // default connect time out in seconds
   int32_t m_maxListCount;              // max obj count for ls
   uint16_t m_clientPoolSize;           // pool size of client
   uint16_t m_parallelTransfers;        // number of file transfers in parallel

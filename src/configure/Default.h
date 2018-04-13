@@ -59,7 +59,7 @@ size_t GetMaxStatCount();           // File meta data cache max count
 uint16_t GetMaxListObjectsCount();  // max count for list operation
 
 uint16_t GetDefaultTransactionRetries();
-uint32_t GetDefaultTransactionTimeDuration();  // in milliseconds
+uint32_t GetDefaultConnectTimeOut();  // in seconds
 int GetClientDefaultPoolSize();
 const char* GetSDKLogFolderBaseName();
 

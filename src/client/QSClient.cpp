@@ -834,7 +834,7 @@ void QSClient::DoStartQSService() {
   m_qingStorConfig->port = clientConfig.GetPort();
   m_qingStorConfig->connectionRetries = clientConfig.GetTransactionRetries();
   // timeoutPeriod is for one connection duration
-  m_qingStorConfig->timeOutPeriod = clientConfig.GetTransactionTimeDuration();
+  m_qingStorConfig->timeOutPeriod = clientConfig.GetConnectTimeOut();
   // QSClient has not count on the retry strategy, instead QSClient count on
   // qingstor sdk retry policy
 }

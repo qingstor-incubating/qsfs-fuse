@@ -51,7 +51,7 @@ using QS::Configure::Default::GetDefaultZone;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
-using QS::Configure::Default::GetDefaultTransactionTimeDuration;
+using QS::Configure::Default::GetDefaultConnectTimeOut;
 using QS::Logging::GetLogLevelName;
 using QS::Logging::GetLogLevelByName;
 using QS::StringUtils::ModeToString;
@@ -72,7 +72,7 @@ Options::Options()
       m_dirMode(GetDefaultDirMode()),
       m_umaskMountPoint(0),
       m_retries(GetDefaultTransactionRetries()),
-      m_requestTimeOut(GetDefaultTransactionTimeDuration()),
+      m_requestTimeOut(GetDefaultConnectTimeOut()),
       m_maxCacheSizeInMB(GetMaxCacheSize() / QS::Size::MB1),
       m_diskCacheDir(GetDefaultDiskCacheDirectory()),
       m_maxStatCountInK(GetMaxStatCount() / QS::Size::K1),

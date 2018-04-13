@@ -117,8 +117,9 @@ uint16_t GetDefaultTransactionRetries() {
   return QSFS_DEFAULT_TRANSACTION_RETRIES;
 }
 
-uint32_t GetDefaultTransactionTimeDuration() {
-  return 30 ;  // in seconds
+uint32_t GetDefaultConnectTimeOut() {
+  // set default value to 300 seconds which is as same as curl default
+  return 300;  // in seconds
 }
 
 int GetClientDefaultPoolSize() { return CLIENT_DEFAULT_POOL_SIZE; }

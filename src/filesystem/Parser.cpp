@@ -67,7 +67,7 @@ using QS::Configure::Default::GetDefaultZone;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
-using QS::Configure::Default::GetDefaultTransactionTimeDuration;
+using QS::Configure::Default::GetDefaultConnectTimeOut;
 using QS::Utils::GetProcessEffectiveUserID;
 using QS::Utils::GetProcessEffectiveGroupID;
 using std::string;
@@ -245,7 +245,7 @@ void Parse(int argc, char **argv) {
   options.dirMode        = GetDefaultDirMode();
   options.umaskmp        = 0;  // default 0000
   options.retries        = GetDefaultTransactionRetries();
-  options.reqtimeout     = GetDefaultTransactionTimeDuration();
+  options.reqtimeout     = GetDefaultConnectTimeOut();
   options.maxcache       = GetMaxCacheSize() / QS::Size::MB1;
   options.diskdir        = strdup(GetDefaultDiskCacheDirectory().c_str());
   options.maxstat        = GetMaxStatCount() / QS::Size::K1;
@@ -307,8 +307,8 @@ void Parse(int argc, char **argv) {
 
   if (options.reqtimeout <= 0) {
     PrintWarnMsg("-R|--reqtimeout", options.reqtimeout,
-                 GetDefaultTransactionTimeDuration());
-    qsOptions.SetRequestTimeOut(GetDefaultTransactionTimeDuration());
+                 GetDefaultConnectTimeOut());
+    qsOptions.SetRequestTimeOut(GetDefaultConnectTimeOut());
   } else {
     qsOptions.SetRequestTimeOut(options.reqtimeout);
   }

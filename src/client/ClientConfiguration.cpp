@@ -56,7 +56,7 @@ using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultZone;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetSDKLogFolderBaseName;
-using QS::Configure::Default::GetDefaultTransactionTimeDuration;
+using QS::Configure::Default::GetDefaultConnectTimeOut;
 using QS::StringUtils::FormatPath;
 using QS::Utils::AppendPathDelim;
 using std::string;
@@ -152,7 +152,7 @@ ClientConfiguration::ClientConfiguration(const Credentials &credentials)
       m_sdkLogDirectory(AppendPathDelim(GetDefaultLogDirectory()) +
                         GetSDKLogFolderBaseName()),
       m_transactionRetries(GetDefaultTransactionRetries()),
-      m_transactionTimeDuration(GetDefaultTransactionTimeDuration()),
+      m_connectTimeOut(GetDefaultConnectTimeOut()),
       m_maxListCount(GetMaxListObjectsCount()),
       m_clientPoolSize(GetClientDefaultPoolSize()),
       m_parallelTransfers(GetDefaultParallelTransfers()),
@@ -173,7 +173,7 @@ ClientConfiguration::ClientConfiguration(const CredentialsProvider &provider)
       m_sdkLogDirectory(AppendPathDelim(GetDefaultLogDirectory()) +
                         GetSDKLogFolderBaseName()),
       m_transactionRetries(GetDefaultTransactionRetries()),
-      m_transactionTimeDuration(GetDefaultTransactionTimeDuration()),
+      m_connectTimeOut(GetDefaultConnectTimeOut()),
       m_maxListCount(GetMaxListObjectsCount()),
       m_clientPoolSize(GetClientDefaultPoolSize()),
       m_parallelTransfers(GetDefaultParallelTransfers()),
@@ -213,7 +213,7 @@ void ClientConfiguration::InitializeByOptions() {
   }
 
   m_transactionRetries = options.GetRetries();
-  m_transactionTimeDuration = options.GetRequestTimeOut();
+  m_connectTimeOut = options.GetRequestTimeOut();
   m_maxListCount = options.GetMaxListCount();
   m_clientPoolSize = options.GetClientPoolSize();
   m_parallelTransfers = options.GetParallelTransfers();

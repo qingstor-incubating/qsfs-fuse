@@ -48,7 +48,7 @@ using QS::Configure::Default::GetDefaultZone;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
-using QS::Configure::Default::GetDefaultTransactionTimeDuration;
+using QS::Configure::Default::GetDefaultConnectTimeOut;
 using std::cout;
 using std::endl;
 
@@ -91,8 +91,8 @@ void ShowQSFSHelp() {
   "                     default value is 0000\n"
   "  -r, --retries      Number of times to retry a failed transaction, default value\n"
   "                     is " << to_string(GetDefaultTransactionRetries()) << " times\n"
-  "  -R, --reqtimeout   Time(seconds) to wait before timing out a request, default value\n"
-  "                     is " << to_string(GetDefaultTransactionTimeDuration())
+  "  -R, --reqtimeout   Time(seconds) to wait before giving up connection, default value\n"
+  "                     is " << to_string(GetDefaultConnectTimeOut())
                                           << " seconds\n"
   "  -Z, --maxcache     Max in-memory cache size(MB) for files, default value is "
                         << to_string(GetMaxCacheSize() / QS::Size::MB1) << "MB\n"
