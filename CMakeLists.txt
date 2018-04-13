@@ -10,6 +10,7 @@ option (BUILD_SHARED_LIBS  "Build shared libraries." OFF)
 option (BUILD_TESTING      "Enable build of the unit tests and their execution using CTest." OFF)
 option (INSTALL_HEADERS    "Request installation of headers and other development files." OFF)
 option (REGISTER_BUILD_DIR "Request entry of build directory in CMake's package registry." OFF)
+option (UPDATE_CONNECT     "Update automatically from the remote repository." OFF)
 
 
 #

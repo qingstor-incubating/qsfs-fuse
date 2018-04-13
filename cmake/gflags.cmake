@@ -1,7 +1,10 @@
 if (CMAKE_VERSION VERSION_LESS 3.2)
     set(UPDATE_DISCONNECTED_IF_AVAILABLE "")
 else()
-    set(UPDATE_DISCONNECTED_IF_AVAILABLE "UPDATE_DISCONNECTED 1")
+    # UPDATE_DISCONNECTED is 1 by default
+    if (UPDATE_CONNECT)
+        set(UPDATE_DISCONNECTED_IF_AVAILABLE "UPDATE_DISCONNECTED 0")
+    endif()
 endif()
 
 include(cmake/DownloadInstallProject.cmake)
