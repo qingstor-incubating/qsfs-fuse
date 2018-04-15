@@ -118,7 +118,7 @@ shared_ptr<Node> CheckParentDir(const string& path, int amode, int* ret,
     // *ret = -EINVAL;
     // throw QSException("No parent directory " + FormatPath(path));
     // If we have get the child level, it usually means we have accessed parent
-    // in the pass, so we just return directly instead of thread exception.
+    // in the pass, so we just return directly instead of throw exception.
     // This also helps the FileMetaData LRU invalidation, e.g, some dir node
     // could be removed from FileMetaDataManager when hit max stat cache.
     return shared_ptr<Node>();

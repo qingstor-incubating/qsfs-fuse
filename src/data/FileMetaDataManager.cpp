@@ -255,19 +255,14 @@ bool FileMetaDataManager::FreeNoLock(size_t needCount, string fileUnfreeable) {
       continue;
     }
     if (it->second) {
-      if (it->second->IsFileOpen()) {
+      if (it->second->IsFileOpen() || fileId == fileUnfreeable) {
         ++it;
         continue;
       }
-      if(fileId[fileId.size() - 1] == '/') {  // do not free dir
-        ++it;
-        continue;
-      }
-      if (fileId == fileUnfreeable) {
-        ++it;
-        continue;
-      }
-      if(GetDirName(fileId) == GetDirName(fileUnfreeable)) {
+      string dir = GetDirName(fileId);
+      string dirUnfreeable = GetDirName(fileUnfreeable);
+      // Do not free siblings and ancestors
+      if(dir == dirUnfreeable || QS::Utils::IsAncestor(dir, dirUnfreeable)) {
         ++it;
         continue;
       }
@@ -275,11 +270,12 @@ bool FileMetaDataManager::FreeNoLock(size_t needCount, string fileUnfreeable) {
       DebugWarning("file metadata null" + FormatPath(fileId));
     }
 
-    DebugInfo("Free file " + FormatPath(fileId)); 
+    DebugInfo("Freed file " + FormatPath(fileId) + " for adding file " +
+              FormatPath(fileUnfreeable));
     // Must invoke callback to update directory tree before erasing,
     // as directory node depend on the file meta data
     if (m_dirTree) {
-      m_dirTree->Remove(fileId);
+      m_dirTree->Remove(fileId, RemoveNodeType::SelfOnly);
     }    
     // Node destructor will inovke FileMetaDataManger::Erase,
     // so double checking before earsing file meta
@@ -295,7 +291,7 @@ bool FileMetaDataManager::FreeNoLock(size_t needCount, string fileUnfreeable) {
   if (HasFreeSpaceNoLock(needCount)) {
     return true;
   } else {
-    Warning("Fail to free " + to_string(needCount) +
+    Warning("Unalbe to free " + to_string(needCount) +
             " items for file " + FormatPath(fileUnfreeable));
     return false;
   }

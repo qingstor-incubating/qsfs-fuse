@@ -266,7 +266,7 @@ pair<shared_ptr<Node>, bool> Drive::GetNode(const string &path,
         if (err.GetError() == QSError::NOT_FOUND) {
           // remove node
           DebugInfo("File not exist " + FormatPath(path));
-          m_directoryTree->Remove(path);
+          m_directoryTree->Remove(path, QS::Data::RemoveNodeType::SelfOnly);
           if (m_cache->HasFile(path)) {
             m_cache->Erase(path);
           }
@@ -637,7 +637,8 @@ struct RenameDirCallback {
 
       // Remove old dir node from dir tree
       if (dirTree) {
-        dirTree->Remove(dirPath);
+        dirTree->Remove(dirPath,
+                        QS::Data::RemoveNodeType::IncludeDescendant);
       }
 
       // Add new dir node to dir tree

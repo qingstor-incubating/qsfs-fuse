@@ -174,14 +174,14 @@ ClientError<QSError::Value> QSClient::DeleteFile(
     // the file for a hard link.
     if (node->IsHardLink() ||
         (!node->IsDirectory() && node->GetNumLink() >= 2)) {
-      dirTree->Remove(filePath);
+      dirTree->Remove(filePath, QS::Data::RemoveNodeType::SelfOnly);
       return ClientError<QSError::Value>(QSError::GOOD, false);
     }
   }
 
   DeleteObjectOutcome outcome = GetQSClientImpl()->DeleteObject(filePath);
   if (outcome.IsSuccess()) {
-    dirTree->Remove(filePath);
+    dirTree->Remove(filePath, QS::Data::RemoveNodeType::SelfOnly);
 
     if (cache && cache->HasFile(filePath)) {
       cache->Erase(filePath);

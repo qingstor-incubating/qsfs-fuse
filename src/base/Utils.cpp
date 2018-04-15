@@ -359,6 +359,33 @@ pair<bool, string> IsSafeDiskSpace(const string &absolutePath,
 bool IsRootDirectory(const std::string &path) { return path == "/"; }
 
 // --------------------------------------------------------------------------
+bool IsAncestor(const string &candidate, const string &target) {
+  if (candidate.empty() || target.empty()) {
+    return false;
+  }
+
+  if(IsRootDirectory(candidate)) {
+    return true;
+  }
+
+  string candidate_ = AppendPathDelim(candidate);
+  string target_ = AppendPathDelim(target);
+  if(candidate_.size() > target_.size()) {
+    return false;
+  } else if (candidate_.size() == target_.size()) {
+    if (candidate_ == target_) {
+      return true;
+    }
+  } else {
+    if (candidate_ == target_.substr(0, candidate_.size())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// --------------------------------------------------------------------------
 string AppendPathDelim(const string &path) {
   assert(!path.empty());
   string cpy(path);

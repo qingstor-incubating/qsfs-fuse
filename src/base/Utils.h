@@ -103,6 +103,13 @@ std::pair<bool, std::string> IsSafeDiskSpace(const std::string &absolutePath,
 // Check if path is root
 bool IsRootDirectory(const std::string &path);
 
+
+// Check if given candidate dir is ancestor of target dir
+//
+// @param  : candidate dir path, target dir path
+// @return : bool
+bool IsAncestor(const std::string &candidate, const std::string &target);
+
 // Append delim to path
 //
 // @param  : file path

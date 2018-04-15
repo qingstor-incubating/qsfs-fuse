@@ -64,6 +64,11 @@ typedef ParentFilePathToChildrenMultiMap::iterator ChildrenMultiMapIterator;
 typedef ParentFilePathToChildrenMultiMap::const_iterator
     ChildrenMultiMapConstIterator;
 
+struct RemoveNodeType {
+  enum Value { SelfOnly, IncludeChild, IncludeDescendant };
+};
+
+std::string RemoveNodeTypeToString(RemoveNodeType::Value type);
 
 /**
  * Representation of the filesystem's directory tree.
@@ -145,9 +150,7 @@ class DirectoryTree : private boost::noncopyable {
   //
   // @param  : path
   // @return : void
-  //
-  // This will remove node and all its childrens (recursively)
-  void Remove(const std::string &path);
+  void Remove(const std::string &path, RemoveNodeType::Value type);
 
  private:
   DirectoryTree() {}

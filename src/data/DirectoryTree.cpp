@@ -62,6 +62,30 @@ using std::vector;
 static const char *const ROOT_PATH = "/";
 
 // --------------------------------------------------------------------------
+string RemoveNodeTypeToString(RemoveNodeType::Value type) {
+  string str;
+  switch(type) {
+    case RemoveNodeType::SelfOnly: {
+      str = "SelfOnly";
+      break;
+    }
+    case RemoveNodeType::IncludeChild: {
+      str = "IncludeChild";
+      break;
+    }
+    case RemoveNodeType::IncludeDescendant: {
+      str = "IncludeDescendant";
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+
+  return str;
+}
+
+// --------------------------------------------------------------------------
 shared_ptr<Node> DirectoryTree::GetRoot() const {
   lock_guard<recursive_mutex> lock(m_mutex);
   return m_root;
@@ -265,7 +289,7 @@ shared_ptr<Node> DirectoryTree::UpdateDirectory(
         }
       }
       BOOST_FOREACH(const string &childId, deleteChildrenIds) {
-        Remove(childId);
+        Remove(childId, RemoveNodeType::IncludeDescendant);
       }
     }
 
@@ -343,7 +367,8 @@ shared_ptr<Node> DirectoryTree::Rename(const string &oldFilePath,
 }
 
 // --------------------------------------------------------------------------
-void DirectoryTree::Remove(const string &path) {
+void DirectoryTree::Remove(const string &path,
+                                      RemoveNodeType::Value type) {
   if (IsRootDirectory(path)) {
     DebugWarning("Unable to remove root");
     return;
@@ -356,7 +381,8 @@ void DirectoryTree::Remove(const string &path) {
     return;
   }
 
-  DebugInfo("Remove node " + FormatPath(path));
+  DebugInfo("Remove node (" + RemoveNodeTypeToString(type) + ") " +
+            FormatPath(path));
   shared_ptr<Node> parent = node->GetParent();
   if (parent && *parent) {
     // if path is a directory, when go out of this function, destructor
@@ -388,12 +414,15 @@ void DirectoryTree::Remove(const string &path) {
     return;
   }
 
+  if (type == RemoveNodeType::SelfOnly) {
+    return;
+  }
+
   std::queue<shared_ptr<Node> > deleteNodes;
   BOOST_FOREACH(const FilePathToNodeUnorderedMap::value_type &p,
                  node->GetChildren()) {
     deleteNodes.push(p.second);
   }
-  // recursively remove all children references
   while (!deleteNodes.empty()) {
     shared_ptr<Node> node_ = deleteNodes.front();
     deleteNodes.pop();
@@ -402,6 +431,11 @@ void DirectoryTree::Remove(const string &path) {
     m_map.erase(path_);
     m_parentToChildrenMap.erase(path_);
 
+    if (type == RemoveNodeType::IncludeChild) {
+      continue;
+    }
+    // else IncludeDescendant
+    // recursively remove all children references
     if (node->IsDirectory()) {
       BOOST_FOREACH(const FilePathToNodeUnorderedMap::value_type &p,
                      node_->GetChildren()) {
