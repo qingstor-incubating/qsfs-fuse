@@ -90,6 +90,7 @@ class DirectoryTreeTest : public Test {
         make_shared<FileMetaData>("/folder1/file1", 10, mtime_, mtime_, uid_,
                                   gid_, fileMode_, FileType::File);
     tree.Grow(file1InFolder);
+    EXPECT_TRUE(tree.Has("/folder1/file1"));
     EXPECT_EQ(tree.FindChildren("/").size(), 2U);
     EXPECT_EQ(tree.FindChildren("/folder1/").size(), 1U);
     shared_ptr<Node> node_dir1 = tree.Find("/folder1/");
@@ -108,11 +109,11 @@ class DirectoryTreeTest : public Test {
     EXPECT_EQ(node_file1InFolder->GetParent()->GetFilePath(),
               node_dir2->GetFilePath());
 
-    tree.Remove("/file1");
+    tree.Remove("/file1", QS::Data::RemoveNodeType::SelfOnly);
     EXPECT_FALSE(tree.Has("/file1"));
     EXPECT_EQ(tree.FindChildren("/").size(), 1U);
 
-    tree.Remove("/folder2/");
+    tree.Remove("/folder2/", QS::Data::RemoveNodeType::SelfOnly);
     EXPECT_FALSE(tree.Has("/folder2/"));
     EXPECT_EQ(tree.FindChildren("/").size(), 0U);
   }
