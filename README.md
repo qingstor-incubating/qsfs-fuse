@@ -14,7 +14,7 @@
 - File Transfer:
   - Large files uploads via multipart parallel uploads.
   - Large files downloads via parallel byte-range downloads.
-  - Large files transfer in chunks (10MB chunks by default). If you are uploading large files (e.g. larger than 1GB), you can increase the transfer buffer size and the max
+  - Large files transfer in chunks (10 MB chunks by default). If you are uploading large files (e.g. larger than 1 GB), you can increase the transfer buffer size and the max
   parallel transfers.
 - Data integrity via MD5 hashes.
 - Cache:
@@ -104,14 +104,14 @@ Supported general options are listed as following,
 | -D | --dirmode     | octal   | N | Specify the permission bits in st_mode for directory objects without x-qs-meta-mode header. The value is given in octal representation; default value is `0755`
 | -u | --umaskmp     | octal   | N | Specify the permission bits in st_mode for the mount point directory. This option only works when you set with the fuse allow_other option. The resulting permission bits are the ones missing from the given umask value. The value is given in octal representation; default value is `0000`
 | -r | --retries     | integer | N | Specify number of times to retry a failed transaction, default value is `3 times`
-| -R | --reqtimeout  | integer | N | Specify time(seconds) to wait before giving up connection, default value is `300 seconds`
-| -Z | --maxcache    | integer | N | Specify max in-memory cache size(MB) for files, default value is `200 MB`
+| -R | --reqtimeout  | integer | N | Specify time (seconds) to wait before giving up connection, default value is `300 seconds`
+| -Z | --maxcache    | integer | N | Specify max in-memory cache size (MB) for files, default value is `200 MB`
 | -k | --diskdir     | string  | N | Specify the directory to store file data when in-memory cache is not availabe, default path is `/tmp/qsfs_cache/`
-| -t | --maxstat     | integer | N | Specify max count(K) of cached stat entrys, default value is `20 K`
-| -e | --statexpire  | integer | N | Specify expire time(minutes) for stat entries, negative value will disable stat expire, default is no expire
+| -t | --maxstat     | integer | N | Specify max count (K) of cached stat entrys, default value is `20 K`
+| -e | --statexpire  | integer | N | Specify expire time (minutes) for stat entries, negative value will disable stat expire, default is no expire
 | -i | --maxlist     | integer | N | Specify max count of files of ls operation. A value of zero will list all files, default is to list all files
 | -n | --numtransfer | integer | N | Specify max number file tranfers to run in parallel, you can increase the value when transfer large files, default value is `5`
-| -b | --bufsize     | integer | N | Specify file transfer buffer size(MB), this should be larger than 8MB, default value is `10 MB`
+| -b | --bufsize     | integer | N | Specify file transfer buffer size (MB), this should be larger than 8MB, default value is `10 MB`
 | -H | --host        | string  | N | Specify host name, default value is `qingstor.com`
 | -p | --protocol    | string  | N | Specify protocol (https or http) default value is `https`
 | -P | --port        | integer | N | Specify port, default is 443 for https and 80 for http
