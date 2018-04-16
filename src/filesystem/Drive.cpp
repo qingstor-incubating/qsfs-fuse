@@ -614,14 +614,15 @@ struct RenameDirCallback {
     if (IsGoodQSError(err)) {
       // Rename local cache
       shared_ptr<Node> node = dirTree->Find(dirPath);
-      deque<string> childPaths = node->GetChildrenIdsRecursively();
+      deque<string> childPaths = node->GetDescendantIds();
       size_t len = dirPath.size();
       deque<string> childTargetPaths;
       BOOST_FOREACH (const string &path, childPaths) {
         if (path.substr(0, len) != dirPath) {
-          DebugError("Directory has an invalid child file [path=" + dirPath +
+          DebugWarning("Directory has an invalid child file [path=" + dirPath +
                      " child=" + path + "]");
           childTargetPaths.push_back(path);  // put old path
+          continue;
         }
         childTargetPaths.push_back(newDirPath + path.substr(len));
       }

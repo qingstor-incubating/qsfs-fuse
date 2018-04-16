@@ -103,11 +103,20 @@ class Node : private boost::noncopyable {
   // @param  : void
   // @return : a list of all children's file names and chilren's chidlren's ones
   //           in a recursively way. The nearest child is put at front.
-  std::deque<std::string> GetChildrenIdsRecursively() const;
+  std::deque<std::string> GetDescendantIds() const;
 
   boost::shared_ptr<Node> Insert(const boost::shared_ptr<Node> &child);
   void Remove(const boost::shared_ptr<Node> &child);
   void Remove(const std::string &childFilePath);
+
+  // Rename to a new file path 
+  //
+  // @param  : new file path
+  // @return : void
+  //
+  // This will rename its all descendants if this is a dir node
+  void Rename(const std::string &newFilePath);
+
   void RenameChild(const std::string &oldFilePath,
                    const std::string &newFilePath);
 
@@ -156,8 +165,6 @@ class Node : private boost::noncopyable {
       m_entry.SetFileSize(sz);
     }
   }
-
-  void Rename(const std::string &newFilePath);
 
   void SetEntry(const Entry &entry) { m_entry = entry; }
   void SetParent(const boost::shared_ptr<Node> &parent) { m_parent = parent; }

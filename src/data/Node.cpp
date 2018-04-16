@@ -109,7 +109,7 @@ set<string> Node::GetChildrenIds() const {
 }
 
 // --------------------------------------------------------------------------
-deque<string> Node::GetChildrenIdsRecursively() const {
+deque<string> Node::GetDescendantIds() const {
   deque<string> ids;
   deque<shared_ptr<Node> > childs;
 
