@@ -113,6 +113,14 @@ class DirectoryTree : private boost::noncopyable {
   // Const iterator point to end of the parent to children map
   ChildrenMultiMapConstIterator CEndParentToChildrenMap() const;
 
+  // For debug or log
+  // Return all recorded nodes' id pair (key : node file path)
+  std::vector<std::string> GetNodeIds() const;
+
+  // For debug or log
+  // Return all recorded 'key : child node file path'
+  std::vector<std::string> GetParentToChildrenIds() const;
+
  private:
   // Grow the directory tree
   //

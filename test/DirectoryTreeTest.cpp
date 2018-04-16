@@ -105,6 +105,7 @@ class DirectoryTreeTest : public Test {
     shared_ptr<Node> node_dir2 = tree.Rename("/folder1/", "/folder2/");
     EXPECT_FALSE(tree.Has("/folder1/"));
     EXPECT_TRUE(tree.Has("/folder2/"));
+    EXPECT_TRUE(tree.Has("/folder2/file1"));
     EXPECT_TRUE(node_dir2->HaveChild("/folder2/file1"));
     EXPECT_EQ(node_file1InFolder->GetParent()->GetFilePath(),
               node_dir2->GetFilePath());

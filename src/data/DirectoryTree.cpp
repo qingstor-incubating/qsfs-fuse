@@ -19,6 +19,7 @@
 #include <assert.h>
 
 #include <algorithm>
+#include <deque>
 #include <iterator>
 #include <queue>
 #include <set>
@@ -53,6 +54,7 @@ using QS::StringUtils::FormatPath;
 using QS::TimeUtils::SecondsToRFC822GMT;
 using QS::Utils::AppendPathDelim;
 using QS::Utils::IsRootDirectory;
+using std::deque;
 using std::pair;
 using std::queue;
 using std::set;
@@ -140,6 +142,47 @@ ChildrenMultiMapConstIterator DirectoryTree::CEndParentToChildrenMap() const {
   lock_guard<recursive_mutex> lock(m_mutex);
   return m_parentToChildrenMap.cend();
 }
+// --------------------------------------------------------------------------
+vector<string> DirectoryTree::GetNodeIds() const{
+  vector<string> keyToPaths;
+  if (m_map.empty()) {
+    return keyToPaths;
+  }
+
+  BOOST_FOREACH(const FilePathToNodeUnorderedMap::value_type &p, m_map) {
+    string str = p.first;
+    str.append(" : ");
+    if (p.second) {
+      str.append(p.second->GetFilePath());
+    } else {
+      str.append("NULL");
+    }
+    keyToPaths.push_back(str);
+  }
+  return keyToPaths;
+}
+
+// --------------------------------------------------------------------------
+vector<string> DirectoryTree::GetParentToChildrenIds() const {
+  vector<string> parentToChildIds;
+  if (m_parentToChildrenMap.empty()) {
+    return parentToChildIds;
+  }
+
+  BOOST_FOREACH(const ParentFilePathToChildrenMultiMap::value_type &p,
+                    m_parentToChildrenMap) {
+    shared_ptr<Node> node = p.second.lock();
+    if (!node) {
+      continue;
+    }
+    string str = p.first;
+    str.append(" : ");
+    str.append(node->GetFilePath());
+    parentToChildIds.push_back(str);
+  }
+  return parentToChildIds;
+}
+
 
 // --------------------------------------------------------------------------
 shared_ptr<Node> DirectoryTree::Grow(const shared_ptr<FileMetaData> &fileMeta) {
@@ -330,34 +373,86 @@ shared_ptr<Node> DirectoryTree::Rename(const string &oldFilePath,
     }
 
     // Do Renaming
+    // Node::Rename will rename it's all descendents
+    // here we only need to update records of map and parent to child map
     DebugInfo("Rename node " + FormatPath(oldFilePath, newFilePath));
     string parentName = node->MyDirName();
+    deque<string> oldDescendants;  // record old desendants path before rename
+    if (node->IsDirectory()) {
+      oldDescendants = node->GetDescendantIds();
+    }
     node->Rename(newFilePath);  // still need as parent maybe not added yet
     shared_ptr<Node> parent = node->GetParent();
     if (parent && *parent) {
       parent->RenameChild(oldFilePath, newFilePath);
     }
+    // update records
     pair<TreeNodeMapIterator, bool> res = m_map.emplace(newFilePath, node);
     if (!res.second) {
-      DebugWarning("Fail to rename node " +
+      DebugWarning("Fail to insert new node in records when rename " +
                    FormatPath(oldFilePath, newFilePath));
     }
     m_map.erase(oldFilePath);
-    if (node->IsDirectory()) {
-      bool fail = false;
-      vector<weak_ptr<Node> > childs = FindChildren(oldFilePath);
-      BOOST_FOREACH(weak_ptr<Node> &child, childs) {
-        if(m_parentToChildrenMap.emplace(newFilePath, child) ==
-           m_parentToChildrenMap.end()) {
-            fail = true;
+    if (!node->IsDirectory()) {
+      return node;
+    }
+    vector<weak_ptr<Node> > childs = FindChildren(oldFilePath);
+    BOOST_FOREACH (weak_ptr<Node> &child, childs) {
+      if (m_parentToChildrenMap.emplace(newFilePath, child) ==
+          m_parentToChildrenMap.end()) {
+        DebugWarning(
+            "Fail to insert new node in parent to children map when rename " +
+            FormatPath(oldFilePath, newFilePath));
+      }
+    }
+    m_parentToChildrenMap.erase(oldFilePath);
+
+    // update descendants' records
+    if (oldDescendants.empty()) {
+      return node;
+    }
+    size_t len = oldFilePath.size();
+    deque<string> targetDescendants;
+    BOOST_FOREACH (const string &path, oldDescendants) {
+      targetDescendants.push_back(newFilePath + path.substr(len));
+    }
+    deque<string>::reverse_iterator pOld = oldDescendants.rbegin();
+    deque<string>::reverse_iterator pTarget = targetDescendants.rbegin();
+    while (pOld != oldDescendants.rend() &&
+           pTarget != targetDescendants.rend()) {
+      // update desendants in map
+      string source = *pOld;
+      string target = *pTarget;
+      if (source == target) {
+        DebugInfo("No need to upate in records, same path " +
+                  FormatPath(source));
+        continue;
+      }
+      shared_ptr<Node> nodeChild = Find(source);
+      if (nodeChild) {
+        m_map.emplace(target, nodeChild);
+        m_map.erase(source);
+      } else {
+        DebugWarning("Not found the node in records " + FormatPath(source));
+      }
+      // update descendants in parent to children records
+      for (pair<ChildrenMultiMapConstIterator, ChildrenMultiMapConstIterator>
+               range = m_parentToChildrenMap.equal_range(source);
+           range.first != range.second; ++range.first) {
+        weak_ptr<Node> child = range.first->second;
+        if (m_parentToChildrenMap.emplace(target, range.first->second) ==
+            m_parentToChildrenMap.end()) {
+          DebugWarning(
+              "Fail to insert new node in parent to children records when "
+              "rename " +
+              FormatPath(source, target));
         }
       }
-      if(fail) {
-        DebugWarning("Fail to rename node " +
-                      FormatPath(oldFilePath, newFilePath));
-      }
-      m_parentToChildrenMap.erase(oldFilePath);
+      m_parentToChildrenMap.erase(source);
+      ++pOld;
+      ++pTarget;
     }
+
     // m_currentNode = node;
   } else {
     DebugWarning("Node not exist " + FormatPath(oldFilePath));
