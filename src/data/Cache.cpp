@@ -464,12 +464,12 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
   }
 
   if (freedSpace > 0) {
-    Info("Has freed cache of " + to_string(freedSpace) + " bytes");
+    Info("Has freed cache of " + to_string(freedSpace) + " bytes for file " +
+         FormatPath(fileUnfreeable));
   }
   if (freedDiskSpace > 0) {
-    Info(
-        "Has freed disk file of " + to_string(freedDiskSpace) + " bytes" +
-        FormatPath(QS::Configure::Options::Instance().GetDiskCacheDirectory()));
+    Info("Has freed disk file of " + to_string(freedDiskSpace) +
+         " bytes for file " + FormatPath(fileUnfreeable));
   }
   return HasFreeSpace(size);
 }
@@ -514,12 +514,12 @@ bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
   }
 
   if (freedSpace > 0) {
-    DebugInfo("Has freed cache of " + to_string(freedSpace) + " bytes");
+    Info("Has freed cache of " + to_string(freedSpace) + " bytes for file " +
+         FormatPath(fileUnfreeable));
   }
   if (freedDiskSpace > 0) {
-    DebugInfo(
-        "Has freed disk file of " + to_string(freedDiskSpace) + " bytes" +
-        FormatPath(QS::Configure::Options::Instance().GetDiskCacheDirectory()));
+    Info("Has freed disk file of " + to_string(freedDiskSpace) +
+         " bytes for file" + FormatPath(fileUnfreeable));
   }
   return IsSafeDiskSpace(diskfolder, size);
 }
