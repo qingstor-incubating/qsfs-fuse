@@ -8,6 +8,7 @@ option (BUILD_PACKAGING    "Enable build of distribution packages using CPack." 
 option (BUILD_SHARED_LIBS  "Build shared libraries." OFF)
 # to turn on, specify -DBUILD_TESTING=ON in cmake command line
 option (BUILD_TESTING      "Enable build of the unit tests and their execution using CTest." OFF)
+option (BUILD_INTEGRATION_TESTING "Enable integration test execution using CTest." OFF)
 option (INSTALL_HEADERS    "Request installation of headers and other development files." OFF)
 option (REGISTER_BUILD_DIR "Request entry of build directory in CMake's package registry." OFF)
 option (UPDATE_CONNECT     "Update automatically from the remote repository." OFF)
@@ -73,6 +74,10 @@ set (QSFS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src
      CACHE PATH "qsfs source directory")
 set (THIRD_PARTY_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third_party
      CACHE PATH "third party source directory")
+set (QSFS_TEST_DIR ${CMAKE_SOURCE_DIR}/test
+     CACHE PATH "qsfs test directory")
+set (QSFS_INTEGRATION_TEST_RUN_DIR "/tmp/qsfs_integration_test"
+     CACHE PATH "qsfs integration test run directory")
 
 
 #
@@ -90,8 +95,13 @@ configure_file (cmake/templates/VersionConfig.h.in
 #
 find_package (Threads REQUIRED)
 if (NOT Threads_FOUND)
-message (FATAL_ERROR "Could not find pthread. Check the log file"
-"\n\t${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log")
+  message (FATAL_ERROR "Could not find pthread. Check the log file"
+           "\n\t${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log")
+endif ()
+
+find_program(BASH_PROGRAM bash)
+if (NOT BASH_PROGRAM)
+  message(WARNING "Cound not find bash.")
 endif ()
 
 # Not call find_package to check dependencies, instead
@@ -307,6 +317,14 @@ if (BUILD_TESTING)
   enable_testing ()
   add_subdirectory(test)
 endif (BUILD_TESTING)
+
+if (BUILD_INTEGRATION_TESTING AND BASH_PROGRAM)
+  configure_file(cmake/templates/CTestCustom.cmake.in
+                 "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY)
+  include(CTest)
+  enable_testing ()
+  add_subdirectory(test/sh)
+endif (BUILD_INTEGRATION_TESTING AND BASH_PROGRAM)
 
 
 #
