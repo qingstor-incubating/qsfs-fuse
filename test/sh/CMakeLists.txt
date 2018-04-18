@@ -1,4 +1,6 @@
 if (BUILD_INTEGRATION_TESTING AND BASH_PROGRAM)
   add_test (MakeRemoveFile ${BASH_PROGRAM} ${CMAKE_CURRENT_LIST_DIR}/make_remove_file.sh)
   add_test (MakeRemoveDir ${BASH_PROGRAM} ${CMAKE_CURRENT_LIST_DIR}/make_remove_dir.sh)
+  add_test (AppendFile ${BASH_PROGRAM} ${CMAKE_CURRENT_LIST_DIR}/append_file.sh)
+  add_test (TruncateFile ${BASH_PROGRAM} ${CMAKE_CURRENT_LIST_DIR}/truncate_file.sh)
 endif (BUILD_INTEGRATION_TESTING AND BASH_PROGRAM)

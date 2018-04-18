@@ -14,6 +14,9 @@
 # | See the License for the specific language governing permissions and
 # | limitations under the License.
 # +-------------------------------------------------------------------------
+#
+# common configure for interagtion function test cases
+#
 
 RUN_DIR=$(printenv QSFS_INTEGRATION_TEST_RUN_DIR);
 #RUN_DIR=$(env | grep QSFS_INTEGRATION_TEST_RUN_DIR | grep -oe '[^=]*$');

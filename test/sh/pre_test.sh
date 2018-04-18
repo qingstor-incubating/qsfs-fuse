@@ -14,6 +14,11 @@
 # | See the License for the specific language governing permissions and
 # | limitations under the License.
 # +-------------------------------------------------------------------------
+#
+# things to do before the tests run
+#
+# 1. start qsfs
+# 2. make run dir
 
 current_path=$(dirname "$0")
 source "$current_path/common.sh"

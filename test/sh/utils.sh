@@ -14,6 +14,11 @@
 # | See the License for the specific language governing permissions and
 # | limitations under the License.
 # +-------------------------------------------------------------------------
+#
+# util functions
+#
+# when call mk_test_file, should also call mv_test_file to cleanup
+# same for mk_test_dir
 
 set -o errexit
 
@@ -24,29 +29,38 @@ source "$current_path/common.sh"
 TEST_TEXT="HELLO 你好"
 TEST_TEXT_FILE="$RUN_DIR/test-file-qsfs.txt"
 TEST_DIR="$RUN_DIR/testdir"
+TEST_APPEND_FILE_LEN=30
 
 
+#
+# Make a text file
+#
+# Arguments:
+#   $1 file name (optional)
+#   $2 file data (optional)
+# Returns:
+#   None
 function mk_test_file {
   if [ $# == 0 ]; then
-    TEXT=$TEST_TEXT
     FILE=$TEST_TEXT_FILE
+    TEXT=$TEST_TEXT
   else
-    TEXT=$1
-    if [ $# > 2 ]; then
-      FILE="$RUN_DIR/$2"
+    FILE="$RUN_DIR/$1"
+    if [ $# > 1 ]; then
+      TEXT=$2
     else
-      FILE=$TEST_TEXT_FILE
+      TEXT=$TEST_TEXT
     fi
   fi
 
-  echo $TEXT > $FILE
+  echo -n $TEXT > $FILE
   if [ ! -e $FILE ]; then
-    echo "Could not create file ${FILE}, it does not exist"
+    echo "Error: Could not create file ${FILE}, it does not exist"
     exit 1
   fi
 
   # wait & check
-  TEST_TEXT_LEN=$(echo $TEXT | wc -c | awk '{print $1}')
+  TEST_TEXT_LEN=$(echo -n $TEXT | wc -c | awk '{print $1}')
   TRY_COUNT=3
   while true; do
     TEXT_FILE_LEN=$(wc -c $FILE | awk '{print $1}')
@@ -55,12 +69,19 @@ function mk_test_file {
     fi
     let TRY_COUNT--
     if [ $TRY_COUNT -le 0 ]; then
-      echo "Cound not create file ${TEST_TEXT_FILE}, that file size is something wrong"
+      echo "Error: Cound not create file ${FILE}, that file size is something wrong"
     fi
     sleep 1
   done
 }
 
+#
+# Remove a file
+#
+# Arguments:
+#   $1 file name (optional)
+# Returns:
+#   None
 function rm_test_file {
   if [ $# == 0 ]; then
     FILE=$TEST_TEXT_FILE
@@ -70,11 +91,18 @@ function rm_test_file {
   rm -f $FILE
 
   if [ -e $FILE ]; then
-    echo "Could not cleanup file ${FILE}"
+    echo "Error: Could not cleanup file ${FILE}"
     exit 1
   fi
 }
 
+#
+# Make a directory
+#
+# Arguments:
+#   $1 dir(folder) name (optional)
+# Returns:
+#   None
 function mk_test_dir {
   if [ $# == 0 ]; then
     DIR=$TEST_DIR
@@ -88,11 +116,18 @@ function mk_test_dir {
     echo "Warning: directory ${DIR} already exists"
   fi
   if [ ! -d $DIR ]; then
-    echo "Could not create directory ${DIR}"
+    echo "Error: Could not create directory ${DIR}"
     exit 1
   fi
 }
 
+#
+# Remove a directory
+#
+# Arguments:
+#   $1 dir(folder) name (optional)
+# Returns:
+#   None
 function rm_test_dir {
   if [ $# == 0 ]; then
     DIR=$TEST_DIR
@@ -102,7 +137,99 @@ function rm_test_dir {
 
   rmdir $DIR
   if [ -e $DIR ]; then
-    echo "Could not remove directory ${DIR}, it still exists"
+    echo "Error: Could not remove directory ${DIR}, it still exists"
+    exit 1
+  fi
+}
+
+#
+# Append data to a file
+# This will append numbers (from 1 to file_size) to a file
+#
+# Arguments:
+#   $1 file name (optional)
+#   $2 file size (optional)
+# Returns:
+#   None
+function append_test_file {
+  if [ $# == 0 ]; then
+    FILE="$TEST_TEXT_FILE"
+    SIZE=$TEST_APPEND_FILE_LEN
+  else
+    FILE="$RUN_DIR/$1"
+    if [ $# > 1 ]; then
+      re='^[0-9]+$'
+      if [[ $2 =~ $re ]]; then
+        SIZE=$2
+        if [ $SIZE -lt 1]; then
+          echo "Warning: file size ${2} is less than 1, use $TEST_APPEND_FILE_LEN"
+          SIZE=$TEST_APPEND_FILE_LEN
+        fi
+      else 
+        echo "Warning: file size ${2} is not a integer, use $TEST_APPEND_FILE_LEN"
+        SIZE=$TEST_APPEND_FILE_LEN
+      fi
+    fi
+  fi
+
+  for x in $(seq 1 $SIZE); do
+    echo $x >> $FILE
+  done
+
+  # Verify contents of file
+  FILE_SIZE=$(wc -l $FILE | awk '{print $1}')
+  if [ $SIZE -ne $FILE_SIZE ]; then
+    echo "Error: expected file size ${SIZE}, got ${FILE_SIZE} [path=$FILE]"
+    exit 1
+  fi
+}
+
+
+#
+# Truncate a file
+# If given file not exists, an empty file will be created
+#
+# Arguments:
+#   $1 file name (optional)
+#   $2 target size (optional)
+# Returns:
+#   None
+function truncate_test_file {
+  if [ $# == 0 ]; then
+    FILE="$TEST_TEXT_FILE"
+    TARGET_SIZE=0
+  elif [ $# == 1 ]; then
+    FILE="$RUN_DIR/$1"
+    TARGET_SIZE=0
+  else
+    FILE="$RUN_DIR/$1"
+    TARGET_SIZE=$2
+    if [ $TARGET_SIZE -lt 0 ]; then
+      echo "Warning: truncate size $TARGET_SIZE is less than 0, use 0"
+      TARGET_SIZE=0
+    fi
+  fi
+
+  if [ ! -e ${FILE} ]; then
+    touch ${FILE}
+  else
+    if [ ! -f ${FILE} ]; then
+      echo "Error: ${FILE} exists, but is not a regular file"
+      exit 1
+    fi
+  fi
+
+  if [ $TARGET_SIZE == 0 ]; then
+    # This should trigger open(path, O_RDWR | O_TRUNC...)
+    : > ${FILE}
+  else
+    truncate ${FILE} -s $TARGET_SIZE
+  fi
+
+  # Verify file size
+  FILE_SIZE=$(stat -c %s ${FILE})
+  if [ $TARGET_SIZE -ne $FILE_SIZE ]; then
+    echo "Error: expected ${FILE} to be $TARGET_SIZE length, got $FILE_SIZE"
     exit 1
   fi
 }

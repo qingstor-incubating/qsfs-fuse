@@ -14,6 +14,9 @@
 # | See the License for the specific language governing permissions and
 # | limitations under the License.
 # +-------------------------------------------------------------------------
+#
+#
+# test case: make directory and remove directory
 
 set -o xtrace
 set -o errexit

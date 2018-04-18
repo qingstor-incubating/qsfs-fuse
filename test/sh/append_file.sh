@@ -16,7 +16,7 @@
 # +-------------------------------------------------------------------------
 #
 #
-# test case: of make file and remove file
+# test case: sequence write (append data to a file)
 
 set -o xtrace
 set -o errexit
@@ -24,15 +24,10 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-mk_test_file
+append_test_file
 rm_test_file
 
-FILE_NAME='青云文件ㅙ=글シン歓迎'
-TEXT_DATA='QingCloud©ⓐ➀Ⓐ♡㊊ㅙ=글ツマシン歓迎Oº°‘¨¨‘°ºOQingCloud'
-mk_test_file $FILE_NAME $TEXT_DATA 
-rm_test_file $FILE_NAME
-
-FILE_NAME='empty_file.txt'
-TEXT_DATA=
-mk_test_file $FILE_NAME $TEXT_DATA 
+FILE_NAME='append_test_file.txt'
+FILE_SIZE=100
+append_test_file $FILE_NAME $FILE_SIZE
 rm_test_file $FILE_NAME
