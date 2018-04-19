@@ -16,7 +16,7 @@
 # +-------------------------------------------------------------------------
 #
 #
-# test case: write_after_seek_file
+# test case: upload and move big file
 
 set -o xtrace
 set -o errexit
@@ -24,14 +24,30 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-# write after seek ahead
-FILE_NAME="write_after_seek_ahead.txt"
-FILE_TEST="$RUN_DIR/$FILE_NAME"
-dd if=/dev/zero of=$FILE_TEST seek=1 count=1 bs=1024
-FILE_SIZE=$(stat -c %s ${FILE_TEST})
-if [ FILE_SIZE -ne 2048 ]; then
-  echo "Error: expected ${FILE_TEST} has length 2048, got ${FILE_SIZE}"
+BIG_FILENAME="multipart-big-file.txt"
+BIG_FILENAME_COPY="multipart-big-file-copy.txt"
+BIG_FILESIZE=$(( 25 * 1024 * 1024 ))
+BIG_FILE="$RUN_DIR/$BIG_FILENAME"
+BIG_FILE_COPY="$RUN_DIR/$BIG_FILENAME_COPY"
+BIG_TMPFILE="/tmp/${BIG_FILENAME}"
+
+# upload
+dd if=/dev/urandom of="${BIG_TMPFILE}" bs=${BIG_FILESIZE} count=1
+dd if="${BIG_TMPFILE}" of="${BIG_FILE}" bs=${BIG_FILESIZE} count=1
+# verify
+if [ ! cmp "${BIG_TMPFILE}" "${BIG_FILE}" ]; then
+  echo "Error: expected the same file content for ${BIG_FILE} and ${BIG_TMPFILE}, got different"
   exit 1
 fi
 
-rm_test_file $FILE_NAME
+# move
+mv ${BIG_FILE} ${BIG_FILE_COPY}
+# verify
+if [ ! cmp "${BIG_TMPFILE}" "${BIG_FILE_COPY}" ]; then
+  echo "Error: expected the same file content for ${BIG_FILE_COPY} and ${BIG_TMPFILE}, got different"
+  exit 1
+fi
+
+
+rm -f ${BIG_TMPFILE}
+rm_test_file ${BIG_FILE_COPY}
