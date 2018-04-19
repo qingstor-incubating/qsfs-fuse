@@ -16,7 +16,7 @@
 # +-------------------------------------------------------------------------
 #
 #
-# test case: rename file before close
+# test case: list directory
 
 set -o xtrace
 set -o errexit
@@ -24,19 +24,15 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='test_rename_before_close.txt'
-FILE_NAME_NEW=${FILE_NAME}_new
-FILE_="$RUN_DIR/$FILE_NAME" # to avoid name overloading from utils
-FILE_NEW="$RUN_DIR/$FILE_NAME_NEW"
-(
-  echo foo
-  mv ${FILE_} ${FILE_NEW}
-) > ${FILE_}
+rm -rf ${RUN_DIR}/*
+mk_test_file
+mk_test_dir
 
-if ! cmp <(echo foo) ${FILE_NEW}; then
-    echo "Error: ${FILE} rename before close failed"
-    exit 1
+file_cnt=$(ls $RUN_DIR -1 | wc -l)
+if [ $file_cnt -ne 2 ]; then
+  echo "Error: expected 2 files in ${RUN_DIR}, got $file_cnt"
+  exit 1
 fi
 
-rm_test_file "${FILE_NAME_NEW}"
-rm -f ${FILE_}
+rm_test_file
+rm_test_dir

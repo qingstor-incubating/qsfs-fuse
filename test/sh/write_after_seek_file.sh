@@ -16,7 +16,7 @@
 # +-------------------------------------------------------------------------
 #
 #
-# test case: rename file before close
+# test case: write_after_seek_file
 
 set -o xtrace
 set -o errexit
@@ -24,19 +24,14 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='test_rename_before_close.txt'
-FILE_NAME_NEW=${FILE_NAME}_new
-FILE_="$RUN_DIR/$FILE_NAME" # to avoid name overloading from utils
-FILE_NEW="$RUN_DIR/$FILE_NAME_NEW"
-(
-  echo foo
-  mv ${FILE_} ${FILE_NEW}
-) > ${FILE_}
-
-if ! cmp <(echo foo) ${FILE_NEW}; then
-    echo "Error: ${FILE} rename before close failed"
-    exit 1
+# write after seek ahead
+FILE_NAME="write_after_seek_ahead.txt"
+FILE_TEST="$RUN_DIR/$FILE_NAME"
+dd if=/dev/zero of=$FILE_TEST seek=1 count=1 bs=1024
+FILE_SIZE=$(stat -c %s ${FILE_TEST})
+if [ FILE_SIZE -ne 2048 ]; then
+  echo "Error: expected ${FILE_TEST} has length 2048, got ${FILE_SIZE}"
+  exit 1
 fi
 
-rm_test_file "${FILE_NAME_NEW}"
-rm -f ${FILE_}
+#rm_test_file $FILE_NAME

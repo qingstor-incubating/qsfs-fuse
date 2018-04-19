@@ -55,14 +55,14 @@ function mk_test_file {
     fi
   fi
 
-  echo -n $TEXT > $FILE
+  echo $TEXT > $FILE
   if [ ! -e $FILE ]; then
     echo "Error: Could not create file ${FILE}, it does not exist"
     exit 1
   fi
 
   # wait & check
-  TEST_TEXT_LEN=$(echo -n $TEXT | wc -c | awk '{print $1}')
+  TEST_TEXT_LEN=$(echo $TEXT | wc -c | awk '{print $1}')
   TRY_COUNT=3
   while true; do
     TEXT_FILE_LEN=$(wc -c $FILE | awk '{print $1}')

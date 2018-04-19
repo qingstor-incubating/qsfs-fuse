@@ -16,7 +16,7 @@
 # +-------------------------------------------------------------------------
 #
 #
-# test case: rename file before close
+# test case: redirect
 
 set -o xtrace
 set -o errexit
@@ -24,19 +24,38 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='test_rename_before_close.txt'
-FILE_NAME_NEW=${FILE_NAME}_new
-FILE_="$RUN_DIR/$FILE_NAME" # to avoid name overloading from utils
-FILE_NEW="$RUN_DIR/$FILE_NAME_NEW"
-(
-  echo foo
-  mv ${FILE_} ${FILE_NEW}
-) > ${FILE_}
+DATA_LINE0='abcdefghijk'
+DATA_LINE1='ABCDEFGHIJK'
+DATA_LINE2='12345678900'
+FILE_NAME='test_redirects.txt'
+FILE_="$RUN_DIR/$FILE_NAME"
 
-if ! cmp <(echo foo) ${FILE_NEW}; then
-    echo "Error: ${FILE} rename before close failed"
-    exit 1
+mk_test_file $FILE_NAME $DATA_LINE0
+CONTENT=$(cat ${FILE_})
+if [ "${CONTENT}" != "${DATA_LINE0}" ]; then
+  echo "Error: expected ${FILE_} contain ${DATA_LINE0}, got ${CONTENT}"
+  exit 1
 fi
 
-rm_test_file "${FILE_NAME_NEW}"
-rm -f ${FILE_}
+echo ${DATA_LINE1} > $FILE_
+CONTENT=$(cat ${FILE_})
+if [ "${CONTENT}" != "${DATA_LINE1}" ]; then
+  echo "Error: expected ${FILE_} contain ${DATA_LINE1}, got ${CONTENT}"
+  exit 1
+fi
+
+echo ${DATA_LINE2} >> $FILE_
+LINE1=$(sed -n '1,1p' $FILE_)
+LINE2=$(sed -n '2,2p' $FILE_)
+if [ ${LINE1} != ${DATA_LINE1} ]; then
+  echo "Error: expected ${FILE_} first line ${DATA_LINE1}, got ${LINE1}"
+  exit 1
+fi
+
+if [ ${LINE2} != ${DATA_LINE2} ]; then
+  echo "Error: expected ${FILE_} second line ${DATA_LINE2}, got ${LINE2}"
+  exit 1
+fi
+
+rm_test_file $FILE_NAME
+

@@ -46,5 +46,5 @@ if [ ! -f $FILE_TO ]; then
   exit 1
 fi
 
+rm_test_file $FILE_NAME_TO  # must remove symlink firstly
 rm_test_file $FILE_NAME
-rm_test_file $FILE_NAME_TO
