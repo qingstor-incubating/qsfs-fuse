@@ -137,7 +137,12 @@ function rm_test_dir {
     DIR="$RUN_DIR/$1"
   fi
 
-  rmdir $DIR
+  files=$(ls -A $DIR)
+  if [ -n "${files}" ]; then
+    rm -rf $DIR
+  else
+    rmdir $DIR
+  fi
   if [ -e $DIR ]; then
     echo "Error: Could not remove directory ${DIR}, it still exists"
     exit 1
