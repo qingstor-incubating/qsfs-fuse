@@ -17,7 +17,7 @@
 #
 # util functions
 #
-# when call mk_test_file, should also call mv_test_file to cleanup
+# when call mk_test_file, you probably need to call mv_test_file to cleanup
 # same for mk_test_dir
 
 set -o errexit
@@ -28,7 +28,9 @@ source "$current_path/common.sh"
 # configuration
 TEST_TEXT="HELLO 你好"
 TEST_TEXT_FILE="$RUN_DIR/test-file-qsfs.txt"
+TEST_TEXT_FILENAME="test-file-qsfs.txt"
 TEST_DIR="$RUN_DIR/testdir"
+TEST_DIRNAME="testdir"
 TEST_APPEND_FILE_LEN=30
 
 
@@ -41,12 +43,12 @@ TEST_APPEND_FILE_LEN=30
 # Returns:
 #   None
 function mk_test_file {
-  if [ $# == 0 ]; then
+  if [ $# -eq 0 ]; then
     FILE=$TEST_TEXT_FILE
     TEXT=$TEST_TEXT
   else
     FILE="$RUN_DIR/$1"
-    if [ $# > 1 ]; then
+    if [ $# -gt 1 ]; then
       TEXT=$2
     else
       TEXT=$TEST_TEXT
@@ -83,7 +85,7 @@ function mk_test_file {
 # Returns:
 #   None
 function rm_test_file {
-  if [ $# == 0 ]; then
+  if [ $# -eq 0 ]; then
     FILE=$TEST_TEXT_FILE
   else
     FILE="$RUN_DIR/$1"
@@ -104,7 +106,7 @@ function rm_test_file {
 # Returns:
 #   None
 function mk_test_dir {
-  if [ $# == 0 ]; then
+  if [ $# -eq 0 ]; then
     DIR=$TEST_DIR
   else
     DIR="$RUN_DIR/$1"
@@ -129,7 +131,7 @@ function mk_test_dir {
 # Returns:
 #   None
 function rm_test_dir {
-  if [ $# == 0 ]; then
+  if [ $# -eq 0 ]; then
     DIR=$TEST_DIR
   else
     DIR="$RUN_DIR/$1"
@@ -152,12 +154,12 @@ function rm_test_dir {
 # Returns:
 #   None
 function append_test_file {
-  if [ $# == 0 ]; then
+  if [ $# -eq 0 ]; then
     FILE="$TEST_TEXT_FILE"
     SIZE=$TEST_APPEND_FILE_LEN
   else
     FILE="$RUN_DIR/$1"
-    if [ $# > 1 ]; then
+    if [ $# -gt 1 ]; then
       re='^[0-9]+$'
       if [[ $2 =~ $re ]]; then
         SIZE=$2
@@ -165,7 +167,7 @@ function append_test_file {
           echo "Warning: file size ${2} is less than 1, use $TEST_APPEND_FILE_LEN"
           SIZE=$TEST_APPEND_FILE_LEN
         fi
-      else 
+      else
         echo "Warning: file size ${2} is not a integer, use $TEST_APPEND_FILE_LEN"
         SIZE=$TEST_APPEND_FILE_LEN
       fi
@@ -195,10 +197,10 @@ function append_test_file {
 # Returns:
 #   None
 function truncate_test_file {
-  if [ $# == 0 ]; then
+  if [ $# -eq 0 ]; then
     FILE="$TEST_TEXT_FILE"
     TARGET_SIZE=0
-  elif [ $# == 1 ]; then
+  elif [ $# -eq 1 ]; then
     FILE="$RUN_DIR/$1"
     TARGET_SIZE=0
   else
@@ -219,7 +221,7 @@ function truncate_test_file {
     fi
   fi
 
-  if [ $TARGET_SIZE == 0 ]; then
+  if [ $TARGET_SIZE -eq 0 ]; then
     # This should trigger open(path, O_RDWR | O_TRUNC...)
     : > ${FILE}
   else
@@ -232,4 +234,78 @@ function truncate_test_file {
     echo "Error: expected ${FILE} to be $TARGET_SIZE length, got $FILE_SIZE"
     exit 1
   fi
+}
+
+
+#
+# Rename a file
+# If file not exist, make a file with data of 'TEST_TEXT'
+# The renamed file will have a new name of 'OLD_FILE_NAME_renamed'
+#
+# Arguments:
+#   $1 file name (optional)
+# Returns:
+#   None
+function mv_test_file {
+  if [ $# -eq 0 ]; then
+    FILENAME=$TEST_TEXT_FILENAME
+  else
+    FILENAME=$1
+  fi
+  FILENAME_RENAMED="${FILENAME}_renamed"
+  FILE="$RUN_DIR/$FILENAME"
+  FILE_RENAMED="$RUN_DIR/$FILENAME_RENAMED"
+
+  mk_test_file $FILENAME
+  LEN=$(wc -c $FILE | awk '{print $1}')
+
+  mv $FILE $FILE_RENAMED
+  if [ ! -f $FILE_RENAMED ]; then
+    echo "Error: could not rename file, ${FILE_RENAMED} not exists"
+    exit 1
+  fi
+
+  LEN_RENAMED=$(wc -c $FILE_RENAMED | awk '{print $1}')
+  if [ $LEN -ne $LEN_RENAMED ]; then
+    echo "Error: file ${FILE_RENAMED} expected length ${LEN}, got ${LEN_RENAMED}"
+    exit 1
+  fi
+
+  rm_test_file $FILENAME_RENAMED
+}
+
+
+#
+# Rename a dir
+# If dir not exist, make a dir with data of 'TEST_TEXT'
+# The renamed dir will have a new name of 'OLD_DIR_NAME_renamed'
+#
+# Arguments:
+#   $1 dir name (optional)
+# Returns:
+#   None
+function mv_test_dir {
+  if [ $# -eq 0 ]; then
+    DIRNAME=$TEST_DIRNAME
+  else 
+    DIRNAME=$1
+  fi
+  DIRNAME_RENAMED="${DIRNAME}_renamed"
+  DIR="$RUN_DIR/$DIRNAME"
+  DIR_RENAMED="$RUN_DIR/$DIRNAME_RENAMED"
+
+  if [ -e ${DIR} ]; then
+    echo "Error: unexpected, the file/dir ${DIR} exists"
+    exit 1
+  fi
+
+  mk_test_dir $DIRNAME
+  mv ${DIR} ${DIR_RENAMED}
+
+  if [ ! -d ${DIR_RENAMED} ]; then
+    echo "Error: dir {DIR} was not renamed"
+    exit 1
+  fi
+
+  rm_test_dir $DIRNAME_RENAMED
 }
