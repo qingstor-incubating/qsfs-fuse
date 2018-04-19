@@ -15,24 +15,36 @@
 # | limitations under the License.
 # +-------------------------------------------------------------------------
 #
-# things to do before the tests run
 #
-# 1. start qsfs
-# 2. make run dir
+# test case: symlink file
+
+set -o xtrace
+set -o errexit
 
 current_path=$(dirname "$0")
-source "$current_path/common.sh"
+source "$current_path/utils.sh"
 
-# 1. start qsfs
-# TODO(jim)
+FILE_NAME='origin_file'
+FILE_NAME_TO='symlink_file'
+FILE_="$RUN_DIR/$FILE_NAME"  # avoid name overloading from utils
+FILE_TO="$RUN_DIR/$FILE_NAME_TO"
+rm_test_file $FILE_NAME
+rm_test_file $FILE_NAME_TO
 
-# 2. make run dir
-if [ ! -d "$RUN_DIR" ]; then
-  echo "make qsfs run dir [path=$RUN_DIR]"
-  mkdir $RUN_DIR
+echo foo > $FILE_
 
-  if [ ! -d ${RUN_DIR} ]; then
-    echo "Error: Could not create directory ${RUN_DIR}"
-    exit 1
-  fi
+ln -s $FILE_ $FILE_TO
+cmp $FILE_ $FILE_TO
+
+if [ ! -L $FILE_TO ]; then
+  echo "Error: expect ${FILE_TO} is symlink, but it's not"
+  exit 1
 fi
+
+if [ ! -f $FILE_TO ]; then
+  echo "Error: {FILE_TO} is not existing"
+  exit 1
+fi
+
+rm_test_file $FILE_NAME
+rm_test_file $FILE_NAME_TO

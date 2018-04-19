@@ -90,7 +90,10 @@ function rm_test_file {
   else
     FILE="$RUN_DIR/$1"
   fi
-  rm -f $FILE
+
+  if [ -e $FILE ]; then
+    rm -f $FILE
+  fi
 
   if [ -e $FILE ]; then
     echo "Error: Could not cleanup file ${FILE}"

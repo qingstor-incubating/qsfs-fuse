@@ -15,24 +15,21 @@
 # | limitations under the License.
 # +-------------------------------------------------------------------------
 #
-# things to do before the tests run
 #
-# 1. start qsfs
-# 2. make run dir
+# test case: special characters
+
+set -o xtrace
+set -o errexit
 
 current_path=$(dirname "$0")
 source "$current_path/common.sh"
 
-# 1. start qsfs
-# TODO(jim)
-
-# 2. make run dir
-if [ ! -d "$RUN_DIR" ]; then
-  echo "make qsfs run dir [path=$RUN_DIR]"
-  mkdir $RUN_DIR
-
-  if [ ! -d ${RUN_DIR} ]; then
-    echo "Error: Could not create directory ${RUN_DIR}"
-    exit 1
-  fi
-fi
+cd $RUN_DIR
+ls 'special' 2>&1 | grep -q 'No such file or directory'
+ls 'special?' 2>&1 | grep -q 'No such file or directory'
+ls 'special*' 2>&1 | grep -q 'No such file or directory'
+ls 'special~' 2>&1 | grep -q 'No such file or directory'
+ls 'specialµ' 2>&1 | grep -q 'No such file or directory'
+ls 'special글' 2>&1 | grep -q 'No such file or directory'
+ls 'specialシ' 2>&1 | grep -q 'No such file or directory'
+ls 'special歓' 2>&1 | grep -q 'No such file or directory'

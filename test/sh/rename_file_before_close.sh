@@ -15,24 +15,27 @@
 # | limitations under the License.
 # +-------------------------------------------------------------------------
 #
-# things to do before the tests run
 #
-# 1. start qsfs
-# 2. make run dir
+# test case: rename file before close
+
+set -o xtrace
+set -o errexit
 
 current_path=$(dirname "$0")
-source "$current_path/common.sh"
+source "$current_path/utils.sh"
 
-# 1. start qsfs
-# TODO(jim)
+FILE_NAME='test_rename_before_close.txt'
+FILE_="$RUN_DIR/$FILE_NAME" # to avoid name overloading from utils
 
-# 2. make run dir
-if [ ! -d "$RUN_DIR" ]; then
-  echo "make qsfs run dir [path=$RUN_DIR]"
-  mkdir $RUN_DIR
+(
+  echo foo
+  mv ${FILE_} ${FILE_}.new
+) > ${FILE_}
 
-  if [ ! -d ${RUN_DIR} ]; then
-    echo "Error: Could not create directory ${RUN_DIR}"
+if ! cmp <(echo foo) ${FILE_}.new; then
+    echo "Error: ${FILE} rename before close failed"
     exit 1
-  fi
 fi
+
+rm_test_file ${FILE_}.new
+rm -f ${FILE_}
