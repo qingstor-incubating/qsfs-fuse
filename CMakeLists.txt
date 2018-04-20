@@ -12,6 +12,14 @@ option (BUILD_INTEGRATION_TESTING "Enable integration test execution using CTest
 option (INSTALL_HEADERS    "Request installation of headers and other development files." OFF)
 option (REGISTER_BUILD_DIR "Request entry of build directory in CMake's package registry." OFF)
 option (UPDATE_CONNECT     "Update automatically from the remote repository." OFF)
+set (MOUNT_POINT "" CACHE STRING "Mount point (full path) to run integration test.")
+if (BUILD_INTEGRATION_TESTING)
+  # check if directory of mount point exist
+  # notes it should be a full path
+  if (NOT EXISTS ${MOUNT_POINT})
+    message(FATAL_ERROR "Mount point ${MOUNT_POINT} is not existing, please use full path and confirm it's existence.")
+  endif()
+endif (BUILD_INTEGRATION_TESTING)
 
 
 #
@@ -74,10 +82,17 @@ set (QSFS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src
      CACHE PATH "qsfs source directory")
 set (THIRD_PARTY_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third_party
      CACHE PATH "third party source directory")
+# qsfs test directory
 set (QSFS_TEST_DIR ${CMAKE_SOURCE_DIR}/test
      CACHE PATH "qsfs test directory")
-set (QSFS_INTEGRATION_TEST_RUN_DIR "/tmp/qsfs_integration_test"
-     CACHE PATH "qsfs integration test run directory")
+# qsfs integration test run dir
+if (${MOUNT_POINT} MATCHES "/$")  # ends with /
+  set (QSFS_INTEGRATION_TEST_RUN_DIR "${MOUNT_POINT}qsfs_integration_test"
+       CACHE PATH "qsfs integration test run directory")
+elseif ()
+  set (QSFS_INTEGRATION_TEST_RUN_DIR "${MOUNT_POINT}/qsfs_integration_test"
+       CACHE PATH "qsfs integration test run directory")
+endif ()
 
 
 #

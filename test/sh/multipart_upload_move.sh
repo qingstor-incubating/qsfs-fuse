@@ -50,4 +50,4 @@ fi
 
 
 rm -f ${BIG_TMPFILE}
-rm_test_file ${BIG_FILE_COPY}
+rm_test_file ${BIG_FILENAME_COPY}
