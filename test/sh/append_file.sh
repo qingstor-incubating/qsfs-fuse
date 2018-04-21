@@ -28,6 +28,6 @@ append_test_file
 rm_test_file
 
 FILE_NAME='append_test_file.txt'
-FILE_SIZE=100
+FILE_SIZE=15
 append_test_file $FILE_NAME $FILE_SIZE
 rm_test_file $FILE_NAME

@@ -24,9 +24,13 @@ current_path=$(dirname "$0")
 source "$current_path/common.sh"
 
 # 1. stop qsfs
-# TODO(jim)
+MOUNT_POINT=$(dirname "${QSFS_TEST_RUN_DIR}")
+fusermount -u ${MOUNT_POINT}
+if [ -n "$(df | grep ${MOUNT_POINT})" ]; then
+  echo "Error: fail to unmount with command: fusermount -u ${MOUNT_POINT}"
+  exit 1
+fi
 
 # 2. clean run dir
 echo "remove qsfs run dir [path=$QSFS_TEST_RUN_DIR]"
-# TODO(jim): uncomment following
-#rm -rf $QSFS_TEST_RUN_DIR
+rm -rf $QSFS_TEST_RUN_DIR

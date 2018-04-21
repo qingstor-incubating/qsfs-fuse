@@ -17,14 +17,27 @@
 #
 # things to do before the tests run
 #
+# 0. check if user is root
 # 1. start qsfs
 # 2. make run dir
 
 current_path=$(dirname "$0")
 source "$current_path/common.sh"
 
+# 0. check root
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: qsfs integration test must be run as root" 1>&2
+  exit 1
+fi
+
 # 1. start qsfs
-# TODO(jim)
+MOUNT_POINT=$(dirname "${QSFS_TEST_RUN_DIR}")
+echo "mount to ${MOUNT_POINT}"
+qsfs ${QSFS_TEST_BUCKET} ${MOUNT_POINT} -l=/tmp/qsfs_integration_test_log -L=INFO -C -o allow_other
+if [ -z "$(df | grep ${MOUNT_POINT})" ]; then
+  echo "Error: unable to mount with command: qsfs ${QSFS_TEST_BUCKET} ${MOUNT_POINT} -o allow_other"
+  exit 1
+fi
 
 # 2. make run dir
 if [ ! -d "$QSFS_TEST_RUN_DIR" ]; then

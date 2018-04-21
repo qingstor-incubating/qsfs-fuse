@@ -1,6 +1,7 @@
 # This template enables ctest to do things before and after the test runs.
 
 set(ENV{QSFS_INTEGRATION_TEST_RUN_DIR} "@QSFS_INTEGRATION_TEST_RUN_DIR@")
+set(ENV{QSFS_INTEGRATION_TEST_BUCKET} "@BUCKET_NAME@")
 
 # PRE TEST
 execute_process(COMMAND bash -c "@QSFS_TEST_DIR@/sh/pre_test.sh" OUTPUT_VARIABLE OV)
