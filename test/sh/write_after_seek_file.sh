@@ -26,7 +26,7 @@ source "$current_path/utils.sh"
 
 # write after seek ahead
 FILE_NAME="write_after_seek_ahead.txt"
-FILE_TEST="$RUN_DIR/$FILE_NAME"
+FILE_TEST="$QSFS_TEST_RUN_DIR/$FILE_NAME"
 dd if=/dev/zero of=$FILE_TEST seek=1 count=1 bs=1024
 FILE_SIZE=$(stat -c %s ${FILE_TEST})
 if [ FILE_SIZE -ne 2048 ]; then

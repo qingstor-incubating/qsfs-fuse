@@ -27,6 +27,6 @@ source "$current_path/common.sh"
 # TODO(jim)
 
 # 2. clean run dir
-echo "remove qsfs run dir [path=$RUN_DIR]"
+echo "remove qsfs run dir [path=$QSFS_TEST_RUN_DIR]"
 # TODO(jim): uncomment following
-#rm -rf $RUN_DIR
+#rm -rf $QSFS_TEST_RUN_DIR

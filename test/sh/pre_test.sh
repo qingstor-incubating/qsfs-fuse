@@ -27,12 +27,12 @@ source "$current_path/common.sh"
 # TODO(jim)
 
 # 2. make run dir
-if [ ! -d "$RUN_DIR" ]; then
-  echo "make qsfs run dir [path=$RUN_DIR]"
-  mkdir $RUN_DIR
+if [ ! -d "$QSFS_TEST_RUN_DIR" ]; then
+  echo "make qsfs run dir [path=$QSFS_TEST_RUN_DIR]"
+  mkdir $QSFS_TEST_RUN_DIR
 
-  if [ ! -d ${RUN_DIR} ]; then
-    echo "Error: Could not create directory ${RUN_DIR}"
+  if [ ! -d ${QSFS_TEST_RUN_DIR} ]; then
+    echo "Error: Could not create directory ${QSFS_TEST_RUN_DIR}"
     exit 1
   fi
 fi

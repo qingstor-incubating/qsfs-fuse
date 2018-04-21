@@ -26,8 +26,8 @@ source "$current_path/utils.sh"
 
 FILE_NAME='origin_file'
 FILE_NAME_TO='symlink_file'
-FILE_="$RUN_DIR/$FILE_NAME"  # avoid name overloading from utils
-FILE_TO="$RUN_DIR/$FILE_NAME_TO"
+FILE_="$QSFS_TEST_RUN_DIR/$FILE_NAME"  # avoid name overloading from utils
+FILE_TO="$QSFS_TEST_RUN_DIR/$FILE_NAME_TO"
 rm_test_file $FILE_NAME
 rm_test_file $FILE_NAME_TO
 

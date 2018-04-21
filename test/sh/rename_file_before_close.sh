@@ -26,8 +26,8 @@ source "$current_path/utils.sh"
 
 FILE_NAME='test_rename_before_close.txt'
 FILE_NAME_NEW=${FILE_NAME}_new
-FILE_="$RUN_DIR/$FILE_NAME" # to avoid name overloading from utils
-FILE_NEW="$RUN_DIR/$FILE_NAME_NEW"
+FILE_="$QSFS_TEST_RUN_DIR/$FILE_NAME" # to avoid name overloading from utils
+FILE_NEW="$QSFS_TEST_RUN_DIR/$FILE_NAME_NEW"
 (
   echo foo
   mv ${FILE_} ${FILE_NEW}

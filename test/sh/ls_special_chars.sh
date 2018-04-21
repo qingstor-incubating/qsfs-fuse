@@ -24,7 +24,7 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/common.sh"
 
-cd $RUN_DIR
+cd $QSFS_TEST_RUN_DIR
 ls 'special' 2>&1 | grep -q 'No such file or directory'
 ls 'special?' 2>&1 | grep -q 'No such file or directory'
 ls 'special*' 2>&1 | grep -q 'No such file or directory'

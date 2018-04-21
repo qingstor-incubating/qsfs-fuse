@@ -27,8 +27,8 @@ source "$current_path/utils.sh"
 BIG_FILENAME="multipart-big-file.txt"
 BIG_FILENAME_COPY="multipart-big-file-copy.txt"
 BIG_FILESIZE=$(( 25 * 1024 * 1024 ))
-BIG_FILE="$RUN_DIR/$BIG_FILENAME"
-BIG_FILE_COPY="$RUN_DIR/$BIG_FILENAME_COPY"
+BIG_FILE="$QSFS_TEST_RUN_DIR/$BIG_FILENAME"
+BIG_FILE_COPY="$QSFS_TEST_RUN_DIR/$BIG_FILENAME_COPY"
 BIG_TMPFILE="/tmp/${BIG_FILENAME}"
 
 # upload

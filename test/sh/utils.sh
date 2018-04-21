@@ -27,9 +27,9 @@ source "$current_path/common.sh"
 
 # configuration
 TEST_TEXT="HELLO 你好"
-TEST_TEXT_FILE="$RUN_DIR/test-file-qsfs.txt"
+TEST_TEXT_FILE="$QSFS_TEST_RUN_DIR/test-file-qsfs.txt"
 TEST_TEXT_FILENAME="test-file-qsfs.txt"
-TEST_DIR="$RUN_DIR/testdir"
+TEST_DIR="$QSFS_TEST_RUN_DIR/testdir"
 TEST_DIRNAME="testdir"
 TEST_APPEND_FILE_LEN=30
 
@@ -47,7 +47,7 @@ function mk_test_file {
     FILE=$TEST_TEXT_FILE
     TEXT=$TEST_TEXT
   else
-    FILE="$RUN_DIR/$1"
+    FILE="$QSFS_TEST_RUN_DIR/$1"
     if [ $# -gt 1 ]; then
       TEXT=$2
     else
@@ -88,7 +88,7 @@ function rm_test_file {
   if [ $# -eq 0 ]; then
     FILE=$TEST_TEXT_FILE
   else
-    FILE="$RUN_DIR/$1"
+    FILE="$QSFS_TEST_RUN_DIR/$1"
   fi
 
   if [ -e $FILE ]; then
@@ -112,7 +112,7 @@ function mk_test_dir {
   if [ $# -eq 0 ]; then
     DIR=$TEST_DIR
   else
-    DIR="$RUN_DIR/$1"
+    DIR="$QSFS_TEST_RUN_DIR/$1"
   fi
 
   if [ ! -e $DIR ]; then
@@ -137,7 +137,7 @@ function rm_test_dir {
   if [ $# -eq 0 ]; then
     DIR=$TEST_DIR
   else
-    DIR="$RUN_DIR/$1"
+    DIR="$QSFS_TEST_RUN_DIR/$1"
   fi
 
   files=$(ls -A $DIR)
@@ -166,7 +166,7 @@ function append_test_file {
     FILE="$TEST_TEXT_FILE"
     SIZE=$TEST_APPEND_FILE_LEN
   else
-    FILE="$RUN_DIR/$1"
+    FILE="$QSFS_TEST_RUN_DIR/$1"
     if [ $# -gt 1 ]; then
       re='^[0-9]+$'
       if [[ $2 =~ $re ]]; then
@@ -209,10 +209,10 @@ function truncate_test_file {
     FILE="$TEST_TEXT_FILE"
     TARGET_SIZE=0
   elif [ $# -eq 1 ]; then
-    FILE="$RUN_DIR/$1"
+    FILE="$QSFS_TEST_RUN_DIR/$1"
     TARGET_SIZE=0
   else
-    FILE="$RUN_DIR/$1"
+    FILE="$QSFS_TEST_RUN_DIR/$1"
     TARGET_SIZE=$2
     if [ $TARGET_SIZE -lt 0 ]; then
       echo "Warning: truncate size $TARGET_SIZE is less than 0, use 0"
@@ -261,8 +261,8 @@ function mv_test_file {
     FILENAME=$1
   fi
   FILENAME_RENAMED="${FILENAME}_renamed"
-  FILE="$RUN_DIR/$FILENAME"
-  FILE_RENAMED="$RUN_DIR/$FILENAME_RENAMED"
+  FILE="$QSFS_TEST_RUN_DIR/$FILENAME"
+  FILE_RENAMED="$QSFS_TEST_RUN_DIR/$FILENAME_RENAMED"
 
   mk_test_file $FILENAME
   LEN=$(wc -c $FILE | awk '{print $1}')
@@ -299,8 +299,8 @@ function mv_test_dir {
     DIRNAME=$1
   fi
   DIRNAME_RENAMED="${DIRNAME}_renamed"
-  DIR="$RUN_DIR/$DIRNAME"
-  DIR_RENAMED="$RUN_DIR/$DIRNAME_RENAMED"
+  DIR="$QSFS_TEST_RUN_DIR/$DIRNAME"
+  DIR_RENAMED="$QSFS_TEST_RUN_DIR/$DIRNAME_RENAMED"
 
   if [ -e ${DIR} ]; then
     echo "Error: unexpected, the file/dir ${DIR} exists"

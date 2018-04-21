@@ -18,6 +18,6 @@
 # common configure for interagtion function test cases
 #
 
-RUN_DIR=$(printenv QSFS_INTEGRATION_TEST_RUN_DIR);
-#RUN_DIR=$(env | grep QSFS_INTEGRATION_TEST_RUN_DIR | grep -oe '[^=]*$');
-export RUN_DIR
+QSFS_TEST_RUN_DIR=$(printenv QSFS_INTEGRATION_TEST_RUN_DIR);
+#QSFS_TEST_RUN_DIR=$(env | grep QSFS_INTEGRATION_TEST_RUN_DIR | grep -oe '[^=]*$');
+export QSFS_TEST_RUN_DIR
