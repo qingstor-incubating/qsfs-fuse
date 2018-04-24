@@ -33,7 +33,16 @@ fi
 # 1. start qsfs
 MOUNT_POINT=$(dirname "${QSFS_TEST_RUN_DIR}")
 echo "mount to ${MOUNT_POINT}"
-qsfs ${QSFS_TEST_BUCKET} ${MOUNT_POINT} -l=/tmp/qsfs_integration_test_log -L=INFO -C -o allow_other
+# subshell
+(
+  set -x
+  qsfs ${QSFS_TEST_BUCKET} ${MOUNT_POINT} \
+    -l=/tmp/qsfs_integration_test_log \
+    -L=INFO \
+    -C \
+    -d \
+    -o allow_other &
+)
 if [ -z "$(df | grep ${MOUNT_POINT})" ]; then
   echo "Error: unable to mount with command: qsfs ${QSFS_TEST_BUCKET} ${MOUNT_POINT} -o allow_other"
   exit 1
