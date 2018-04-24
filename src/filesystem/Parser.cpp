@@ -120,7 +120,7 @@ static struct options {
   int foreground;          // default not foreground
   int singleThread;        // default FUSE multi-thread
   int qsSingleThread;      // default qsfs single-thread
-  int debug;               // default no debug
+  int debug;               // default debug on
   int fusedbg;             // default no debug (for fuse)
   int curldbg;             // default no curl debug msg
   int showHelp;
@@ -265,7 +265,7 @@ void Parse(int argc, char **argv) {
   options.foreground     = 0;
   options.singleThread   = 0;
   options.qsSingleThread = 1;  // default qsfs single
-  options.debug          = 0;
+  options.debug          = 1;  // default qsfs debug on
   options.fusedbg        = 0;
   options.curldbg        = 0;
   options.showHelp       = 0;
