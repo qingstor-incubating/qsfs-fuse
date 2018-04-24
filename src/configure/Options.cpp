@@ -91,6 +91,7 @@ Options::Options()
       m_singleThread(false),
       m_qsfsSingleThread(false),
       m_debug(false),
+      m_debugFuse(false),
       m_debugCurl(false),
       m_showHelp(false),
       m_showVersion(false),
@@ -158,6 +159,7 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[FUSE single thread: " << opts.m_singleThread << "] "
          << "[qsfs single thread: " << opts.m_qsfsSingleThread << "] "
          << "[debug: " << opts.m_debug << "] "
+         << "[fusedbg: " << opts.m_debugFuse << "] "
          << "[curldbg: " << opts.m_debugCurl << "] "
          << "[show help: " << opts.m_showHelp << "] "
          << "[show version: " << opts.m_showVersion << "] "

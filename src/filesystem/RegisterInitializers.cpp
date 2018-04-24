@@ -15,7 +15,6 @@
 // +-------------------------------------------------------------------------
 
 #include <iostream>
-#include <sstream>
 #include <string>
 
 #include "boost/foreach.hpp"
@@ -23,7 +22,6 @@
 #include "boost/shared_ptr.hpp"
 
 #include "base/Exception.h"
-#include "base/LogMacros.h"
 #include "base/Logging.h"
 #include "base/UtilsWithLog.h"
 #include "client/ClientConfiguration.h"
@@ -108,15 +106,6 @@ void MimeTypesInitializer() {
   }
 }
 
-// --------------------------------------------------------------------------
-void PrintCommandLineOptions() {
-  // Notice: this should only be invoked after logging initialization
-  const QS::Configure::Options &options = QS::Configure::Options::Instance();
-  std::stringstream ss;
-  ss << "<<Command Line Options>> ";
-  ss << options << std::endl;
-  DebugInfo(ss.str());
-}
 
 namespace {
 
@@ -130,9 +119,5 @@ static Initializer clientConfigInitializer(
 
 static Initializer mimeTypesInitializer(
     PriorityInitFuncPair(Priority::Fourth, MimeTypesInitializer));
-
-// Priority must be lower than log initializer
-static Initializer printCommandLineOpts(
-    PriorityInitFuncPair(Priority::Fifth, PrintCommandLineOptions));
 
 }  // namespace

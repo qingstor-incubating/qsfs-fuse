@@ -121,6 +121,7 @@ static struct options {
   int singleThread;        // default FUSE multi-thread
   int qsSingleThread;      // default qsfs single-thread
   int debug;               // default no debug
+  int fusedbg;             // default no debug (for fuse)
   int curldbg;             // default no curl debug msg
   int showHelp;
   int showVersion;
@@ -165,6 +166,7 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-s",    singleThread),   OPTION("--single",         singleThread),
     OPTION("-S",    qsSingleThread), OPTION("--Single",         qsSingleThread),
     OPTION("-d",    debug),          OPTION("--debug",          debug),
+    OPTION("-g",    fusedbg),        OPTION("--fusedbg",        fusedbg),
     OPTION("-U",    curldbg),        OPTION("--curldbg",        curldbg),
     OPTION("-h",    showHelp),       OPTION("--help",           showHelp),
     OPTION("-V",    showVersion),    OPTION("--version",        showVersion),
@@ -264,6 +266,7 @@ void Parse(int argc, char **argv) {
   options.singleThread   = 0;
   options.qsSingleThread = 1;  // default qsfs single
   options.debug          = 0;
+  options.fusedbg        = 0;
   options.curldbg        = 0;
   options.showHelp       = 0;
   options.showVersion    = 0;
@@ -379,6 +382,7 @@ void Parse(int argc, char **argv) {
     qsOptions.SetQsfsSingleThread(false);
   }
   qsOptions.SetDebug(options.debug != 0);
+  qsOptions.SetDebugFuse(options.fusedbg != 0);
   qsOptions.SetDebugCurl(options.curldbg != 0);
   qsOptions.SetShowHelp(options.showHelp != 0);
   qsOptions.SetShowVerion(options.showVersion !=0);
@@ -425,7 +429,7 @@ void Parse(int argc, char **argv) {
   if (qsOptions.IsSingleThread()) {
     assert(fuse_opt_add_arg(&args, "-s") == 0);
   }
-  if (qsOptions.IsDebug()) {
+  if (qsOptions.IsDebugFuse()) {
     assert(fuse_opt_add_arg(&args, "-d") == 0);
   }
 }

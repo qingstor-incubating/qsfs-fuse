@@ -122,7 +122,8 @@ void ShowQSFSHelp() {
   "  -f, --forground    Turn on log to STDERR and enable FUSE foreground mode\n"
   "  -s, --single       Turn on FUSE single threaded option - disable multi-threaded\n"
   //"  -S, --Single       Turn on qsfs single threaded option - disable multi-threaded\n"
-  "  -d, --debug        Turn on debug messages to log and enable FUSE debug option\n"
+  "  -d, --debug        Turn on debug messages to log\n"
+  "  -g, --fusedbg      Enable FUSE debug option\n"
   "  -U, --curldbg      Turn on debug message from libcurl\n"
   "  -h, --help         Print qsfs help\n"
   "  -V, --version      Print qsfs version\n"
@@ -153,7 +154,7 @@ void ShowQSFSUsage() {
   "       [-f|--foreground]\n"
   "       [-s|--single]\n"
   //"     [-s|--single] [-S|--Single]\n"
-  "       [-d|--debug] [-U|--curldbg]\n"
+  "       [-d|--debug] [-g|--fusedbg] [-U|--curldbg]\n"
   "       [-h|--help] [-V|--version]\n"
   "       [FUSE options]\n";
   cout.flush();

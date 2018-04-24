@@ -25,6 +25,7 @@
 #include <sys/types.h>  // for uid_t
 #include <unistd.h>     // for R_OK
 
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1508,18 +1509,25 @@ int qsfs_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi) {
 //
 // It overrides the initial value provided to fuse_main() / fuse_new().
 void* qsfs_init(struct fuse_conn_info* conn) {
+  // To avoid the problem for glog, that when calling fork after initializing
+  // that the log messages before forking will be not print.
+  // So we print command options here.
+  const QS::Configure::Options& options = QS::Configure::Options::Instance();
+  std::stringstream ss;
+  ss << "<Command Line Options> ";
+  ss << options << std::endl;
+  Info(ss.str());
+
   Info("Connecting qsfs...");
 
   // Do check bucket service here
   // To avoid the commom problem for libcurl, that when calling fork (which
   // will be called by fuse_main when goes into the background) after
-  // initializing
-  // libraries that the libcurl need to be initialized again. Otherwise libcurl
-  // will reproduce error by making an https request.
+  // initializing ibraries that the libcurl need to be initialized again.
+  // Otherwise libcurl will reproduce error by making an https request.
   Drive& drive = Drive::Instance();
   if (!drive.IsMountable()) {
-    Error("Unable to connect bucket " +
-          QS::Configure::Options::Instance().GetBucket());
+    Error("Unable to connect bucket " + options.GetBucket());
     ExitQsfsFuseLoop();
     return NULL;
   }

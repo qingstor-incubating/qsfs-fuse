@@ -89,6 +89,7 @@ class Options : public Singleton<Options> {
   bool IsSingleThread() const { return m_singleThread; }
   bool IsQsfsSingleThread() const { return m_qsfsSingleThread; }
   bool IsDebug() const { return m_debug; }
+  bool IsDebugFuse() const { return m_debugFuse; }
   bool IsDebugCurl() const { return m_debugCurl; }
   bool IsShowHelp() const { return m_showHelp; }
   bool IsShowVersion() const { return m_showVersion; }
@@ -145,6 +146,7 @@ class Options : public Singleton<Options> {
     m_qsfsSingleThread = singleThread;
   }
   void SetDebug(bool debug) { m_debug = debug; }
+  void SetDebugFuse (bool debug) { m_debugFuse = debug; }
   void SetDebugCurl(bool debug) { m_debugCurl = debug; }
   void SetShowHelp(bool showHelp) { m_showHelp = showHelp; }
   void SetShowVerion(bool showVersion) { m_showVersion = showVersion; }
@@ -188,7 +190,8 @@ class Options : public Singleton<Options> {
   bool m_foreground;        // FUSE foreground option
   bool m_singleThread;      // FUSE single threaded option
   bool m_qsfsSingleThread;  // qsfs single threaded option
-  bool m_debug;
+  bool m_debug;             // qsfs debug option
+  bool m_debugFuse;         // fuse debug option
   bool m_debugCurl;
   bool m_showHelp;
   bool m_showVersion;

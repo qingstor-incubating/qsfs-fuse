@@ -91,6 +91,9 @@ int main(int argc, char **argv) {
       }
 
       // Notice: DO NOT use logging before initialization done.
+      // Also you should log message after fuse get initialized,
+      // as if fuse run in backgroud mode after calling fork,
+      // the messaged logged before fuse init will not be printed.
       // Do initializations.
       Initializer::RunInitializers();
 
