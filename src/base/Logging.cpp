@@ -17,10 +17,13 @@
 #include "base/Logging.h"
 
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>  // for strerr
+#include <unistd.h>
 
 #include <exception>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -34,9 +37,36 @@
 #include "configure/Default.h"
 
 namespace {
+const char *programFile = "/usr/local/bin/qsfs";
+
+void ProcessSignal(const char *data, int size) {
+  char buf[4096] = "";
+  int sz = size > 4096 ? 4095 : size - 1;  // ingore endline
+  memcpy(buf, data, sz);
+  std::string msg(buf, sz);
+  if (access(programFile, F_OK) == 0 && *data == ' ') {
+    char address[100] = "";  // address len should be less than 100
+    sscanf(buf, "%*[^0]0x%[^ ]", address);
+    FILE *fp;
+    std::stringstream ss;
+    ss << "addr2line 0x" << address << " -C -s -e " << programFile;
+    if ((fp = popen(ss.str().c_str(), "r"))) {
+      char name[1024] = "";  // only read first 1024 bytes
+      if (fgets(name, 1024, fp) != NULL) {
+        name[strlen(name) - 1] = '\0';  // ignore endline
+        msg.append(" <");
+        msg.append(name);
+        msg.append(">");
+      }
+    }
+  }
+  LOG(ERROR) << msg;
+}
 
 void InitializeGLog() {
   google::InitGoogleLogging(QS::Configure::Default::GetProgramName());
+  google::InstallFailureSignalHandler();
+  google::InstallFailureWriter(&ProcessSignal);
 }
 
 }  // namespace
@@ -67,12 +97,15 @@ void Log::SetLogLevel(LogLevel::Value level) {
 void Log::DoInitialize(const string &logdir) {
   if (logdir.empty()) {
     FLAGS_logtostderr = 1;
+    FLAGS_colorlogtostderr = true;
   } else {
     m_logDirectory = logdir;
     // Notes for glog, most settings start working immediately after you upate
     // FLAGS_*. The exceptions are the flags related to desination files.
     // So need to set FLAGS_log_dir before calling google::InitGoogleLogging.
     FLAGS_log_dir = logdir.c_str();
+    FLAGS_max_log_size = 1024;  // 1GB
+    FLAGS_stop_logging_if_full_disk = true;
 
     if (!QS::Utils::CreateDirectoryIfNotExists(logdir)) {
       throw QSException("Unable to create log directory " + logdir + " : " +

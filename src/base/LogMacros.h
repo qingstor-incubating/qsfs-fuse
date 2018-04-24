@@ -47,138 +47,108 @@
 // Google INFO stream needs to be flushed. So in oreder to get latest log,
 // we always flush INFO stream for all non-fatal level stream. This will help
 // to prevent failures for unit test due to the uncompleted log.
-#define Info(msg)                                                            \
-  {                                                                          \
-    LOG(INFO) << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Info) \
-              << msg;                                                        \
-    google::FlushLogFiles(google::INFO);                                     \
-  }
-
-#define Warning(msg)                                 \
-  {                                                  \
-    LOG(WARNING) << QS::Logging::GetLogLevelPrefix(  \
-                        QS::Logging::LogLevel::Warn) \
-                 << msg;                             \
-    google::FlushLogFiles(google::INFO);             \
-  }
-
-#define Error(msg)                                                             \
-  {                                                                            \
-    LOG(ERROR) << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Error) \
-               << msg;                                                         \
-    google::FlushLogFiles(google::INFO);                                       \
-  }
-
-#define Fatal(msg)                                                             \
-  {                                                                            \
-    LOG(FATAL) << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Fatal) \
-               << msg;                                                         \
-  }
-
-#define InfoIf(condition, msg)                                                 \
-  {                                                                            \
-    LOG_IF(INFO, (condition))                                                  \
-        << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Info) << msg; \
-    google::FlushLogFiles(google::INFO);                                       \
-  }
-
-#define WarningIf(condition, msg)                                              \
-  {                                                                            \
-    LOG_IF(WARNING, (condition))                                               \
-        << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Warn) << msg; \
-    google::FlushLogFiles(google::INFO);                                       \
-  }
-
-#define ErrorIf(condition, msg)                                         \
-  {                                                                     \
-    LOG_IF(ERROR, (condition))                                          \
-        << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Error) \
-        << msg;                                                         \
-    google::FlushLogFiles(google::INFO);                                \
-  }
-
-#define FatalIf(condition, msg)                                         \
-  {                                                                     \
-    LOG_IF(FATAL, (condition))                                          \
-        << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Fatal) \
-        << msg;                                                         \
-  }
-
-#define DebugInfo(msg)                                                         \
-  {                                                                            \
-    if (QS::Logging::Log::Instance().IsDebug()) {                              \
-      LOG(INFO) << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Info) \
-                << msg;                                                        \
-      google::FlushLogFiles(google::INFO);                                     \
-    }                                                                          \
-  }
-
-#define DebugWarning(msg)                              \
+#define Info(msg)                                      \
   {                                                    \
-    if (QS::Logging::Log::Instance().IsDebug()) {      \
-      LOG(WARNING) << QS::Logging::GetLogLevelPrefix(  \
-                          QS::Logging::LogLevel::Warn) \
-                   << msg;                             \
-      google::FlushLogFiles(google::INFO);             \
-    }                                                  \
+    LOG(INFO) << "[INFO] " << __func__ << ": " << msg; \
+    google::FlushLogFiles(google::INFO);               \
   }
 
-#define DebugError(msg)                               \
-  {                                                   \
-    if (QS::Logging::Log::Instance().IsDebug()) {     \
-      LOG(ERROR) << QS::Logging::GetLogLevelPrefix(   \
-                        QS::Logging::LogLevel::Error) \
-                 << msg;                              \
-      google::FlushLogFiles(google::INFO);            \
-    }                                                 \
+#define Warning(msg)                                      \
+  {                                                       \
+    LOG(WARNING) << "[WARN] " << __func__ << ": " << msg; \
+    google::FlushLogFiles(google::INFO);                  \
   }
 
-#define DebugFatal(msg)                               \
-  {                                                   \
-    if (QS::Logging::Log::Instance().IsDebug()) {     \
-      LOG(FATAL) << QS::Logging::GetLogLevelPrefix(   \
-                        QS::Logging::LogLevel::Fatal) \
-                 << msg;                              \
-    }                                                 \
+#define Error(msg)                                       \
+  {                                                      \
+    LOG(ERROR) << "[ERROR] " << __func__ << ": " << msg; \
+    google::FlushLogFiles(google::INFO);                 \
+  }
+
+#define Fatal(msg) \
+  { LOG(FATAL) << "[FATAL] " << __func__ << ": " << msg; }
+
+#define InfoIf(condition, msg)                                         \
+  {                                                                    \
+    LOG_IF(INFO, (condition)) << "[INFO] " << __func__ << ": " << msg; \
+    google::FlushLogFiles(google::INFO);                               \
+  }
+
+#define WarningIf(condition, msg)                                         \
+  {                                                                       \
+    LOG_IF(WARNING, (condition)) << "[WARN] " << __func__ << ": " << msg; \
+    google::FlushLogFiles(google::INFO);                                  \
+  }
+
+#define ErrorIf(condition, msg)                                          \
+  {                                                                      \
+    LOG_IF(ERROR, (condition)) << "[ERROR] " << __func__ << ": " << msg; \
+    google::FlushLogFiles(google::INFO);                                 \
+  }
+
+#define FatalIf(condition, msg) \
+  { LOG_IF(FATAL, (condition)) << "[FATAL] " << __func__ << ": " << msg; }
+
+#define DebugInfo(msg)                                   \
+  {                                                      \
+    if (QS::Logging::Log::Instance().IsDebug()) {        \
+      LOG(INFO) << "[INFO] " << __func__ << ": " << msg; \
+      google::FlushLogFiles(google::INFO);               \
+    }                                                    \
+  }
+
+#define DebugWarning(msg)                                   \
+  {                                                         \
+    if (QS::Logging::Log::Instance().IsDebug()) {           \
+      LOG(WARNING) << "[WARN] " << __func__ << ": " << msg; \
+      google::FlushLogFiles(google::INFO);                  \
+    }                                                       \
+  }
+
+#define DebugError(msg)                                    \
+  {                                                        \
+    if (QS::Logging::Log::Instance().IsDebug()) {          \
+      LOG(ERROR) << "[ERROR] " << __func__ << ": " << msg; \
+      google::FlushLogFiles(google::INFO);                 \
+    }                                                      \
+  }
+
+#define DebugFatal(msg)                                    \
+  {                                                        \
+    if (QS::Logging::Log::Instance().IsDebug()) {          \
+      LOG(FATAL) << "[FATAL] " << __func__ << ": " << msg; \
+    }                                                      \
   }
 
 #define DebugInfoIf(condition, msg)                                      \
   {                                                                      \
     if (QS::Logging::Log::Instance().IsDebug()) {                        \
-      LOG_IF(INFO, (condition))                                          \
-          << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Info) \
-          << msg;                                                        \
+      LOG_IF(INFO, (condition)) << "[INFO] " << __func__ << ": " << msg; \
       google::FlushLogFiles(google::INFO);                               \
     }                                                                    \
   }
 
-#define DebugWarningIf(condition, msg)                                   \
-  {                                                                      \
-    if (QS::Logging::Log::Instance().IsDebug()) {                        \
-      LOG_IF(WARNING, (condition))                                       \
-          << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Warn) \
-          << msg;                                                        \
-      google::FlushLogFiles(google::INFO);                               \
-    }                                                                    \
+#define DebugWarningIf(condition, msg)                                      \
+  {                                                                         \
+    if (QS::Logging::Log::Instance().IsDebug()) {                           \
+      LOG_IF(WARNING, (condition)) << "[WARN] " << __func__ << ": " << msg; \
+      google::FlushLogFiles(google::INFO);                                  \
+    }                                                                       \
   }
 
-#define DebugErrorIf(condition, msg)                                      \
-  {                                                                       \
-    if (QS::Logging::Log::Instance().IsDebug()) {                         \
-      LOG_IF(ERROR, (condition))                                          \
-          << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Error) \
-          << msg;                                                         \
-      google::FlushLogFiles(google::INFO);                                \
-    }                                                                     \
+#define DebugErrorIf(condition, msg)                                       \
+  {                                                                        \
+    if (QS::Logging::Log::Instance().IsDebug()) {                          \
+      LOG_IF(ERROR, (condition)) << "[ERROR] " << __func__ << ": " << msg; \
+      google::FlushLogFiles(google::INFO);                                 \
+    }                                                                      \
   }
 
-#define DebugFatalIf(condition, msg)                                      \
-  {                                                                       \
-    if (QS::Logging::Log::Instance().IsDebug()) {                         \
-      LOG_IF(FATAL, (condition))                                          \
-          << QS::Logging::GetLogLevelPrefix(QS::Logging::LogLevel::Fatal) \
-          << msg;                                                         \
-    }                                                                     \
+#define DebugFatalIf(condition, msg)                                       \
+  {                                                                        \
+    if (QS::Logging::Log::Instance().IsDebug()) {                          \
+      LOG_IF(FATAL, (condition)) << "[FATAL] " << __func__ << ": " << msg; \
+    }                                                                      \
   }
 
 #endif  // DISABLE_QSFS_LOGGING

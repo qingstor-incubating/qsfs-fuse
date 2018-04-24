@@ -109,18 +109,18 @@ void VerifyAllNonFatalLogs(LogLevel::Value level) {
   }
 
   vector<string> expectedMsgs;
-  expectedMsgs.push_back("[ERROR] test Error");
-  expectedMsgs.push_back("[ERROR] test ErrorIf");
-  expectedMsgs.push_back("[ERROR] test DebugError");
-  expectedMsgs.push_back("[ERROR] test DebugErrorIf");
-  expectedMsgs.push_back("[WARN] test Warning");
-  expectedMsgs.push_back("[WARN] test WarningIf");
-  expectedMsgs.push_back("[WARN] test DebugWarning");
-  expectedMsgs.push_back("[WARN] test DebugWarningIf");
-  expectedMsgs.push_back("[INFO] test Info");
-  expectedMsgs.push_back("[INFO] test InfoIf");
-  expectedMsgs.push_back("[INFO] test DebugInfo");
-  expectedMsgs.push_back("[INFO] test DebugInfoIf");
+  expectedMsgs.push_back("[ERROR] LogNonFatalPossibilities: test Error");
+  expectedMsgs.push_back("[ERROR] LogNonFatalPossibilities: test ErrorIf");
+  expectedMsgs.push_back("[ERROR] LogNonFatalPossibilities: test DebugError");
+  expectedMsgs.push_back("[ERROR] LogNonFatalPossibilities: test DebugErrorIf");
+  expectedMsgs.push_back("[WARN] LogNonFatalPossibilities: test Warning");
+  expectedMsgs.push_back("[WARN] LogNonFatalPossibilities: test WarningIf");
+  expectedMsgs.push_back("[WARN] LogNonFatalPossibilities: test DebugWarning");
+  expectedMsgs.push_back("[WARN] LogNonFatalPossibilities: test DebugWarningIf");
+  expectedMsgs.push_back("[INFO] LogNonFatalPossibilities: test Info");
+  expectedMsgs.push_back("[INFO] LogNonFatalPossibilities: test InfoIf");
+  expectedMsgs.push_back("[INFO] LogNonFatalPossibilities: test DebugInfo");
+  expectedMsgs.push_back("[INFO] LogNonFatalPossibilities: test DebugInfoIf");
 
   if (level == LogLevel::Warn) {
     RemoveLastLines(expectedMsgs, 4);
@@ -268,21 +268,21 @@ INSTANTIATE_TEST_CASE_P(
     // to the log file, so the expectMsg will keep unchanged.
 
     // logFun, expectMsg, condition, isDebug, will die
-    Values(LogFatalState(LogFatal, "[FATAL] test Fatal", true, false, true),
-           LogFatalState(LogFatalIf, "[FATAL] test FatalIf", true, false, true),
-           LogFatalState(LogFatalIf, "[FATAL] test FatalIf", false, false,
+    Values(LogFatalState(LogFatal, "[FATAL] LogFatal: test Fatal", true, false, true),
+           LogFatalState(LogFatalIf, "[FATAL] LogFatalIf: test FatalIf", true, false, true),
+           LogFatalState(LogFatalIf, "[FATAL] LogFatalIf: test FatalIf", false, false,
                          false),
-           LogFatalState(LogDebugFatal, "[FATAL] test DebugFatal", true, true,
+           LogFatalState(LogDebugFatal, "[FATAL] LogDebugFatal: test DebugFatal", true, true,
                          true),
-           LogFatalState(LogDebugFatal, "[FATAL] test DebugFatal", true, false,
+           LogFatalState(LogDebugFatal, "[FATAL] LogDebugFatal: test DebugFatal", true, false,
                          false),
-           LogFatalState(LogDebugFatalIf, "[FATAL] test DebugFatalIf", true,
+           LogFatalState(LogDebugFatalIf, "[FATAL] LogDebugFatalIf: test DebugFatalIf", true,
                          true, true),
-           LogFatalState(LogDebugFatalIf, "[FATAL] test DebugFatalIf", false,
+           LogFatalState(LogDebugFatalIf, "[FATAL] LogDebugFatalIf: test DebugFatalIf", false,
                          true, false),
-           LogFatalState(LogDebugFatalIf, "[FATAL] test DebugFatalIf", true,
+           LogFatalState(LogDebugFatalIf, "[FATAL] LogDebugFatalIf: test DebugFatalIf", true,
                          false, false),
-           LogFatalState(LogDebugFatalIf, "[FATAL] test DebugFatalIf", false,
+           LogFatalState(LogDebugFatalIf, "[FATAL] LogDebugFatalIf: test DebugFatalIf", false,
                          false, false)));
 
 }  // namespace Logging
