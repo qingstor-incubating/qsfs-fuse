@@ -188,9 +188,16 @@ void FileMetaDataManager::Rename(const string &oldFilePath,
 
   lock_guard<recursive_mutex> lock(m_mutex);
   if (m_map.find(newFilePath) != m_map.end()) {
-    DebugWarning("File exist, no rename " +
-                 FormatPath(oldFilePath, newFilePath));
-    return;
+    // Issue Fix: fail of function test 'RenameFileBeforeClose'
+    // Root cause: the previous logic would do nothing is the file with new name
+    // exist. This is not right as it will cause the file metadata used the
+    // existing one which is uncorrect rename behaviour. For the function test
+    // case, an existing new file has empty content and the file to be renamed
+    // has non empty content, so the rename will truncate the file to empty,
+    // this cause the follwing content validation fail.
+    // Resolution: if an file with target new filename exist, remove it.
+    // This will enable the following replacement happen
+    m_map.erase(newFilePath);
   }
 
   FileIdToMetaDataMapIterator it = m_map.find(oldFilePath);

@@ -34,7 +34,7 @@ FILE_NEW="$QSFS_TEST_RUN_DIR/$FILE_NAME_NEW"
 ) > ${FILE_}
 
 if ! cmp <(echo foo) ${FILE_NEW}; then
-    echo "Error: ${FILE} rename before close failed"
+    echo "Error: ${FILE_} rename before close failed"
     exit 1
 fi
 
