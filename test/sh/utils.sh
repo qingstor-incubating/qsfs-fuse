@@ -32,6 +32,8 @@ TEST_TEXT_FILENAME="test-file-qsfs.txt"
 TEST_DIR="$QSFS_TEST_RUN_DIR/testdir"
 TEST_DIRNAME="testdir"
 TEST_APPEND_FILE_LEN=10
+TEST_TEXT_FILE_PARALLEL_CNT=10
+TEST_TEXT_FILE_PARALLEL_PREFIX="test_make_file_parallel"
 
 
 #
@@ -78,6 +80,56 @@ function mk_test_file {
 }
 
 #
+# Make text files parallel
+#
+# Arguments:
+#   $1 number of files (optional)
+#   $2 file prefix (optional)
+# Returns:
+#   None
+function mk_test_file_parallel {
+  if [ $# -eq 0 ]; then
+    COUNT=$TEST_TEXT_FILE_PARALLEL_CNT
+    PREFIX=$TEST_TEXT_FILE_PARALLEL_PREFIX
+  else
+    re='^[0-9]+$'
+    if [[ $1 =~ $re ]]; then
+      if [ $1 -lt 1 ]; then
+        echo "Warning: file count ${1} is less than 1, use $TEST_TEXT_FILE_PARALLEL_CNT"
+        COUNT=$TEST_TEXT_FILE_PARALLEL_CNT
+      else
+        COUNT=$1
+      fi
+    else
+      echo "Warning: files count ${1} is not a integer, use $TEST_TEXT_FILE_PARALLEL_CNT"
+      COUNT=$TEST_TEXT_FILE_PARALLEL_CNT
+    fi
+
+    PREFIX=$TEST_TEXT_FILE_PARALLEL_PREFIX
+    if [ $# -gt 1 ]; then
+      PREFIX=$2
+    fi
+  fi
+
+  (
+    for i in $(seq 1 $COUNT); do
+      echo $i > "$QSFS_TEST_RUN_DIR/$PREFIX$i" & true
+    done
+    wait
+  )
+
+  # validation
+  for i in $(seq 1 $COUNT); do
+    fileName="$QSFS_TEST_RUN_DIR/$PREFIX$i"
+    dat=$(cat "$fileName")
+    if [ ! $dat -eq $i ]; then
+      echo "Error: expected $i in $fileName, got $dat"
+      exit 1
+    fi
+  done
+}
+
+#
 # Remove a file
 #
 # Arguments:
@@ -100,6 +152,57 @@ function rm_test_file {
     exit 1
   fi
 }
+
+#
+# Remove text files parallel
+#
+# Arguments:
+#   $1 number of files (optional)
+#   $2 file prefix (optional)
+# Returns:
+#   None
+function rm_test_file_parallel {
+  if [ $# ==0 ]; then
+    COUNT=$TEST_TEXT_FILE_PARALLEL_CNT
+    PREFIX=$TEST_TEXT_FILE_PARALLEL_PREFIX
+  else
+    re='^[0-9]+$'
+    if [[ $1 =~ $re ]]; then
+      if [[ $1 -lt 1 ]]; then
+        echo "Warning: file count ${1} is less than 1, use $TEST_TEXT_FILE_PARALLEL_CNT"
+        COUNT=$TEST_TEXT_FILE_PARALLEL_CNT
+      else
+        COUNT=$1
+      fi
+    else
+      echo "Warning: files count ${1} is not a integer, use $TEST_TEXT_FILE_PARALLEL_CNT"
+      COUNT=$TEST_TEXT_FILE_PARALLEL_CNT
+    fi
+
+    PREFIX=$TEST_TEXT_FILE_PARALLEL_PREFIX
+    if [ $# -gt 1 ]; then
+      PREFIX=$2;
+    fi
+  fi
+
+  (
+    for i in $(seq 1 $COUNT); do
+      fileName="$QSFS_TEST_RUN_DIR/$PREFIX$i" 
+      rm $fileName & true
+    done
+    wait
+  )
+
+  # validation
+  for i in $(seq 1 $COUNT); do
+    fileName="$QSFS_TEST_RUN_DIR/$PREFIX$i" 
+    if [ -e $fileName ]; then
+      echo "Error: could not cleanup file $fileName"
+      exit 1
+    fi
+  done
+}
+
 
 #
 # Make a directory
