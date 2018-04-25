@@ -297,6 +297,52 @@ function append_test_file {
   fi
 }
 
+#
+# Append data to a file in parallel
+# This will append numbers (from 1 to file_size) to a file
+#
+# Arguments:
+#   $1 file name (optional)
+#   $2 file size (optional)
+# Returns:
+#   None
+function append_test_file_parallel {
+  if [ $# -eq 0 ]; then
+    FILE="$TEST_TEXT_FILE"
+    SIZE=$TEST_APPEND_FILE_LEN
+  else
+    FILE="$QSFS_TEST_RUN_DIR/$1"
+    if [ $# -gt 1 ]; then
+      re='^[0-9]+$'
+      if [[ $2 =~ $re ]]; then
+        SIZE=$2
+        if [ $SIZE -lt 1]; then
+          echo "Warning: file size ${2} is less than 1, use $TEST_APPEND_FILE_LEN"
+          SIZE=$TEST_APPEND_FILE_LEN
+        fi
+      else
+        echo "Warning: file size ${2} is not a integer, use $TEST_APPEND_FILE_LEN"
+        SIZE=$TEST_APPEND_FILE_LEN
+      fi
+    fi
+  fi
+
+  # write in parallel
+  (
+    for i in $(seq 1 $SIZE); do
+      echo $i >> $FILE & true
+    done
+    wait
+  )
+
+  # validation
+  LINE_NO=$(wc -l $FILE | awk '{print $1}')
+  if [ $LINE_NO -ne ${SIZE} ]; then
+    echo "Error: expected ${SIZE} lines in ${FILE}, got ${LINE_NO} lines"
+    exit 1
+  fi
+}
+
 
 #
 # Truncate a file
