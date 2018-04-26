@@ -274,7 +274,7 @@ function append_test_file {
       re='^[0-9]+$'
       if [[ $2 =~ $re ]]; then
         SIZE=$2
-        if [ $SIZE -lt 1]; then
+        if [ $SIZE -lt 1 ]; then
           echo "Warning: file size ${2} is less than 1, use $TEST_APPEND_FILE_LEN"
           SIZE=$TEST_APPEND_FILE_LEN
         fi
