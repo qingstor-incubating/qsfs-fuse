@@ -31,7 +31,7 @@ FILE_SIZE=15
 # append numbers (from 1 to file_size) to a file
 append_test_file $FILE_NAME $FILE_SIZE
 
-# random read and validate it
+# read and validate it
 index=0
 while read -r line; do
   let ++index

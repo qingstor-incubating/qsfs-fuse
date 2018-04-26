@@ -16,7 +16,7 @@
 # +-------------------------------------------------------------------------
 #
 #
-# test case: random read file
+# test case: sequence read in parallel
 
 set -o xtrace
 set -o errexit
@@ -24,28 +24,24 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='random_read_file.txt'
-MAX_NUM=30
-HEAD_COUNT=8
+FILE_NAME='sequence_read_file_parallel.txt'
+FILE_SIZE=15
 
-# creat a file at first
-append_test_file $FILE_NAME $MAX_NUM
+# create a file at first
+# append numbers (from 1 to file_size) to a file
+append_test_file $FILE_NAME $FILE_SIZE
 
-# random read
-random_numbers=( $(shuf -n $HEAD_COUNT "$QSFS_TEST_RUN_DIR/$FILE_NAME") )
+# read and validate it in parallel
+(
+  for i in $(seq 1 $FILE_SIZE); do
+    read -r line
+    if [ $line -ne $i ]; then
+      echo "Error: expected ${i}, got ${line}"
+      exit 1
+    fi & true
+  done
+  wait
+) < "$QSFS_TEST_RUN_DIR/$FILE_NAME"
 
-# validation
-count_=${#random_numbers[@]}
-if [ $count_ -ne $HEAD_COUNT ]; then
-  echo "Error: expected random read count ${HEAD_COUNT}, got ${count_}"
-  exit 1
-fi
-for i in ${random_numbers[@]}; do
-  if [ $i -lt 1 ] || [ $i -gt $MAX_NUM ]; then
-    echo "Error: expected number belong to [1,$MAX_NUM], got $i"
-    exit 1
-  fi
-done
-
-# clean up
+# cleanup
 rm_test_file $FILE_NAME
