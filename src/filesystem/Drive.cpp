@@ -581,20 +581,14 @@ void Drive::RenameFile(const string &filePath, const string &newFilePath) {
   ClientError<QSError::Value> err =
       GetClient()->MoveFile(filePath, newFilePath, m_directoryTree, m_cache);
 
-  // Update meta(such as mtime, .etc)
-  if (IsGoodQSError(err)) {
-    pair<shared_ptr<Node>, bool> res = GetNode(newFilePath, true, false, false);
-    shared_ptr<Node> node = res.first;
-    if (node && *node) {
-      Info("Rename file " + FormatPath(filePath, newFilePath));
-    } else {
-      Warning("Fail to rename file " + FormatPath(filePath, newFilePath));
-    }
-    return;
-  } else {
-    Error(GetMessageForQSError(err));
-    return;
-  }
+  // Fix failure of function test RenameFileBeforeClose
+  // fuse invoking operation in following sequence:
+  //   make file -> flush file -> write file -> rename file -> flush renamed file
+  // so before rename the data is write in cache and still not flushed, if we
+  // update the node meta just after rename with the renamed file (which is empty),
+  // this will set the file size to 0, which results in flushing renamed file
+  // with empty data.
+  ErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
 }
 
 // --------------------------------------------------------------------------

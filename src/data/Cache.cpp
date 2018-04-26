@@ -561,8 +561,9 @@ void Cache::Rename(const string &oldFileId, const string &newFileId) {
       DebugWarning("Fail to rename " + FormatPath(oldFileId, newFileId));
     }
     m_map.erase(it);
+    DebugInfo("Renamed file in cache" + FormatPath(oldFileId, newFileId));
   } else {
-    DebugInfo("File not exists, no rename " + FormatPath(oldFileId));
+    DebugInfo("File not exists, no rename " + FormatPath(oldFileId, newFileId));
   }
 }
 
