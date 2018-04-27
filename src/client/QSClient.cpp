@@ -197,7 +197,8 @@ ClientError<QSError::Value> QSClient::DeleteFile(
 ClientError<QSError::Value> QSClient::MakeFile(const string &filePath) {
   PutObjectInput input;
   input.SetContentLength(0);  // create empty file
-  input.SetContentType(LookupMimeType(filePath));
+  // no need to set content type now, as qingstor server will handle it
+  // input.SetContentType(LookupMimeType(filePath));
 
   PutObjectOutcome outcome = GetQSClientImpl()->PutObject(filePath, &input);
 
@@ -432,7 +433,7 @@ ClientError<QSError::Value> QSClient::DownloadFile(const string &filePath,
 ClientError<QSError::Value> QSClient::InitiateMultipartUpload(
     const string &filePath, string *uploadId) {
   InitiateMultipartUploadInput input;
-  input.SetContentType(LookupMimeType(filePath));
+  // input.SetContentType(LookupMimeType(filePath));
 
   InitiateMultipartUploadOutcome outcome =
       GetQSClientImpl()->InitiateMultipartUpload(filePath, &input);
@@ -533,7 +534,7 @@ ClientError<QSError::Value> QSClient::UploadFile(const string &filePath,
                                                  shared_ptr<iostream> buffer) {
   PutObjectInput input;
   input.SetContentLength(fileSize);
-  input.SetContentType(LookupMimeType(filePath));
+  // input.SetContentType(LookupMimeType(filePath));
   if (fileSize > 0) {
     input.SetBody(buffer.get());
     if (ClientConfiguration::Instance().IsEnableContentMD5()) {
