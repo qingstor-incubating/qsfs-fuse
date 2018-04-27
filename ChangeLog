@@ -1,5 +1,17 @@
 * Fri Apr 13 2018 - Yunify Inc.
 
+- qsfs: version 1.0.3
+- Refactor Directory Tree Invalidation/Remove
+- Fix Directory Tree Rename issue which not rename directory descendants
+- Add integration test framework
+- Add 24 function test cases including write, read, rename, seek, truncate, rsync, redirect, symlink, etc.
+- Add glog signal failure handler to log failure dump and customize failer writer to convert failure dump address info to readable c++ name.
+- Add function name in log, and glog env such as max_log_size, clorlogtostderr, .etc
+- Seperate debug option for qsfs and fuse 
+- Fix failure of function test 'rename file before close'
+- Log to stderr if umaskmp is not set with allow_other together
+- Not to set content type in QSClient as QingStor server will handle file content type
+
 - qsfs: version 1.0.2
 - To synchronize Cache operations to avoid data race
 - Fix failure to truncate a new created empty file
