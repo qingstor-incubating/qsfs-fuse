@@ -125,7 +125,8 @@ Supported miscellaneous options are list as following,
 | -C | --clearlogdir | bool | N | Clear log directory at beginning
 | -f | --forground   | bool | N | Turn on log to STDERR and enable FUSE foreground mode
 | -s | --single      | bool | N | Turn on FUSE single threaded option - disable multi-threaded
-| -d | --debug       | bool | N | Turn on debug messages to log and enable FUSE debug option
+| -d | --debug       | bool | N | Turn on debug messages to log
+| -g | --fusedbg     | bool | N | Enable FUSE debug option
 | -U | --curldbg     | bool | N | Turn on debug message from curl
 | -h | --help        | bool | N | Print qsfs help
 | -V | --version     | bool | N | Print qsfs version

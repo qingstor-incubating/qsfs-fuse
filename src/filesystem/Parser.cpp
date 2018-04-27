@@ -299,6 +299,12 @@ void Parse(int argc, char **argv) {
   options.umaskmp &= (S_IRWXU | S_IRWXG | S_IRWXO);
   if (options.umaskmp != 0) {
     qsOptions.SetUmaskMountPoint(options.umaskmp);
+    if (!options.allowOther) {
+      std::cerr << "[qsfs Warn] allow_other NOT specified. umaskmp only works "
+                   "when set with the fuse allow_other option. Please sepcify "
+                   "'-o allow_other' if you want to set umaskmp."
+                << std::endl;
+    }
   }
 
   if (options.retries <= 0) {
@@ -408,7 +414,7 @@ void Parse(int argc, char **argv) {
   }
 
   options.umask &= (S_IRWXU | S_IRWXG | S_IRWXO);
-  if (umask != 0) {
+  if (options.umask != 0) {
     qsOptions.SetUmask(options.umask);
   }
 
