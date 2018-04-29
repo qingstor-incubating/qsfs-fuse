@@ -1547,14 +1547,16 @@ void qsfs_destroy(void* userdata) {
   // Drive get clean by itself. Just print an info here.
   Info("Disconnecting qsfs...");
 
-  if (userdata == NULL) {
-    return;
-  }
-
-  Drive* drive = static_cast<QS::FileSystem::Drive*>(userdata);
-  if (drive != NULL) {
-    drive->CleanUp();
-  }
+  // Drive will get clean itself by its static destructor, comment following line
+  // is no harm. And it helps to avoid starce error out at destroying drive
+  // if (userdata == NULL) {
+  //   return;
+  // }
+  //
+  // Drive* drive = static_cast<QS::FileSystem::Drive*>(userdata);
+  // if (drive != NULL) {
+  //   drive->CleanUp();
+  // }
 }
 
 // --------------------------------------------------------------------------
