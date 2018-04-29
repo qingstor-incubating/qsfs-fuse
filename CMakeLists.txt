@@ -59,6 +59,12 @@ if (OS_NAME MATCHES "CentOS" OR OS_NAME MATCHES "RedHat")
 endif ()
 string (CONCAT OS_NAME_VERSION ${OS_NAME} ${OS_VERSION})
 
+if (OS_NAME MATCHES "CentOS" OR OS_NAME MATCHES "RedHat")
+  if (OS_VERSION MATCHES "^5")
+    set (IS_CENTOS_5 TRUE CACHE BOOL "Current OS is CentOS/RedHat 5")
+  endif()
+endif()
+
 #
 # project information
 #

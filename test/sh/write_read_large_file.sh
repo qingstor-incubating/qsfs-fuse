@@ -36,7 +36,8 @@ dd if=/dev/urandom of="${BIG_TMPFILE}" bs=${BIG_FILESIZE} count=1
 dd if="${BIG_TMPFILE}" of="${BIG_FILE}" bs=${BIG_FILESIZE} count=1
 
 # read it
-dd if="${BIG_FILE}" of="${BIG_FILE_COPY}" bs=${BIG_FILESIZE} count=1 iflag=nocache status=none
+# status none, iflag nocache is unsupport on ubuntu12.04, centos5.8/6.8
+dd if="${BIG_FILE}" of="${BIG_FILE_COPY}" bs=${BIG_FILESIZE} count=1
 
 # verify
 if [ ! cmp "${BIG_TMPFILE}" "${BIG_FILE_COPY}" ]; then
