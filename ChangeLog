@@ -11,6 +11,7 @@
 - Fix failure of function test 'rename file before close'
 - Log to stderr if umaskmp is not set with allow_other together
 - Not to set content type in QSClient as QingStor server will handle file content type
+- Link to static QingStor SDK library
 
 - qsfs: version 1.0.2
 - To synchronize Cache operations to avoid data race

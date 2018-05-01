@@ -49,6 +49,7 @@ void ProcessSignal(const char *data, int size) {
     sscanf(buf, "%*[^0]0x%[^ ]", address);
     FILE *fp;
     std::stringstream ss;
+    //ss << "eu-addr2line 0x" << address <<" -p "<< boost::to_string(getpid());
     ss << "addr2line 0x" << address << " -C -s -e " << programFile;
     if ((fp = popen(ss.str().c_str(), "r"))) {
       char name[1024] = "";  // only read first 1024 bytes
