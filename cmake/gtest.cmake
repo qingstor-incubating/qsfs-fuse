@@ -13,7 +13,8 @@ include(cmake/DownloadInstallProject.cmake)
 # gtest_SOURCE_DIR and gtest_BINARY_DIR
 setup_download_project(PROJ      googletest
              GIT_REPOSITORY      https://github.com/google/googletest.git
-             GIT_TAG             master
+             #GIT_TAG             master
+             GIT_TAG             cf9d634  # choose this commit, as gtest latest version borken on gcc 4.4 or below
              ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )
 
