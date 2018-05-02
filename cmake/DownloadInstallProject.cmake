@@ -105,6 +105,7 @@ function(install_project PROJECT INSTALL_DIR)
             -B${${PROJECT}_BINARY_DIR}
             -DBUILD_TESTING=OFF
             -DBUILD_STATICLIB=ON  # only for qingstor sdk, ignore the warning
+            -DBUILD_SHAREDLIB=OFF
             RESULT_VARIABLE result
             ${OUTPUT_QUIET}
             WORKING_DIRECTORY "${${PROJECT}_DOWNLOAD_DIR}"
@@ -115,6 +116,7 @@ function(install_project PROJECT INSTALL_DIR)
             -B${${PROJECT}_BINARY_DIR}
             -DBUILD_TESTING=OFF
             -DBUILD_STATICLIB=ON  # only for qingstor sdk, ignore the warning
+            -DBUILD_SHAREDLIB=OFF
             -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
             RESULT_VARIABLE result
             ${OUTPUT_QUIET}

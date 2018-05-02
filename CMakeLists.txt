@@ -122,6 +122,9 @@ if (NOT Threads_FOUND)
            "\n\t${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log")
 endif ()
 
+find_package(CURL REQUIRED)
+find_package(OpenSSL REQUIRED)
+
 find_program(BASH_PROGRAM bash)
 if (NOT BASH_PROGRAM)
   message(WARNING "Cound not find bash.")

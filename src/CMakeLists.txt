@@ -34,7 +34,7 @@ if (APPLE)
 elseif (UNIX)
   target_link_libraries(${PROJECT_NAME} fuse boost_thread)
 endif ()
-target_link_libraries(${PROJECT_NAME} glog gflags ${CMAKE_THREAD_LIBS_INIT} libqingstor.a curl crypto)
+target_link_libraries(${PROJECT_NAME} glog gflags ${CMAKE_THREAD_LIBS_INIT} libqingstor.a ${CURL_LIBRARIES} ${OPENSSL_LIBRARIES})
 set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
