@@ -11,17 +11,24 @@ include(cmake/DownloadInstallProject.cmake)
 
 setup_download_project(PROJ    qingstorsdk
            GIT_REPOSITORY      https://github.com/yunify/qingstor-sdk-cpp.git
+           #GIT_REPOSITORY      https://github.com/jimhuaang/qingstor-sdk-cpp.git
            GIT_TAG             master
            ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )
 
-# Download and 
+
+# propagate qingstor sdk headers installation option
+# following only work when add qingstor sdk as subdirectory
+# set(INSTALL_SDK_HEADERS ${INSTALL_HEADERS} CACHE BOOL "" FORCE)
+# set(QS_STATICLIB ON CACHE BOOL "" FORCE)
+# add_subdirectory(${qingstorsdk_SOURCE_DIR})
+# include_directories(${qingstorsdk_SOURCE_DIR}/include)
+# link_directories(${CMAKE_BINARY_DIR}/build/qingstorsdk/source/lib)
+
+# Download
 download_project(qingstorsdk)
 
 # Install
-# propagate qingstor sdk headers installation option
-set(INSTALL_SDK_HEADERS ${INSTALL_HEADERS} CACHE BOOL "" FORCE)
-set (QS_STATICLIB true CACHE BOOL "" FORCE)
 install_project(qingstorsdk ${EXTERNAL_PROJECT_INSTALL_PREFIX})
 
 # Uninstall

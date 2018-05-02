@@ -99,26 +99,28 @@ endfunction(download_project PROJECT)
 
 function(install_project PROJECT INSTALL_DIR)
     # Install the project
-    if("{INSTALL_DIR}" STREQUAL "")
+    if("${INSTALL_DIR}" STREQUAL "")
         execute_process(COMMAND ${CMAKE_COMMAND}
             -H${${PROJECT}_SOURCE_DIR}
             -B${${PROJECT}_BINARY_DIR}
             -DBUILD_TESTING=OFF
+            -DBUILD_STATICLIB=ON  # only for qingstor sdk, ignore the warning
             RESULT_VARIABLE result
             ${OUTPUT_QUIET}
             WORKING_DIRECTORY "${${PROJECT}_DOWNLOAD_DIR}"
         )
-    else ("{INSTALL_DIR}" STREQUAL "")
+    else ("${INSTALL_DIR}" STREQUAL "")
         execute_process(COMMAND ${CMAKE_COMMAND}
             -H${${PROJECT}_SOURCE_DIR}
             -B${${PROJECT}_BINARY_DIR}
             -DBUILD_TESTING=OFF
+            -DBUILD_STATICLIB=ON  # only for qingstor sdk, ignore the warning
             -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
             RESULT_VARIABLE result
             ${OUTPUT_QUIET}
             WORKING_DIRECTORY "${${PROJECT}_DOWNLOAD_DIR}"
         )
-    endif("{INSTALL_DIR}" STREQUAL "")
+    endif("${INSTALL_DIR}" STREQUAL "")
     if(result)
         message(FATAL_ERROR "Pre-install step for ${PROJECT} failed: ${result}")
     endif()
