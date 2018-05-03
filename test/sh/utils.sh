@@ -316,7 +316,7 @@ function append_test_file_parallel {
       re='^[0-9]+$'
       if [[ $2 =~ $re ]]; then
         SIZE=$2
-        if [ $SIZE -lt 1]; then
+        if [ $SIZE -lt 1 ]; then
           echo "Warning: file size ${2} is less than 1, use $TEST_APPEND_FILE_LEN"
           SIZE=$TEST_APPEND_FILE_LEN
         fi
@@ -335,12 +335,22 @@ function append_test_file_parallel {
     wait
   )
 
-  # validation
-  LINE_NO=$(wc -l $FILE | awk '{print $1}')
-  if [ $LINE_NO -ne ${SIZE} ]; then
-    echo "Error: expected ${SIZE} lines in ${FILE}, got ${LINE_NO} lines"
-    exit 1
-  fi
+  # As http request has latency, we need to wait for a while when validate
+  # wait & validation
+  TRY_COUNT=3
+  while true; do
+    LINE_NO=$(wc -l $FILE | awk '{print $1}')
+    if [ $LINE_NO -eq ${SIZE} ]; then
+      break;
+    fi
+    let TRY_COUNT--
+    if [ $TRY_COUNT -le 0 ]; then
+      echo "Error: expected ${SIZE} lines in ${FILE}, got ${LINE_NO} lines"
+      FILEDATA=$(cat "$FILE")
+      echo "DATA: ${FILEDATA}"
+    fi
+    sleep 1
+  done
 }
 
 
