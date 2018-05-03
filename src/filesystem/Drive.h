@@ -271,6 +271,15 @@ class Drive : public Singleton<Drive> {
                                 const std::pair<off_t, size_t> &range,
                                 bool fileOpen, bool async = false);
 
+  // An workaroud to get file size
+  // This probably need to be refactored in the future
+  //
+  // File size is maintained by Cache, but only for files which has been
+  // cached. For these uncached file, the file size is from meta data which
+  // is saved when head object.
+  uint64_t GetTrueFileSize(const boost::shared_ptr<QS::Data::Node> &n,
+                           const std::string &p) const;
+
  private:
   boost::shared_ptr<QS::Client::Client> &GetClient() { return m_client; }
   boost::shared_ptr<QS::Client::TransferManager> &GetTransferManager() {

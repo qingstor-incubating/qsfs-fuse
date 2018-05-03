@@ -464,7 +464,7 @@ void Drive::OpenFile(const string &filePath, bool async) {
     return;
   }
 
-  uint64_t fileSize = node->GetFileSize();
+  uint64_t fileSize = GetTrueFileSize(node, filePath);
   Info("Open file [size=" + to_string(fileSize) + "] " + FormatPath(filePath));
 
   assert(fileSize >= 0);
@@ -504,7 +504,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
   // Ajust size or calculate remaining size
   uint64_t downloadSize = size;
   int64_t remainingSize = 0;
-  uint64_t fileSize = node->GetFileSize();
+  uint64_t fileSize = GetTrueFileSize(node, filePath);
   if (offset + size > fileSize) {
     DebugInfo("Read file [offset:size=" + to_string(offset) + ":" +
               to_string(size) + " file size=" + to_string(fileSize) + "] " +
@@ -713,8 +713,9 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
     return;
   }
 
-  if (newSize != node->GetFileSize()) {
-    Info("Truncate file [oldsize:newsize=" + to_string(node->GetFileSize()) +
+  uint64_t fileSize = GetTrueFileSize(node, filePath);
+  if (newSize != fileSize) {
+    Info("Truncate file [oldsize:newsize=" + to_string(fileSize) +
          ":" + to_string(newSize) + "]" + FormatPath(filePath));
     // To gurantee the data consistency, file size has been set in Cache
     m_cache->Resize(filePath, newSize, m_directoryTree);
@@ -790,7 +791,7 @@ void Drive::UploadFile(const string &filePath, bool releaseFile,
     return;
   }
 
-  uint64_t fileSize = node->GetFileSize();
+  uint64_t fileSize = GetTrueFileSize(node, filePath);
   ContentRangeDeque ranges = m_cache->GetUnloadedRanges(filePath, 0, fileSize);
   // download unloaded pages for file
   // this is need as user could open a file and edit a part of it,
@@ -946,6 +947,14 @@ void Drive::DownloadFileContentRange(const string &filePath,
       remainingSize -= downloadSize_;
     }
   }
+}
+
+// --------------------------------------------------------------------------
+uint64_t Drive::GetTrueFileSize(const shared_ptr<Node> &node, const string &filePath) const {
+  assert(node && *node);
+  uint64_t szMeta = node->GetFileSize();
+  uint64_t szCache = m_cache->GetFileSize(filePath);
+  return m_cache->HasFile(filePath) ? szCache : szMeta;
 }
 
 }  // namespace FileSystem
