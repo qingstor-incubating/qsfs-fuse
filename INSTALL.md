@@ -40,16 +40,21 @@ so create a directory in which to create your build files:
  $ cd build
 ```
 
-Run cmake to configure and install dependencies, NOTICE as we install
-dependencies in cmake configure step, the terminal will wait for you
-to type password in order to get root privileges:
-```sh
- $ cmake ..
-```
+Run cmake to configure and install dependencies, NOTICE as we install dependencies (gtest, glog, gflags and QingStor SDK for CPP) in cmake configure step, the terminal will wait for you to type password in order to get root privileges. And notice the installation will install all static libraries to 'third_party/install' not to system default locations (/usr/local/lib and /usr/lib).
 
 Notice, if you want to enable unit test, specfiy -DBUILD_TESTING=ON in cmake configure step; 
 ```sh
  $ cmake -DBUILD_TESTING=ON ..
+```
+
+Notice, it's very important to avoid the openssl version mismatch when your system has multiple OpenSSL
+version. when run make to build, you may meet with some warning like below,
+`/usr/bin/ld: warning: libcrypto.so.1.0.0, needed by /usr/local/lib/libcurl.so, may conflict with libcrypto.so.6`.
+
+You need to specify the root installation of OpenSSL by -DOPENSSL_ROOT_DIR.
+The reason causing OpenSSL mismatch version is due to curl and QingStor SDK both directly depeneded on OpenSSL, you need to ensure they link to the same OpenSSL version. As QingStor SDK also depended on curl, so at end you need to ensure you have linked to the same OpenssL version as curl depended on. For an example, if the OpenSSL, which curl depended on, is located at `/usr/local/ssl/lib `, you can specify root installation of OpenSSL as following,
+```sh
+$ cmake -DOPENSSL_ROOT_DIR=/usr/local/ssl/lib
 ```
 
 Run make to build:
