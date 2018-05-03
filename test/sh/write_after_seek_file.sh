@@ -28,10 +28,20 @@ source "$current_path/utils.sh"
 FILE_NAME="write_after_seek_ahead.txt"
 FILE_TEST="$QSFS_TEST_RUN_DIR/$FILE_NAME"
 dd if=/dev/zero of=$FILE_TEST seek=1 count=1 bs=1024
-FILE_SIZE=$(stat -c %s ${FILE_TEST})
-if [ $FILE_SIZE -ne 2048 ]; then
-  echo "Error: expected ${FILE_TEST} has length 2048, got ${FILE_SIZE}"
-  exit 1
-fi
+
+# wait & check
+TRY_COUNT=3
+while true; do
+  FILE_SIZE=$(stat -c %s ${FILE_TEST})
+  if [ $FILE_SIZE -eq 2048 ]; then
+    break;
+  fi
+  let TRY_COUNT--
+  if [ $TRY_COUNT -le 0 ]; then
+    echo "Error: expected ${FILE_TEST} has length 2048, got ${FILE_SIZE}"
+    exit 1
+  fi
+  sleep 1
+done
 
 rm_test_file $FILE_NAME

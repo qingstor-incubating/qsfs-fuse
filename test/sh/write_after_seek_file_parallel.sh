@@ -44,12 +44,21 @@ touch $FILE_TEST
   wait
 )
 
-# validation
-FILE_SIZE=$(stat -c %s ${FILE_TEST})
-if [ $FILE_SIZE -lt 1 ] || [ $FILE_SIZE -gt $THREADS ]; then
-  echo "Error: expected ${FILE_TEST} has length belong to [1,$THREADS], got ${FILE_SIZE}"
-  exit 1
-fi
+# wait & validation
+TRY_COUNT=3
+while true; do
+  FILE_SIZE=$(stat -c %s ${FILE_TEST})
+  # as write after seek will override the previous data
+  if [ $FILE_SIZE -ge 1 ] && [ $FILE_SIZE -le $THREADS ]; then
+    break;
+  fi
+  let TRY_COUNT--
+  if [ $TRY_COUNT -le 0 ]; then
+    echo "Error: expected ${FILE_TEST} has length belong to [1,$THREADS], got ${FILE_SIZE}"
+    exit 1
+  fi
+  sleep 1
+done
 
 # cleanup
 rm_test_file $FILE_NAME

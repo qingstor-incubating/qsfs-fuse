@@ -39,11 +39,19 @@ dd if="${BIG_TMPFILE}" of="${BIG_FILE}" bs=${BIG_FILESIZE} count=1
 # status none, iflag nocache is unsupport on ubuntu12.04, centos5.8/6.8
 dd if="${BIG_FILE}" of="${BIG_FILE_COPY}" bs=${BIG_FILESIZE} count=1
 
-# verify
-if [ ! cmp "${BIG_TMPFILE}" "${BIG_FILE_COPY}" ]; then
-  echo "Error: expected the same file content for ${BIG_FILE} and ${BIG_TMPFILE}, got different"
-  exit 1
-fi
+# wait & verify
+TRY_COUNT=3
+while true; do
+  if cmp "${BIG_TMPFILE}" "${BIG_FILE_COPY}"; then
+    break;
+  fi
+  let TRY_COUNT--
+  if [ $TRY_COUNT -le 0 ]; then
+    echo "Error: expected the same file content for ${BIG_FILE} and ${BIG_TMPFILE}, got different"
+    exit 1
+  fi
+  sleep 1
+done
 
 rm -f ${BIG_TMPFILE}
 rm -f ${BIG_FILE_COPY}

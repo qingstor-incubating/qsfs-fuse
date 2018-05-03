@@ -74,6 +74,7 @@ function mk_test_file {
     let TRY_COUNT--
     if [ $TRY_COUNT -le 0 ]; then
       echo "Error: Cound not create file ${FILE}, that file size is something wrong"
+      exit 1
     fi
     sleep 1
   done
@@ -289,12 +290,22 @@ function append_test_file {
     echo $x >> $FILE
   done
 
-  # Verify contents of file
-  FILE_SIZE=$(wc -l $FILE | awk '{print $1}')
-  if [ $SIZE -ne $FILE_SIZE ]; then
-    echo "Error: expected file size ${SIZE}, got ${FILE_SIZE} [path=$FILE]"
-    exit 1
-  fi
+  # wait & verify contents of file
+  TRY_COUNT=3
+  while true; do
+    FILE_SIZE=$(wc -l $FILE | awk '{print $1}')
+    if [ $SIZE -eq $FILE_SIZE ]; then
+      break;
+    fi
+    let TRY_COUNT--
+    if [ $TRY_COUNT -le 0 ]; then
+      echo "Error: expected file size ${SIZE}, got ${FILE_SIZE} [path=$FILE]"
+      FILEDATA=$(cat "$FILE")
+      echo "DATA: ${FILEDATA}"
+      exit 1
+    fi
+    sleep 1
+  done
 }
 
 #
@@ -348,6 +359,7 @@ function append_test_file_parallel {
       echo "Error: expected ${SIZE} lines in ${FILE}, got ${LINE_NO} lines"
       FILEDATA=$(cat "$FILE")
       echo "DATA: ${FILEDATA}"
+      exit 1
     fi
     sleep 1
   done
@@ -395,12 +407,20 @@ function truncate_test_file {
     truncate ${FILE} -s $TARGET_SIZE
   fi
 
-  # Verify file size
-  FILE_SIZE=$(stat -c %s ${FILE})
-  if [ $TARGET_SIZE -ne $FILE_SIZE ]; then
-    echo "Error: expected ${FILE} to be $TARGET_SIZE length, got $FILE_SIZE"
-    exit 1
-  fi
+  # wait & verify file size
+  TRY_COUNT=3
+  while true; do
+    FILE_SIZE=$(stat -c %s ${FILE})
+    if [ $TARGET_SIZE -eq $FILE_SIZE ]; then
+      break;
+    fi
+    let TRY_COUNT--
+    if [ $TRY_COUNT -le 0 ]; then
+      echo "Error: expected ${FILE} to be $TARGET_SIZE length, got $FILE_SIZE"
+      exit 1
+    fi
+    sleep 1
+  done
 }
 
 
