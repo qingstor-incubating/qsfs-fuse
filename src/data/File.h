@@ -45,9 +45,8 @@ typedef std::deque<std::pair<off_t, size_t> > ContentRangeDeque;
 
 class File : private boost::noncopyable {
  public:
-  explicit File(const std::string &baseName, time_t mtime, size_t size = 0)
+  explicit File(const std::string &baseName, size_t size = 0)
       : m_baseName(baseName),
-        m_mtime(mtime),
         m_size(size),
         m_cacheSize(size),
         m_useDiskFile(false),
@@ -64,10 +63,6 @@ class File : private boost::noncopyable {
   size_t GetCachedSize() const {
     boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
     return m_cacheSize;
-  }
-  time_t GetTime() const {
-    boost::lock_guard<boost::mutex> locker(m_mtimeLock);
-    return m_mtime;
   }
   bool UseDiskFile() const {
     boost::lock_guard<boost::mutex> locker(m_useDiskFileLock);
@@ -114,7 +109,7 @@ class File : private boost::noncopyable {
  private:
   // Read from the cache (file pages)
   //
-  // @param  : file offset, len of bytes, modified time since from
+  // @param  : file offset, len of bytes
   // @return : a pair of {read size, page list containing data, unloaded ranges}
   //
   // If any bytes is not present, download it as a new page.
@@ -124,29 +119,29 @@ class File : private boost::noncopyable {
   // input asking for, for example, the 1st page of outcome could has a
   // offset which is ahead of input 'offset'.
   boost::tuple<size_t, std::list<boost::shared_ptr<Page> >, ContentRangeDeque>
-  Read(off_t offset, size_t len, time_t mtimeSince = 0);
+  Read(off_t offset, size_t len);
 
   // Write a block of bytes into pages
   //
-  // @param  : file offset, len, buffer, modification time
+  // @param  : file offset, len, buffer
   // @return : {success, added size in cache, added size}
   //
   // From pointer of buffer, number of len bytes will be writen.
   // The owning file's offset is set with 'offset'.
   boost::tuple<bool, size_t, size_t> Write(off_t offset, size_t len,
-                                           const char *buffer, time_t mtime,
+                                           const char *buffer,
                                            bool open = false);
 
   // Write stream into pages
   //
-  // @param  : file offset, len of stream, stream, modification time
+  // @param  : file offset, len of stream, stream
   // @return : {success, added size in cache, added size}
   //
   // The stream will be moved to the pages.
   // The owning file's offset is set with 'offset'.
   boost::tuple<bool, size_t, size_t> Write(
       off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream,
-      time_t mtime, bool open = false);
+      bool open = false);
 
   // Resize the total pages' size to a smaller size.
   void ResizeToSmallerSize(size_t smallerSize);
@@ -156,12 +151,6 @@ class File : private boost::noncopyable {
 
   // Clear pages and reset attributes.
   void Clear();
-
-  // Set modification time
-  void SetTime(time_t mtime) {
-    boost::lock_guard<boost::mutex> locker(m_mtimeLock);
-    m_mtime = mtime;
-  }
 
   // Set flag to use disk file
   void SetUseDiskFile(bool useDiskFile) {
@@ -212,9 +201,6 @@ class File : private boost::noncopyable {
 
  private:
   std::string m_baseName;  // file base name
-
-  mutable boost::mutex m_mtimeLock;
-  time_t m_mtime;  // time of last modification
 
   mutable boost::mutex m_sizeLock;
   size_t m_size;   // record sum of all pages' size

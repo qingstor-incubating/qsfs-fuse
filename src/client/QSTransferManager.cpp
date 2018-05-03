@@ -290,7 +290,7 @@ shared_ptr<TransferHandle> QSTransferManager::RetryDownload(
 
 // --------------------------------------------------------------------------
 shared_ptr<TransferHandle> QSTransferManager::UploadFile(
-    const string &filePath, uint64_t fileSize, time_t fileMtimeSince,
+    const string &filePath, uint64_t fileSize,
     const shared_ptr<Cache> &cache, bool async) {
   string bucket = ClientConfiguration::Instance().GetBucket();
   shared_ptr<TransferHandle> handle = make_shared<TransferHandle>(
@@ -299,14 +299,14 @@ shared_ptr<TransferHandle> QSTransferManager::UploadFile(
     DebugError("Null Cache input");
     return handle;
   }
-  DoUpload(handle, cache, fileMtimeSince, async);
+  DoUpload(handle, cache, async);
 
   return handle;
 }
 
 // --------------------------------------------------------------------------
 shared_ptr<TransferHandle> QSTransferManager::RetryUpload(
-    const shared_ptr<TransferHandle> &handle, time_t fileMtimeSince,
+    const shared_ptr<TransferHandle> &handle,
     const shared_ptr<Cache> &cache, bool async) {
   if (handle->GetStatus() == TransferStatus::InProgress ||
       handle->GetStatus() == TransferStatus::Completed ||
@@ -322,11 +322,11 @@ shared_ptr<TransferHandle> QSTransferManager::RetryUpload(
 
   if (handle->GetStatus() == TransferStatus::Aborted) {
     return UploadFile(handle->GetObjectKey(), handle->GetBytesTotalSize(),
-                      fileMtimeSince, cache, async);
+                      cache, async);
   } else {
     handle->UpdateStatus(TransferStatus::NotStarted);
     handle->Restart();
-    DoUpload(handle, cache, fileMtimeSince, async);
+    DoUpload(handle, cache, async);
     return handle;
   }
 }
@@ -551,7 +551,7 @@ bool QSTransferManager::PrepareUpload(
 // --------------------------------------------------------------------------
 void QSTransferManager::DoSinglePartUpload(
     const shared_ptr<TransferHandle> &handle, const shared_ptr<Cache> &cache,
-    time_t mtimeSince, bool async) {
+    bool async) {
   PartIdToPartMap queuedParts = handle->GetQueuedParts();
   assert(queuedParts.size() == 1);
 
@@ -560,7 +560,7 @@ void QSTransferManager::DoSinglePartUpload(
   Buffer buf = Buffer(new vector<char>(fileSize));
   string objKey = handle->GetObjectKey();
   pair<size_t, ContentRangeDeque> res =
-      cache->Read(objKey, 0, fileSize, &(*buf)[0], mtimeSince);
+      cache->Read(objKey, 0, fileSize, &(*buf)[0]);
   size_t readSize = res.first;
   if (readSize != fileSize) {
     DebugError("Fail to read cache [file:offset:len:readsize=" + objKey +
@@ -594,7 +594,7 @@ void QSTransferManager::DoSinglePartUpload(
 // --------------------------------------------------------------------------
 void QSTransferManager::DoMultiPartUpload(
     const shared_ptr<TransferHandle> &handle, const shared_ptr<Cache> &cache,
-    time_t mtimeSince, bool async) {
+    bool async) {
   PartIdToPartMap queuedParts = handle->GetQueuedParts();
   string objKey = handle->GetObjectKey();
   PartIdToPartMapIterator ipart = queuedParts.begin();
@@ -613,7 +613,7 @@ void QSTransferManager::DoMultiPartUpload(
 
     pair<size_t, ContentRangeDeque> res =
         cache->Read(objKey, part->GetRangeBegin(), part->GetSize(),
-                    &(*buffer)[0], mtimeSince);
+                    &(*buffer)[0]);
     size_t readSize = res.first;
     if (readSize != part->GetSize()) {
       DebugError("Fail to read cache [file:offset:len:readsize=" + objKey +
@@ -661,15 +661,15 @@ void QSTransferManager::DoMultiPartUpload(
 // --------------------------------------------------------------------------
 void QSTransferManager::DoUpload(const shared_ptr<TransferHandle> &handle,
                                  const shared_ptr<Cache> &cache,
-                                 time_t mtimeSince, bool async) {
+                                 bool async) {
   handle->UpdateStatus(TransferStatus::InProgress);
   if (!PrepareUpload(handle)) {
     return;
   }
   if (handle->IsMultipart()) {
-    DoMultiPartUpload(handle, cache, mtimeSince, async);
+    DoMultiPartUpload(handle, cache, async);
   } else {
-    DoSinglePartUpload(handle, cache, mtimeSince, async);
+    DoSinglePartUpload(handle, cache, async);
   }
 }
 

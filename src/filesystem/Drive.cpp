@@ -424,7 +424,7 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
     err = GetClient()->Stat(filePath, m_directoryTree);
     ErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
     shared_ptr<Node> node = GetNodeSimple(filePath);
-    GetCache()->UnguardedNewEmptyFile(filePath, node->GetMTime());
+    GetCache()->UnguardedNewEmptyFile(filePath);
   } else {
     Error("Not support to create a special file (block, char, FIFO, etc.)");
     // This only make file of other types in local dir tree, nothing happens
@@ -467,10 +467,9 @@ void Drive::OpenFile(const string &filePath, bool async) {
   uint64_t fileSize = node->GetFileSize();
   Info("Open file [size=" + to_string(fileSize) + "] " + FormatPath(filePath));
 
-  time_t mtime = node->GetMTime();
   assert(fileSize >= 0);
   if (fileSize == 0) {
-    m_cache->Write(filePath, 0, 0, NULL, mtime, m_directoryTree, true);
+    m_cache->Write(filePath, 0, 0, NULL, m_directoryTree, true);
   } else if (fileSize > 0) {
     bool fileContentExist = m_cache->HasFileData(filePath, 0, fileSize);
     if (!fileContentExist || modified) {
@@ -482,7 +481,7 @@ void Drive::OpenFile(const string &filePath, bool async) {
       QS::Data::ContentRangeDeque ranges =
           m_cache->GetUnloadedRanges(filePath, 0, fileSize);
       if (!ranges.empty()) {
-        DownloadFileContentRanges(filePath, ranges, mtime, true, async);
+        DownloadFileContentRanges(filePath, ranges, true, async);
       }
     }
   }
@@ -521,9 +520,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
 
   time_t mtime = node->GetMTime();
   bool isOpen = node->IsFileOpen();
-  if (mtime > m_cache->GetTime(filePath)) {
-    m_cache->Erase(filePath);
-  }
+
   // Download file if not found in cache or if cache need update
   bool fileContentExist = m_cache->HasFileData(filePath, offset, downloadSize);
   if (!fileContentExist) {
@@ -540,7 +537,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
              to_string(downloadSize) + "] " + FormatPath(filePath));
 
         bool success = m_cache->Write(filePath, offset, downloadSize, stream,
-                                      mtime, m_directoryTree, isOpen);
+                                      m_directoryTree, isOpen);
         ErrorIf(!success,
                 "Fail to write cache [offset:len=" + to_string(offset) + ":" +
                     to_string(downloadSize) + "] " + FormatPath(filePath));
@@ -553,13 +550,13 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     ContentRangeDeque ranges =
         m_cache->GetUnloadedRanges(filePath, 0, fileSize);
     if (!ranges.empty()) {
-      DownloadFileContentRanges(filePath, ranges, mtime, isOpen, async);
+      DownloadFileContentRanges(filePath, ranges, isOpen, async);
     }
   }
 
   // Read from cache
   pair<size_t, ContentRangeDeque> outcome =
-      m_cache->Read(filePath, offset, downloadSize, buf, mtime);
+      m_cache->Read(filePath, offset, downloadSize, buf);
   return outcome.first;
 }
 
@@ -720,7 +717,7 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
     Info("Truncate file [oldsize:newsize=" + to_string(node->GetFileSize()) +
          ":" + to_string(newSize) + "]" + FormatPath(filePath));
     // To gurantee the data consistency, file size has been set in Cache
-    m_cache->Resize(filePath, newSize, node->GetMTime(), m_directoryTree);
+    m_cache->Resize(filePath, newSize, m_directoryTree);
   }
 }
 
@@ -770,20 +767,11 @@ struct UploadFileCallback {
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
         Info("Done Upload file [size=" + to_string(fileSize) + "] " +
              FormatPath(filePath));
-        // update meta mtime
+        // update meta
         if (updateMeta) {
           ClientError<QSError::Value> err =
               client->Stat(handle->GetObjectKey(), dirTree);
-          if (IsGoodQSError(err)) {
-            // update cache mtime
-            shared_ptr<Node> node1 =
-                drive->GetNodeSimple(handle->GetObjectKey());
-            if (node1 && *node1) {
-              cache->SetTime(handle->GetObjectKey(), node1->GetMTime());
-            }
-          } else {
-            Error(GetMessageForQSError(err));
-          }
+          ErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
         }  // update Meta
       }    // Done Transfer
     }
@@ -803,15 +791,13 @@ void Drive::UploadFile(const string &filePath, bool releaseFile,
   }
 
   uint64_t fileSize = node->GetFileSize();
-  time_t mtime = node->GetMTime();
   ContentRangeDeque ranges = m_cache->GetUnloadedRanges(filePath, 0, fileSize);
   // download unloaded pages for file
   // this is need as user could open a file and edit a part of it,
   // but you need the completed file in order to upload it.
   if (!ranges.empty()) {
     bool fileOpen = node->IsFileOpen();
-    DownloadFileContentRanges(filePath, ranges, mtime, fileOpen,
-                              false);  // sync
+    DownloadFileContentRanges(filePath, ranges, fileOpen, false);  // sync
   }
 
   UploadFileCallback callback(filePath, fileSize, node, m_cache, m_client,
@@ -821,10 +807,10 @@ void Drive::UploadFile(const string &filePath, bool releaseFile,
         bind(boost::type<void>(), callback, _1),
         bind(boost::type<shared_ptr<TransferHandle> >(),
              &QS::Client::TransferManager::UploadFile, m_transferManager.get(),
-             _1, fileSize, mtime, m_cache, false),
+             _1, fileSize, m_cache, false),
         filePath);
   } else {
-    callback(m_transferManager->UploadFile(filePath, fileSize, mtime, m_cache));
+    callback(m_transferManager->UploadFile(filePath, fileSize, m_cache));
   }
 }
 
@@ -863,9 +849,8 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
   }
 
   bool isOpen = node->IsFileOpen();
-  time_t mtime = node->GetMTime();
-  bool success = m_cache->Write(filePath, offset, size, buf, mtime,
-                                m_directoryTree, isOpen);
+  bool success =
+      m_cache->Write(filePath, offset, size, buf, m_directoryTree, isOpen);
 
   return success ? size : 0;
 }
@@ -873,9 +858,9 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
 // --------------------------------------------------------------------------
 void Drive::DownloadFileContentRanges(const string &filePath,
                                       const ContentRangeDeque &ranges,
-                                      time_t mtime, bool open, bool async) {
+                                      bool open, bool async) {
   BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
-    DownloadFileContentRange(filePath, range, mtime, open, async);
+    DownloadFileContentRange(filePath, range, open, async);
   }
 }
 
@@ -885,7 +870,6 @@ struct DownloadFileContentRangeCallback {
   off_t offset;
   size_t downloadSize;
   shared_ptr<IOStream> stream;
-  time_t mtime;
   bool fileOpen;
   shared_ptr<Cache> cache;
   shared_ptr<DirectoryTree> dirTree;
@@ -893,14 +877,12 @@ struct DownloadFileContentRangeCallback {
   DownloadFileContentRangeCallback(const string &filePath_, off_t offset_,
                                    size_t downloadSize_,
                                    const shared_ptr<IOStream> &stream_,
-                                   time_t mtime_, bool open_,
-                                   const shared_ptr<Cache> &cache_,
+                                   bool open_, const shared_ptr<Cache> &cache_,
                                    const shared_ptr<DirectoryTree> &dirTree_)
       : filePath(filePath_),
         offset(offset_),
         downloadSize(downloadSize_),
         stream(stream_),
-        mtime(mtime_),
         fileOpen(open_),
         cache(cache_),
         dirTree(dirTree_) {}
@@ -910,7 +892,7 @@ struct DownloadFileContentRangeCallback {
       handle->WaitUntilFinished();
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
         bool success = cache->Write(filePath, offset, downloadSize, stream,
-                                    mtime, dirTree, fileOpen);
+                                    dirTree, fileOpen);
         ErrorIf(!success,
                 "Fail to write cache [file:offset:len=" + filePath + ":" +
                     to_string(offset) + ":" + to_string(downloadSize) + "]");
@@ -922,7 +904,7 @@ struct DownloadFileContentRangeCallback {
 // --------------------------------------------------------------------------
 void Drive::DownloadFileContentRange(const string &filePath,
                                      const pair<off_t, size_t> &range,
-                                     time_t mtime, bool open, bool async) {
+                                     bool open, bool async) {
   off_t offset = range.first;
   size_t size = range.second;
   // Download file if not found in cache or if cache need update
@@ -943,8 +925,8 @@ void Drive::DownloadFileContentRange(const string &filePath,
 
       shared_ptr<IOStream> stream_ = make_shared<IOStream>(downloadSize_);
       DownloadFileContentRangeCallback callback(filePath, offset_,
-                                                downloadSize_, stream_, mtime,
-                                                open, m_cache, m_directoryTree);
+                                                downloadSize_, stream_, open,
+                                                m_cache, m_directoryTree);
 
       if (async) {
         GetTransferManager()->GetExecutor()->SubmitAsync(

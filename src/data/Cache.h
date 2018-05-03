@@ -119,9 +119,6 @@ class Cache : private boost::noncopyable {
   // Get cache Capacity
   uint64_t GetCapacity() const { return m_capacity; }
 
-  // Get file mtime
-  time_t GetTime(const std::string &fileId) const;
-
   // Get file size
   uint64_t GetFileSize(const std::string &filePath) const;
 
@@ -139,37 +136,36 @@ class Cache : private boost::noncopyable {
 
   // Read file cache into a buffer
   //
-  // @param  : file path, offset, len, buffer, modified time since from
+  // @param  : file path, offset, len, buffer
   // @return : {size of bytes have been writen to buffer, unloaded ranges}
   //
   // If not found fileId in cache, create it in cache and load its pages.
   std::pair<size_t, ContentRangeDeque> Read(const std::string &fileId,
                                             off_t offset, size_t len,
-                                            char *buffer,
-                                            time_t mtimeSince = 0);
+                                            char *buffer);
 
  private:
   // Write a block of bytes into file cache
   //
-  // @param  : file path, file offset, len, buffer, modification time
+  // @param  : file path, file offset, len, buffer
   // @return : bool
   //
   // If File of fileId doesn't exist, create one.
   // From pointer of buffer, number of len bytes will be writen.
   bool Write(const std::string &fileId, off_t offset, size_t len,
-             const char *buffer, time_t mtime,
+             const char *buffer,
              const boost::shared_ptr<DirectoryTree> &dirTree,
              bool open = false);
 
   // Write stream into file cache
   //
-  // @param  : file path, file offset, stream, modification time
+  // @param  : file path, file offset, stream
   // @return : bool
   //
   // If File of fileId doesn't exist, create one.
   // Stream will be moved to cache.
   bool Write(const std::string &fileId, off_t offset, size_t len,
-             const boost::shared_ptr<std::iostream> &stream, time_t mtime,
+             const boost::shared_ptr<std::iostream> &stream,
              const boost::shared_ptr<DirectoryTree> &dirTree,
              bool open = false);
 
@@ -180,7 +176,7 @@ class Cache : private boost::noncopyable {
   //
   // internal use only
   std::pair<bool, boost::shared_ptr<File> > PrepareWrite(
-      const std::string &fileId, size_t len, time_t mtime);
+      const std::string &fileId, size_t len);
 
   // Free cache space
   //
@@ -214,12 +210,6 @@ class Cache : private boost::noncopyable {
   // @return : void
   void Rename(const std::string &oldFileId, const std::string &newFileId);
 
-  // Change file mtime
-  //
-  // @param  : file id, mtime
-  // @return : void
-  void SetTime(const std::string &fileId, time_t mtime);
-
   // Change file open state
   //
   // @param  : file id, open state
@@ -229,21 +219,20 @@ class Cache : private boost::noncopyable {
 
   // Resize a file
   //
-  // @param  : file id, new file size, mtime
+  // @param  : file id, new file size
   // @return : void
-  void Resize(const std::string &fileId, size_t newSize, time_t mtime,
-              const boost::shared_ptr<DirectoryTree> &dirTree);
+  void Resize(const std::string &fileId,
+              size_t newSize, const boost::shared_ptr<DirectoryTree> &dirTree);
 
  private:
   // Create an empty File with fileId in cache, without checking input.
   // If success return reference to insert file, else return m_cache.end().
-  CacheListIterator UnguardedNewEmptyFile(const std::string &fileId,
-                                          time_t mtime);
+  CacheListIterator UnguardedNewEmptyFile(const std::string &fileId);
 
   // Erase the file denoted by pos, without checking input.
   CacheListIterator UnguardedErase(FileIdToCacheListIteratorMap::iterator pos);
 
-  // Move the file denoted by pos into the front of the cache,
+// Move the file denoted by pos into the front of the cache,
   // without checking input.
   CacheListIterator UnguardedMakeFileMostRecentlyUsed(CacheListIterator pos);
 

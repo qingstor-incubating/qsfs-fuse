@@ -197,12 +197,11 @@ shared_ptr<Node> DirectoryTree::Grow(const shared_ptr<FileMetaData> &fileMeta) {
   if (node && *node) {
     time_t timein = fileMeta->GetMTime();
     time_t timecur = node->GetMTime();
-    if (timein > timecur) {
-      DebugInfo("Update node " + FormatPath(filePath));
-      node->SetEntry(Entry(fileMeta));  // update entry
-    } else if (timein < timecur) {
+    DebugInfo("Update node " + FormatPath(filePath));
+    node->SetEntry(Entry(fileMeta));  // update entry
+    if (timein < timecur) {
       if(!node->IsDirectory()) {
-        DebugWarning("file mtime too old, no update " + FormatPath(filePath) +
+        DebugWarning("file mtime is old " + FormatPath(filePath) +
                      "[input mtime:" + SecondsToRFC822GMT(timein) +
                      ", current mtime:" + SecondsToRFC822GMT(timecur) + "]");
       }

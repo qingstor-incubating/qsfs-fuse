@@ -56,7 +56,6 @@ void InitLog() {
   QS::Logging::Log::Instance().Initialize(defaultLogDir);
 }
 
-time_t mtime_ = time(NULL);
 uid_t uid_ = 1000U;
 gid_t gid_ = 1000U;
 mode_t fileMode_ = S_IRWXU | S_IRWXG | S_IROTH;
@@ -67,12 +66,12 @@ class FileTest : public Test {
 
   void TestWrite() {
     string filename = "file1";
-    File file1(filename, mtime_);  // empty file
+    File file1(filename);  // empty file
 
     const char *page1 = "012";
     size_t len1 = 3;
     off_t off1 = 0;
-    file1.Write(off1, len1, page1, 0);
+    file1.Write(off1, len1, page1);
     EXPECT_EQ(file1.GetSize(), len1);
     EXPECT_EQ(file1.GetCachedSize(), len1);
     EXPECT_FALSE(file1.UseDiskFile());
@@ -87,7 +86,7 @@ class FileTest : public Test {
     size_t len2 = 3;
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    file1.Write(off2, len2, page2, 0);
+    file1.Write(off2, len2, page2);
     EXPECT_EQ(file1.GetSize(), len1 + len2);
     EXPECT_EQ(file1.GetCachedSize(), len1 + len2);
     EXPECT_TRUE(file1.HasData(0, len1 + len2 - 1));
@@ -141,7 +140,7 @@ class FileTest : public Test {
     size_t len3 = 3;
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    file1.Write(off3, len3, page3, 0);
+    file1.Write(off3, len3, page3);
     EXPECT_EQ(file1.GetSize(), len1 + len2 + len3);
     EXPECT_EQ(file1.GetCachedSize(), len1 + len2 + len3);
     EXPECT_TRUE(file1.HasData(off2, len2));
@@ -175,13 +174,13 @@ class FileTest : public Test {
 
   void TestWriteDiskFile() {
     string filename = "file1";
-    File file1(filename, mtime_);  // empty file
+    File file1(filename);  // empty file
     file1.SetUseDiskFile(true);
 
     const char *page1 = "012";
     size_t len1 = 3;
     off_t off1 = 0;
-    file1.Write(off1, len1, page1, 0);
+    file1.Write(off1, len1, page1);
     EXPECT_EQ(file1.GetSize(), len1);
     EXPECT_EQ(file1.GetCachedSize(), 0u);
     EXPECT_TRUE(file1.UseDiskFile());
@@ -196,7 +195,7 @@ class FileTest : public Test {
     size_t len2 = 3;
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    file1.Write(off2, len2, page2, 0);
+    file1.Write(off2, len2, page2);
     EXPECT_EQ(file1.GetSize(), len1 + len2);
     EXPECT_EQ(file1.GetCachedSize(), 0u);
     EXPECT_TRUE(file1.HasData(0, len1 + len2 - 1));
@@ -230,26 +229,26 @@ class FileTest : public Test {
 
   void TestRead() {
     string filename = "file1";
-    File file1(filename, mtime_);  // empty file
+    File file1(filename);  // empty file
 
     const char *page1 = "012";
     size_t len1 = 3;
     off_t off1 = 0;
-    file1.Write(off1, len1, page1, mtime_);
+    file1.Write(off1, len1, page1);
 
     const char *page2 = "abc";
     size_t len2 = 3;
     off_t off2 = off_t(len1);
-    file1.Write(off2, len2, page2, mtime_);
+    file1.Write(off2, len2, page2);
 
     const char *page3 = "ABC";
     size_t len3 = 3;
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    file1.Write(off3, len3, page3, mtime_);
+    file1.Write(off3, len3, page3);
 
     tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res1 =
-        file1.Read(off1, len1, 0);
+        file1.Read(off1, len1);
     EXPECT_EQ(boost::get<0>(res1), len1);
     list<shared_ptr<Page> > &pages1 = boost::get<1>(res1);
     EXPECT_EQ(pages1.size(), 1u);
@@ -264,7 +263,7 @@ class FileTest : public Test {
     EXPECT_TRUE(unloadPages1.empty());
 
     tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res2 =
-        file1.Read(off1 + 1, len1, 0);
+        file1.Read(off1 + 1, len1);
     EXPECT_EQ(boost::get<0>(res2), len1 + len2);
     list<shared_ptr<Page> > &pages2 = boost::get<1>(res2);
     EXPECT_EQ(pages2.size(), 2u);
@@ -282,7 +281,7 @@ class FileTest : public Test {
     EXPECT_TRUE(unloadPages2.empty());
 
     tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res3 =
-        file1.Read(off2 + len2, holeLen, 0);
+        file1.Read(off2 + len2, holeLen);
     EXPECT_EQ(boost::get<0>(res3), 0u);
     list<shared_ptr<Page> > &pages3 = boost::get<1>(res3);
     EXPECT_TRUE(pages3.empty());
@@ -290,7 +289,7 @@ class FileTest : public Test {
     EXPECT_FALSE(unloadPages3.empty());
 
     tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res4 =
-        file1.Read(off3, len3, 0);
+        file1.Read(off3, len3);
     EXPECT_EQ(boost::get<0>(res4), len3);
     list<shared_ptr<Page> > &pages4 = boost::get<1>(res4);
     EXPECT_EQ(pages4.size(), 1u);
@@ -307,27 +306,27 @@ class FileTest : public Test {
 
   void TestReadDiskFile() {
     string filename = "file2";
-    File file1(filename, mtime_);  // empty file
+    File file1(filename);  // empty file
     file1.SetUseDiskFile(true);
 
     const char *page1 = "012";
     size_t len1 = 3;
     off_t off1 = 0;
-    file1.Write(off1, len1, page1, mtime_);
+    file1.Write(off1, len1, page1);
 
     const char *page2 = "abc";
     size_t len2 = 3;
     off_t off2 = off_t(len1);
-    file1.Write(off2, len2, page2, mtime_);
+    file1.Write(off2, len2, page2);
 
     const char *page3 = "ABC";
     size_t len3 = 3;
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    file1.Write(off3, len3, page3, mtime_);
+    file1.Write(off3, len3, page3);
 
     tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res1 =
-        file1.Read(off1, len1, 0);
+        file1.Read(off1, len1);
     EXPECT_EQ(boost::get<0>(res1), len1);
     list<shared_ptr<Page> > &pages1 = boost::get<1>(res1);
     EXPECT_EQ(pages1.size(), 1u);
@@ -340,7 +339,7 @@ class FileTest : public Test {
     EXPECT_EQ(buf1, arr1);
 
     tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res2 =
-        file1.Read(off1 + 1, len1, 0);
+        file1.Read(off1 + 1, len1);
     EXPECT_EQ(boost::get<0>(res2), len1 + len2);
     list<shared_ptr<Page> > &pages2 = boost::get<1>(res2);
     EXPECT_EQ(pages2.size(), 2u);
@@ -361,11 +360,10 @@ TEST_F(FileTest, Default) {
   string filename = "file1";
   string filepath =
       QS::Configure::Options::Instance().GetDiskCacheDirectory() + filename;
-  File file1(filename, mtime_);
+  File file1(filename);
   EXPECT_EQ(file1.GetBaseName(), filename);
   EXPECT_EQ(file1.GetSize(), 0u);
   EXPECT_EQ(file1.GetCachedSize(), 0u);
-  EXPECT_EQ(file1.GetTime(), mtime_);
   EXPECT_FALSE(file1.UseDiskFile());
   EXPECT_EQ(file1.AskDiskFilePath(), filepath);
   EXPECT_TRUE(file1.HasData(0, 0));

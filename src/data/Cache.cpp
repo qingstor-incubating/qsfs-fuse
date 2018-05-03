@@ -125,18 +125,6 @@ size_t Cache::GetNumFile() const {
 }
 
 // --------------------------------------------------------------------------
-time_t Cache::GetTime(const string &fileId) const {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  CacheMapConstIterator it = m_map.find(fileId);
-  if (it != m_map.end()) {
-    shared_ptr<File> &file = it->second->second;
-    return file->GetTime();
-  } else {
-    return 0;
-  }
-}
-
-// --------------------------------------------------------------------------
 uint64_t Cache::GetFileSize(const std::string &filePath) const {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapConstIterator it = m_map.find(filePath);
@@ -144,6 +132,7 @@ uint64_t Cache::GetFileSize(const std::string &filePath) const {
     shared_ptr<File> &file = it->second->second;
     return file->GetSize();
   } else {
+    // file is not in cache, return 0
     return 0;
   }
 }
@@ -169,8 +158,7 @@ CacheListIterator Cache::End() {
 
 // --------------------------------------------------------------------------
 pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
-                                            size_t len, char *buffer,
-                                            time_t mtimeSince) {
+                                            size_t len, char *buffer) {
   ContentRangeDeque unloadedRanges;
   lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
@@ -198,7 +186,7 @@ pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
     cachedSizeBegin = pos->second->GetCachedSize();
   } else {
     DebugInfo("File not exist in cache. Create new one" + fileId);
-    pos = UnguardedNewEmptyFile(fileId, mtimeSince);
+    pos = UnguardedNewEmptyFile(fileId);
     unloadedRanges.push_back(make_pair(offset, len));
     return make_pair(0, unloadedRanges);
   }
@@ -206,7 +194,7 @@ pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
   assert(pos != m_cache.end());
   shared_ptr<File> &file = pos->second;
   tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> outcome =
-      file->Read(offset, len, mtimeSince);
+      file->Read(offset, len);
   size_t readedFileSize = boost::get<0>(outcome);
   list<shared_ptr<Page> > &pagelist = boost::get<1>(outcome);
   unloadedRanges = boost::get<2>(outcome);
@@ -266,15 +254,15 @@ pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
 
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,
-                  const char *buffer, time_t mtime,
-                  const shared_ptr<DirectoryTree> &dirTree, bool open) {
+                  const char *buffer, const shared_ptr<DirectoryTree> &dirTree,
+                  bool open) {
   lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
     CacheMapIterator it = m_map.find(fileId);
     if (it != m_map.end()) {
       UnguardedMakeFileMostRecentlyUsed(it->second);
     } else {
-      UnguardedNewEmptyFile(fileId, mtime);
+      UnguardedNewEmptyFile(fileId);
     }
     return true;  // do nothing
   }
@@ -290,13 +278,13 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
 
   DebugInfo("Write cache [offset:len=" + to_string(offset) + ":" +
             to_string(len) + "] " + FormatPath(fileId));
-  pair<bool, shared_ptr<File> > res = PrepareWrite(fileId, len, mtime);
+  pair<bool, shared_ptr<File> > res = PrepareWrite(fileId, len);
   bool success = res.first;
   if (success) {
     shared_ptr<File> &file = res.second;
     assert(file);
     tuple<bool, size_t, size_t> res =
-        file->Write(offset, len, buffer, mtime, open);
+        file->Write(offset, len, buffer, open);
     success = boost::get<0>(res);
     if (success) {
       m_size += boost::get<1>(res);  // added size in cache
@@ -320,7 +308,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
 
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,
-                  const shared_ptr<iostream> &stream, time_t mtime,
+                  const shared_ptr<iostream> &stream,
                   const shared_ptr<DirectoryTree> &dirTree, bool open) {
   lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
@@ -328,7 +316,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
     if (it != m_map.end()) {
       UnguardedMakeFileMostRecentlyUsed(it->second);
     } else {
-      UnguardedNewEmptyFile(fileId, mtime);
+      UnguardedNewEmptyFile(fileId);
     }
     return true;  // do nothing
   }
@@ -353,13 +341,13 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
 
   DebugInfo("Write cache [offset:len=" + to_string(offset) + ":" +
             to_string(len) + "] " + FormatPath(fileId));
-  pair<bool, shared_ptr<File> > res = PrepareWrite(fileId, len, mtime);
+  pair<bool, shared_ptr<File> > res = PrepareWrite(fileId, len);
   bool success = res.first;
   if (success) {
     shared_ptr<File> &file = res.second;
     assert(file);
     tuple<bool, size_t, size_t> res =
-        file->Write(offset, len, stream, mtime, open);
+        file->Write(offset, len, stream, open);
     success = boost::get<0>(res);
     if (success) {
       m_size += boost::get<1>(res);  // added size in cache
@@ -383,7 +371,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
 
 // --------------------------------------------------------------------------
 pair<bool, shared_ptr<File> > Cache::PrepareWrite(const string &fileId,
-                                                   size_t len, time_t mtime) {
+                                                  size_t len) {
   bool availableFreeSpace = true;
   if (!HasFreeSpace(len)) {
     availableFreeSpace = Free(len, fileId);
@@ -410,7 +398,7 @@ pair<bool, shared_ptr<File> > Cache::PrepareWrite(const string &fileId,
   if (it != m_map.end()) {
     pos = UnguardedMakeFileMostRecentlyUsed(it->second);
   } else {
-    pos = UnguardedNewEmptyFile(fileId, mtime);
+    pos = UnguardedNewEmptyFile(fileId);
     assert(pos != m_cache.end());
   }
 
@@ -568,22 +556,6 @@ void Cache::Rename(const string &oldFileId, const string &newFileId) {
 }
 
 // --------------------------------------------------------------------------
-void Cache::SetTime(const string &fileId, time_t mtime) {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  CacheMapIterator it = m_map.find(fileId);
-  CacheListIterator pos;
-  if (it != m_map.end()) {
-    pos = it->second;
-  } else {
-    pos = UnguardedNewEmptyFile(fileId, mtime);
-  }
-  shared_ptr<File> &file = pos->second;
-  if (mtime > file->GetTime()) {
-    file->SetTime(mtime);
-  }
-}
-
-// --------------------------------------------------------------------------
 void Cache::SetFileOpen(const std::string &fileId, bool open,
                         const shared_ptr<DirectoryTree> &dirTree) {
   lock_guard<recursive_mutex> locker(m_mutex);
@@ -604,7 +576,7 @@ void Cache::SetFileOpen(const std::string &fileId, bool open,
 }
 
 // --------------------------------------------------------------------------
-void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime,
+void Cache::Resize(const string &fileId, size_t newFileSize,
                    const shared_ptr<DirectoryTree> &dirTree) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(fileId);
@@ -613,7 +585,7 @@ void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime,
     pos = it->second;
   } else {
     // File not cached yet, maybe because its content's empty
-    pos = UnguardedNewEmptyFile(fileId, mtime);
+    pos = UnguardedNewEmptyFile(fileId);
   }
 
   shared_ptr<File> &file = pos->second;
@@ -628,10 +600,9 @@ void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime,
     DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
               to_string(holeSize) + "] " + FormatPath(fileId));
     bool fileOpen = file->IsOpen();
-    Write(fileId, oldFileSize, holeSize, &hole[0], mtime, dirTree, fileOpen);
+    Write(fileId, oldFileSize, holeSize, &hole[0], dirTree, fileOpen);
   } else {
     file->ResizeToSmallerSize(newFileSize);
-    file->SetTime(mtime);
   }
   m_size += file->GetCachedSize() - oldFileCacheSize;
 
@@ -650,10 +621,9 @@ void Cache::Resize(const string &fileId, size_t newFileSize, time_t mtime,
 }
 
 // --------------------------------------------------------------------------
-CacheListIterator Cache::UnguardedNewEmptyFile(const string &fileId,
-                                               time_t mtime) {
+CacheListIterator Cache::UnguardedNewEmptyFile(const string &fileId) {
   m_cache.push_front(make_pair(
-      fileId, make_shared<File>(QS::Utils::GetBaseName(fileId), mtime)));
+      fileId, make_shared<File>(QS::Utils::GetBaseName(fileId))));
   if (m_cache.begin()->first == fileId) {  // insert to cache sucessfully
     pair<CacheMapIterator, bool> res = m_map.emplace(fileId, m_cache.begin());
     if (res.second) {

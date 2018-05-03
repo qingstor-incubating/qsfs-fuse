@@ -265,12 +265,11 @@ class Drive : public Singleton<Drive> {
   // @return : void
   void DownloadFileContentRanges(const std::string &filePath,
                                  const QS::Data::ContentRangeDeque &ranges,
-                                 time_t mtime, bool fileOpen,
-                                 bool async = false);
+                                 bool fileOpen, bool async = false);
 
   void DownloadFileContentRange(const std::string &filePath,
                                 const std::pair<off_t, size_t> &range,
-                                time_t mtime, bool fileOpen, bool async = false);
+                                bool fileOpen, bool async = false);
 
  private:
   boost::shared_ptr<QS::Client::Client> &GetClient() { return m_client; }

@@ -193,7 +193,7 @@ size_t File::GetNumPages() const {
 
 // --------------------------------------------------------------------------
 tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> File::Read(
-    off_t offset, size_t len, time_t mtimeSince) {
+    off_t offset, size_t len) {
   // Cache already check input.
   // bool isValidInput = offset >= 0 && len > 0 && entry != nullptr && (*entry);
   // assert(isValidInput);
@@ -214,13 +214,6 @@ tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> File::Read(
 
   {
     lock_guard<recursive_mutex> lock(m_mutex);
-
-    if (mtimeSince > 0) {
-      // File is just created, update mtime.
-      if (m_mtime == 0) {
-        SetTime(mtimeSince);
-      }
-    }
 
     // If pages is empty.
     if (m_pages.empty()) {
@@ -271,8 +264,7 @@ tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> File::Read(
 
 // --------------------------------------------------------------------------
 tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
-                                        const char *buffer, time_t mtime,
-                                        bool open) {
+                                        const char *buffer, bool open) {
   // Cache has checked input.
   // bool isValidInput = = offset >= 0 && len > 0 &&  buffer != NULL;
   // assert(isValidInput);
@@ -292,9 +284,6 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
     tuple<PageSetConstIterator, bool, size_t, size_t> res =
         UnguardedAddPage(offset, len, buffer);
     if (boost::get<1>(res)) {
-      if (mtime > m_mtime) {
-        SetTime(mtime);
-      }
       addedSizeInCache += boost::get<2>(res);
       addedSize += boost::get<3>(res);
     }
@@ -332,26 +321,17 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
       len_ -= lenNewPage;
     } else {  // Refresh the overlapped page's content.
       if (len_ <= static_cast<size_t>(page->Next() - offset_)) {
-        if (mtime >= m_mtime) {
-          SetTime(mtime);
-          // refresh parital content of page
-          return make_tuple(page->Refresh(offset_, len_, buffer + start_),
-                            addedSizeInCache, addedSize);
-        } else {
-          // do nothing
-          return make_tuple(true, addedSizeInCache, addedSize);
-        }
+        // refresh parital content of page
+        return make_tuple(page->Refresh(offset_, len_, buffer + start_),
+                          addedSizeInCache, addedSize);
       } else {
-        if (mtime >= m_mtime) {
-          // refresh entire page
-          bool refresh = page->Refresh(buffer + start_);
-          if (!refresh) {
-            success = false;
-            return make_tuple(false, addedSizeInCache, addedSize);
-          }
-
-          SetTime(mtime);
+        // refresh entire page
+        bool refresh = page->Refresh(buffer + start_);
+        if (!refresh) {
+          success = false;
+          return make_tuple(false, addedSizeInCache, addedSize);
         }
+
         offset_ = page->Next();
         start_ += page->m_size;
         len_ -= page->m_size;
@@ -366,9 +346,6 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
     if (boost::get<1>(res)) {
       success = true;
 
-      if (mtime > m_mtime) {
-        SetTime(mtime);
-      }
       addedSizeInCache += boost::get<2>(res);
       addedSize += boost::get<3>(res);
     } else {
@@ -382,15 +359,12 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
 // --------------------------------------------------------------------------
 tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
                                         const shared_ptr<iostream> &stream,
-                                        time_t mtime, bool open) {
+                                        bool open) {
   lock_guard<recursive_mutex> lock(m_mutex);
   SetOpen(open);
   if (m_pages.empty()) {
     tuple<PageSetConstIterator, bool, size_t, size_t> res =
         UnguardedAddPage(offset, len, stream);
-    if (boost::get<1>(res) && mtime > m_mtime) {
-      SetTime(mtime);
-    }
     return make_tuple(boost::get<1>(res), boost::get<2>(res),
                       boost::get<3>(res));
   } else {
@@ -399,24 +373,18 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
     if (it == m_pages.end()) {
       tuple<PageSetConstIterator, bool, size_t, size_t> res =
           UnguardedAddPage(offset, len, stream);
-      if (boost::get<1>(res) && mtime > m_mtime) {
-        SetTime(mtime);
-      }
       return make_tuple(boost::get<1>(res), boost::get<2>(res),
                         boost::get<3>(res));
     } else if (page->Offset() == offset && page->Size() == len) {
-      if (mtime >= m_mtime) {
-        // replace old stream
-        page->SetStream(stream);
-        SetTime(mtime);
-      }
+      // replace old stream
+      page->SetStream(stream);
       return make_tuple(true, 0, 0);
     } else {
       scoped_ptr<vector<char> > buf(new vector<char>(len));
       stream->seekg(0, std::ios_base::beg);
       stream->read(&(*buf)[0], len);
 
-      return Write(offset, len, &(*buf)[0], mtime, open);
+      return Write(offset, len, &(*buf)[0], open);
     }
   }
 }
@@ -480,7 +448,6 @@ void File::RemoveDiskFileIfExists(bool logOn) const {
 void File::Clear() {
   lock_guard<recursive_mutex> lock(m_mutex);
   m_pages.clear();
-  m_mtime = 0;
   m_size = 0;
   m_cacheSize = 0;
   RemoveDiskFileIfExists(true);

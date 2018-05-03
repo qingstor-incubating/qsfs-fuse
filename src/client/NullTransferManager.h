@@ -51,13 +51,13 @@ class NullTransferManager : public TransferManager {
   }
 
   boost::shared_ptr<TransferHandle> UploadFile(
-      const std::string &filePath, uint64_t fileSize, time_t fileMTimeSince,
+      const std::string &filePath, uint64_t fileSize,
       const boost::shared_ptr<QS::Data::Cache> &cache, bool async = false) {
     return boost::shared_ptr<TransferHandle>();
   }
 
   boost::shared_ptr<TransferHandle> RetryUpload(
-      const boost::shared_ptr<TransferHandle> &handle, time_t fileMTimeSince,
+      const boost::shared_ptr<TransferHandle> &handle,
       const boost::shared_ptr<QS::Data::Cache> &cache, bool async = false) {
     return boost::shared_ptr<TransferHandle>();
   }
