@@ -111,8 +111,8 @@ class Drive : public Singleton<Drive> {
   // asynchronously if node is directory, which means the children of the
   // directory will be add to the tree.
   //
-  // Notes: GetNode will connect to object storage to retrive the object and
-  // update the local dir tree
+  // Notes: If forceUpdateNode or time is expired, GetNode will connect to object storage 
+  // to retrive the object and update the local dir tree
   std::pair<boost::shared_ptr<QS::Data::Node>, bool> GetNode(
       const std::string &path, bool forceUpdateNode,
       bool updateIfDirectory = false, bool updateDirAsync = false);
