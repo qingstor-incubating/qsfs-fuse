@@ -482,7 +482,8 @@ void Drive::OpenFile(const string &filePath, bool async) {
       QS::Data::ContentRangeDeque ranges =
           m_cache->GetUnloadedRanges(filePath, 0, fileSize);
       if (!ranges.empty()) {
-        DebugInfo("Unloaded ranges " + ContentRangeDequeToString(ranges));
+        DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
+                  " file:" + m_cache->FileToString(filePath));
         DownloadFileContentRanges(filePath, ranges, true, async);
       }
     }
@@ -526,6 +527,8 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
   // Download file if not found in cache or if cache need update
   bool fileContentExist = m_cache->HasFileData(filePath, offset, downloadSize);
   if (!fileContentExist) {
+    DebugInfo("Download file [offset:len=" + to_string(offset) + ":" +
+              to_string(downloadSize) + "] " + m_cache->FileToString(filePath));
     // download synchronizely for request file part
     shared_ptr<IOStream> stream = make_shared<IOStream>(downloadSize);
     shared_ptr<TransferHandle> handle =
@@ -535,14 +538,13 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     if (handle) {
       handle->WaitUntilFinished();
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
-        Info("Download file [offset:len=" + to_string(offset) + ":" +
-             to_string(downloadSize) + "] " + FormatPath(filePath));
-
         bool success = m_cache->Write(filePath, offset, downloadSize, stream,
                                       m_directoryTree, isOpen);
         ErrorIf(!success,
                 "Fail to write cache [offset:len=" + to_string(offset) + ":" +
                     to_string(downloadSize) + "] " + FormatPath(filePath));
+      } else {
+        Error("download failed " + handle->ToString());
       }
     }
   }
@@ -552,7 +554,8 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     ContentRangeDeque ranges =
         m_cache->GetUnloadedRanges(filePath, 0, fileSize);
     if (!ranges.empty()) {
-      DebugInfo("Unloaded ranges " + ContentRangeDequeToString(ranges));
+      DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
+                " file:" + m_cache->FileToString(filePath));
       DownloadFileContentRanges(filePath, ranges, isOpen, async);
     }
   }
@@ -800,7 +803,8 @@ void Drive::UploadFile(const string &filePath, bool releaseFile,
   // this is need as user could open a file and edit a part of it,
   // but you need the completed file in order to upload it.
   if (!ranges.empty()) {
-    DebugInfo("Unloaded ranges " + ContentRangeDequeToString(ranges));
+    DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
+              " file:" + m_cache->FileToString(filePath));
     bool fileOpen = node->IsFileOpen();
     DownloadFileContentRanges(filePath, ranges, fileOpen, false);  // sync
   }

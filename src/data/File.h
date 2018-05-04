@@ -106,6 +106,9 @@ class File : private boost::noncopyable {
   // Return num of pages
   size_t GetNumPages() const;
 
+  // To string
+  std::string ToString() const;
+
  private:
   // Read from the cache (file pages)
   //

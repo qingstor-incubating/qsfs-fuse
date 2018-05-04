@@ -138,6 +138,19 @@ uint64_t Cache::GetFileSize(const std::string &filePath) const {
 }
 
 // --------------------------------------------------------------------------
+string Cache::FileToString(const string &filePath) const {
+  lock_guard<recursive_mutex> locker(m_mutex);
+  CacheMapConstIterator it = m_map.find(filePath);
+  if (it != m_map.end()) {
+    shared_ptr<File> &file = it->second->second;
+    return file->ToString();
+  } else {
+    // file is not in cache, return empty
+    return string();
+  }
+}
+
+// --------------------------------------------------------------------------
 CacheListIterator Cache::Find(const string &filePath) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(filePath);

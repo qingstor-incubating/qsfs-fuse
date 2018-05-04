@@ -78,11 +78,11 @@ Part::Part(uint16_t partId, size_t bestProgressInBytes, size_t sizeInBytes,
 
 // --------------------------------------------------------------------------
 string Part::ToString() const {
-  return "[part id: " + to_string(m_partId) + ", etag: " + m_eTag +
-         ", current progress(bytes): " + to_string(m_currentProgress) +
-         ", best progress(bytes): " + to_string(m_bestProgress) +
-         ", size(bytes): " + to_string(m_size) +
-         ", range begin: " + to_string(m_rangeBegin) + "]";
+  return "[part id:" + to_string(m_partId) + ", etag:" + m_eTag +
+         ", current progress(bytes):" + to_string(m_currentProgress) +
+         ", best progress(bytes):" + to_string(m_bestProgress) +
+         ", size(bytes):" + to_string(m_size) +
+         ", range begin:" + to_string(m_rangeBegin) + "]";
 }
 
 // --------------------------------------------------------------------------
@@ -218,19 +218,19 @@ bool TransferHandle::HasParts() const {
 
 // --------------------------------------------------------------------------
 string TransferHandle::ToString() const {
-  string str = "[object key: " + m_objectKey;
+  string str = "[object key:" + m_objectKey;
   if (m_isMultipart) {
-    str += ", multipart id: " + m_multipartId;
+    str += ", multipart id:" + m_multipartId;
   }
 
-  str += ", status: " + TransferStatusToString(m_status) +
-         ", direction: " + TransferDirectionToString(m_direction) +
-         ", transferred bytes: " + to_string(m_bytesTransferred) +
-         ", totoal bytes: " + to_string(m_bytesTotalSize) +
-         ", content range begin: " + to_string(m_contentRangeBegin);
+  str += ", status:" + TransferStatusToString(m_status) +
+         ", direction:" + TransferDirectionToString(m_direction) +
+         ", transferred bytes:" + to_string(m_bytesTransferred) +
+         ", totoal bytes:" + to_string(m_bytesTotalSize) +
+         ", content range begin:" + to_string(m_contentRangeBegin);
 
   if (!IsGoodQSError(m_error)) {
-    str += ", error: " + GetMessageForQSError(m_error);
+    str += ", error:" + GetMessageForQSError(m_error);
   }
   str += "]";
   str += PartMapToString(m_failedParts,"failed parts");

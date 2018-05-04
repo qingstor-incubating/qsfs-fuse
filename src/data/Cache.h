@@ -122,6 +122,9 @@ class Cache : private boost::noncopyable {
   // Get file size
   uint64_t GetFileSize(const std::string &filePath) const;
 
+  // Return file string presentation
+  std::string FileToString(const std::string &filePath) const;
+
   // Find the file
   //
   // @param  : file path (absolute path)

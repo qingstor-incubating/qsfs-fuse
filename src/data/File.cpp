@@ -52,6 +52,7 @@ using boost::shared_ptr;
 using boost::to_string;
 using boost::tuple;
 using QS::StringUtils::PointerAddress;
+using QS::StringUtils::BoolToString;
 using std::iostream;
 using std::list;
 using std::make_pair;
@@ -189,6 +190,15 @@ PageSetConstIterator File::EndPage() const {
 size_t File::GetNumPages() const {
   lock_guard<recursive_mutex> lock(m_mutex);
   return m_pages.size();
+}
+
+// --------------------------------------------------------------------------
+string File::ToString() const {
+  return "[" + m_baseName + " size:" + to_string(m_size) +
+         ", cachedsize:" + to_string(m_cacheSize) +
+         ", useDisk:" + BoolToString(m_useDiskFile) +
+         ", open:" + BoolToString(m_open) +
+         ", pages:" + PageSetToString(m_pages) + "]";
 }
 
 // --------------------------------------------------------------------------

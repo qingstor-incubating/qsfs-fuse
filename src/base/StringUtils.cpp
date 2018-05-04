@@ -124,7 +124,7 @@ string ContentRangeDequeToString(const ContentRangeDeque &ranges) {
   if (ranges.empty()) {
     return str;
   }
-  str.append("[offset:len]");
+  str.append("{offset:len");
   BOOST_FOREACH (const ContentRangeDeque::value_type &p, ranges) {
     str.append("[");
     str.append(to_string(p.first));
@@ -132,6 +132,7 @@ string ContentRangeDequeToString(const ContentRangeDeque &ranges) {
     str.append(to_string(p.second));
     str.append("]");
   }
+  str.append("}");
   return str;
 }
 

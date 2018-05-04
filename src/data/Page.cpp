@@ -159,6 +159,11 @@ Page::Page(off_t offset, size_t len, const shared_ptr<iostream> &instream,
 }
 
 // --------------------------------------------------------------------------
+string Page::ToString() const {
+  return "[" + to_string(m_offset) + ":" + to_string(m_size) + "]";
+}
+
+// --------------------------------------------------------------------------
 bool Page::UseDiskFile() {
   lock_guard<recursive_mutex> lock(m_mutex);
   return !m_diskFile.empty();
@@ -426,6 +431,15 @@ string ToStringLine(const string &fileId, off_t offset, size_t len,
                     const char *buffer) {
   return "[fileId:offset:size:buffer=" + fileId + ":" + to_string(offset) +
          ":" + to_string(len) + ":" + PointerAddress(buffer) + "]";
+}
+
+// --------------------------------------------------------------------------
+string PageSetToString(const PageSet &pages) {
+  string str;
+  for (PageSetConstIterator p = pages.begin(); p != pages.end(); ++p) {
+    str.append((*p)->ToString());
+  }
+  return str;
 }
 
 }  // namespace Data

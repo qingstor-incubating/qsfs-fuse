@@ -126,6 +126,9 @@ class Page {
   // Return body
   const boost::shared_ptr<std::iostream> &GetBody() const { return m_body; }
 
+  // Retrun string of [offset:size]
+  std::string ToString() const;
+
   // Return if page use disk file
   bool UseDiskFile();
   bool UseDiskFileNoLock();
@@ -244,6 +247,7 @@ struct PageCmp {
 typedef std::set<boost::shared_ptr<Page>, PageCmp> PageSet;
 typedef PageSet::const_iterator PageSetConstIterator;
 
+std::string PageSetToString(const PageSet &pages);
 std::string ToStringLine(const std::string &fileId, off_t offset, size_t len,
                          const char *buffer);
 std::string ToStringLine(off_t offset, size_t len, const char *buffer);

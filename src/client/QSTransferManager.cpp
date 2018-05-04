@@ -33,6 +33,7 @@
 #include "boost/tuple/tuple.hpp"
 
 #include "base/LogMacros.h"
+#include "base/StringUtils.h"
 #include "client/Client.h"
 #include "client/ClientConfiguration.h"
 #include "client/QSError.h"
@@ -55,6 +56,7 @@ using boost::make_shared;
 using boost::shared_ptr;
 using boost::to_string;
 using QS::Client::Utils::BuildRequestRange;
+using QS::StringUtils::ContentRangeDequeToString;
 using QS::Data::Buffer;
 using QS::Data::Cache;
 using QS::Data::ContentRangeDeque;
@@ -565,6 +567,7 @@ void QSTransferManager::DoSinglePartUpload(
   if (readSize != fileSize) {
     DebugError("Fail to read cache [file:offset:len:readsize=" + objKey +
                ":0:" + to_string(fileSize) + ":" + to_string(readSize) +
+               " unloaded ranges:" + ContentRangeDequeToString(res.second) +
                "], stop upload");
     handle->ChangePartToFailed(part);
     handle->UpdateStatus(TransferStatus::Failed);
@@ -619,6 +622,7 @@ void QSTransferManager::DoMultiPartUpload(
       DebugError("Fail to read cache [file:offset:len:readsize=" + objKey +
                  ":" + to_string(part->GetRangeBegin()) + ":" +
                  to_string(part->GetSize()) + ":" + to_string(readSize) +
+                 " unloaded ranges:" + ContentRangeDequeToString(res.second) +
                  "], stop upload");
 
       handle->ChangePartToFailed(part);
