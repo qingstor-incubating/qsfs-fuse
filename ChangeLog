@@ -12,6 +12,8 @@
 - Log to stderr if umaskmp is not set with allow_other together
 - Not to set content type in QSClient as QingStor server will handle file content type
 - Link to static QingStor SDK library
+- Refactor to remove mtime from cache
+- Add File info to log message
 
 - qsfs: version 1.0.2
 - To synchronize Cache operations to avoid data race
