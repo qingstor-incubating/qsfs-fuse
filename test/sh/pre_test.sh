@@ -47,12 +47,21 @@ if [ -z "$(df | grep ${MOUNT_POINT})" ]; then
 fi
 
 # 2. make run dir
-if [ ! -d "$QSFS_TEST_RUN_DIR" ]; then
-  echo "make qsfs run dir [path=$QSFS_TEST_RUN_DIR]"
-  mkdir $QSFS_TEST_RUN_DIR
-
-  if [ ! -d ${QSFS_TEST_RUN_DIR} ]; then
+TRY_COUNT=3
+echo "make qsfs run dir [path=$QSFS_TEST_RUN_DIR]"
+while true; do
+  if [ -d "$QSFS_TEST_RUN_DIR" ]; then
+    break;
+  else
+    mkdir $QSFS_TEST_RUN_DIR
+    if [ -d "$QSFS_TEST_RUN_DIR" ]; then
+      break;
+    fi
+  fi
+  let TRY_COUNT--
+  if [ TRY_COUNT -le 0 ]; then
     echo "Error: Could not create directory ${QSFS_TEST_RUN_DIR}"
     exit 1
   fi
-fi
+  sleep 1
+done

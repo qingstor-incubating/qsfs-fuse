@@ -29,8 +29,22 @@ rm -rf $QSFS_TEST_RUN_DIR
 
 # 2. stop qsfs
 MOUNT_POINT=$(dirname "${QSFS_TEST_RUN_DIR}")
-fusermount -u ${MOUNT_POINT}
-if [ -n "$(df | grep ${MOUNT_POINT})" ]; then
-  echo "Error: fail to unmount with command: fusermount -u ${MOUNT_POINT}"
-  exit 1
+echo "umount ${MOUNT_POINT}"
+TRY_COUNT=3
+while true; do
+  fusermount -u ${MOUNT_POINT}
+  if [ -z "$(df | grep ${MOUNT_POINT})" ]; then
+    break;
+  fi
+  let TRY_COUNT--
+  if [ $TRY_COUNT -le 0 ]; then
+    echo "Error: fail to unmount with command: fusermount -u ${MOUNT_POINT}"
+    exit 1
+  fi
+  sleep 1
+done
+
+# 3. check if there is error log
+if [ -e "/tmp/qsfs_integration_test_log/qsfs.ERROR" ]; then
+  echo "Error happen, please check /tmp/qsfs_integration_test_log/qsfs.ERROR"
 fi
