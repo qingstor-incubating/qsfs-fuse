@@ -92,6 +92,7 @@ using QS::Data::IOStream;
 using QS::Data::Node;
 using QS::Exception::QSException;
 using QS::StringUtils::FormatPath;
+using QS::StringUtils::ContentRangeDequeToString;
 using QS::Utils::AppendPathDelim;
 using QS::Utils::DeleteFilesInDirectory;
 using QS::UtilsWithLog::IsDirectory;
@@ -481,6 +482,7 @@ void Drive::OpenFile(const string &filePath, bool async) {
       QS::Data::ContentRangeDeque ranges =
           m_cache->GetUnloadedRanges(filePath, 0, fileSize);
       if (!ranges.empty()) {
+        DebugInfo("Unloaded ranges " + ContentRangeDequeToString(ranges));
         DownloadFileContentRanges(filePath, ranges, true, async);
       }
     }
@@ -550,6 +552,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     ContentRangeDeque ranges =
         m_cache->GetUnloadedRanges(filePath, 0, fileSize);
     if (!ranges.empty()) {
+      DebugInfo("Unloaded ranges " + ContentRangeDequeToString(ranges));
       DownloadFileContentRanges(filePath, ranges, isOpen, async);
     }
   }
@@ -782,7 +785,6 @@ struct UploadFileCallback {
 // --------------------------------------------------------------------------
 void Drive::UploadFile(const string &filePath, bool releaseFile,
                        bool updateMeta, bool async) {
-  Info("Start upload file " + FormatPath(filePath));
   // upload should just get file node from local
   shared_ptr<Node> node = GetNodeSimple(filePath);
 
@@ -792,11 +794,13 @@ void Drive::UploadFile(const string &filePath, bool releaseFile,
   }
 
   uint64_t fileSize = GetTrueFileSize(node, filePath);
+  Info("Start upload file [size=" + to_string(fileSize) + "]" + FormatPath(filePath));
   ContentRangeDeque ranges = m_cache->GetUnloadedRanges(filePath, 0, fileSize);
   // download unloaded pages for file
   // this is need as user could open a file and edit a part of it,
   // but you need the completed file in order to upload it.
   if (!ranges.empty()) {
+    DebugInfo("Unloaded ranges " + ContentRangeDequeToString(ranges));
     bool fileOpen = node->IsFileOpen();
     DownloadFileContentRanges(filePath, ranges, fileOpen, false);  // sync
   }

@@ -19,7 +19,9 @@
 
 #include <stdio.h>
 
+#include <deque>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/type_traits/is_pointer.hpp"
@@ -64,6 +66,14 @@ std::string ModeToString(mode_t mode);
 // @param  : bool
 // @return : "true" or "false"
 std::string BoolToString(bool b);
+
+// Convert ContentRangeDeque to string
+//
+// @param  : ContentRangeDeque
+// @return : string
+// Range represented by a pair of {offset, size}
+typedef std::deque<std::pair<off_t, size_t> > ContentRangeDeque;
+std::string ContentRangeDequeToString(const ContentRangeDeque &ranges);
 
 // Get file type letter
 //

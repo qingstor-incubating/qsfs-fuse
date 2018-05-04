@@ -23,6 +23,7 @@
 #include <cctype>
 #include <string>
 
+#include "boost/exception/to_string.hpp"
 #include "boost/foreach.hpp"
 #include "boost/lambda/lambda.hpp"
 
@@ -30,6 +31,7 @@ namespace QS {
 
 namespace StringUtils {
 
+using boost::to_string;
 using std::string;
 
 // --------------------------------------------------------------------------
@@ -114,6 +116,23 @@ std::string ModeToString(mode_t mode) {
     modeStr[9] = (mode & S_IXUSR) ? 't' : 'T';
   }
   return modeStr;
+}
+
+// --------------------------------------------------------------------------
+string ContentRangeDequeToString(const ContentRangeDeque &ranges) {
+  string str;
+  if (ranges.empty()) {
+    return str;
+  }
+  str.append("[offset:len]");
+  BOOST_FOREACH (const ContentRangeDeque::value_type &p, ranges) {
+    str.append("[");
+    str.append(to_string(p.first));
+    str.append(",");
+    str.append(to_string(p.second));
+    str.append("]");
+  }
+  return str;
 }
 
 // --------------------------------------------------------------------------
