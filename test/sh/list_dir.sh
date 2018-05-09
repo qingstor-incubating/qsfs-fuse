@@ -24,15 +24,24 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-rm -rf ${QSFS_TEST_RUN_DIR}/*
-mk_test_file
-mk_test_dir
 
-file_cnt=$(ls $QSFS_TEST_RUN_DIR -1 | wc -l)
+WORK_DIR_NAME="list_directory"
+WORK_DIR="${QSFS_TEST_RUN_DIR}/${WORK_DIR_NAME}"
+mk_test_dir ${WORK_DIR_NAME}
+
+MY_DIR_NAME="${WORK_DIR_NAME}/list_directory_folder"
+MY_DIR="${QSFS_TEST_RUN_DIR}/${MY_DIR_NAME}"
+MY_FILE_NAME="${WORK_DIR_NAME}/list_directory_file.txt"
+mk_test_dir ${MY_DIR_NAME}
+mk_test_file ${MY_FILE_NAME}
+
+file_cnt=$(ls ${WORK_DIR} -1 | wc -l)
 if [ $file_cnt -ne 2 ]; then
-  echo "Error: expected 2 files in ${QSFS_TEST_RUN_DIR}, got $file_cnt"
+  echo "Error: expected 2 files in ${WORK_DIR}, got $file_cnt"
   exit 1
 fi
 
-rm_test_file
-rm_test_dir
+rm_test_file ${MY_FILE_NAME}
+rm_test_dir ${MY_DIR_NAME}
+rm_test_dir ${WORK_DIR_NAME}
+

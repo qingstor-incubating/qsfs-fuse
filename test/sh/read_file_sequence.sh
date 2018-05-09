@@ -24,7 +24,11 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='sequence_read_file.txt'
+WORK_DIR_NAME="sequence_read"
+WORK_DIR="${QSFS_TEST_RUN_DIR}/${WORK_DIR_NAME}"
+mk_test_dir ${WORK_DIR_NAME}
+
+FILE_NAME="${WORK_DIR_NAME}/sequence_read_file.txt"
 FILE_SIZE=15
 
 # create a file at first
@@ -48,3 +52,4 @@ fi
 
 # cleanup
 rm_test_file $FILE_NAME
+rm_test_dir ${WORK_DIR_NAME}

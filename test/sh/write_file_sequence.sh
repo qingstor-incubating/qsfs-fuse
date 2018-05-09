@@ -24,10 +24,13 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-append_test_file
-rm_test_file
+WORK_DIR_NAME="append_file"
+WORK_DIR="${QSFS_TEST_RUN_DIR}/${WORK_DIR_NAME}"
+mk_test_dir "${WORK_DIR_NAME}"
 
-FILE_NAME='append_test_file.txt'
+
+FILE_NAME="${WORK_DIR_NAME}/append_test_file.txt"
 FILE_SIZE=15
 append_test_file $FILE_NAME $FILE_SIZE
 rm_test_file $FILE_NAME
+rm_test_dir ${WORK_DIR_NAME}
