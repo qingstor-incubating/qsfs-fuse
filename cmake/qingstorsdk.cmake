@@ -10,8 +10,8 @@ endif()
 include(cmake/DownloadInstallProject.cmake)
 
 setup_download_project(PROJ    qingstorsdk
-           #GIT_REPOSITORY      https://github.com/yunify/qingstor-sdk-cpp.git
-           GIT_REPOSITORY      https://github.com/jimhuaang/qingstor-sdk-cpp.git
+           GIT_REPOSITORY      https://github.com/yunify/qingstor-sdk-cpp.git
+           #GIT_REPOSITORY      https://github.com/jimhuaang/qingstor-sdk-cpp.git
            GIT_TAG             master
            ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )

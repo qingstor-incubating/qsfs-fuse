@@ -92,14 +92,14 @@ void TransferManager::SetClient(const shared_ptr<Client> &client) {
                      boost::bind(boost::type<void>(),
                                  &TransferManager::InitializeResources, this));
   } else {
-    DebugError("Null client parameter");
+    Error("Null client parameter");
   }
 }
 
 // --------------------------------------------------------------------------
 void TransferManager::InitializeResources() {
   if (!m_bufferManager) {
-    DebugError("Buffer Manager is null");
+    Error("Buffer Manager is null");
     return;
   }
   for (uint64_t i = 0; i < GetBufferMaxHeapSize(); i += GetBufferSize()) {

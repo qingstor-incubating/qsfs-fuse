@@ -829,7 +829,7 @@ void QSClient::DoStartQSService() {
       new QsConfig(clientConfig.GetAccessKeyId(), clientConfig.GetSecretKey()));
 
   m_qingStorConfig->additionalUserAgent = clientConfig.GetAdditionalAgent();
-  m_qingStorConfig->host = Http::HostToString(clientConfig.GetHost());
+  m_qingStorConfig->host = clientConfig.GetHost();
   m_qingStorConfig->protocol =
       Http::ProtocolToString(clientConfig.GetProtocol());
   m_qingStorConfig->port = clientConfig.GetPort();

@@ -54,7 +54,7 @@ Protocol::Value StringToProtocol(const string& name) {
     return Protocol::HTTPS;
   } else {
     Warning(
-        "Trying to get protocol with unrecognized protocol name, default "
+        "Trying to get protocol with unrecognized protocol name (name), default "
         "protocol of https returned");
   }
 

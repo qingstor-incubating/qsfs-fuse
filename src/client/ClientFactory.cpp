@@ -26,7 +26,6 @@
 #include "client/NullClientImpl.h"
 #include "client/QSClient.h"
 #include "client/QSClientImpl.h"
-#include "client/URI.h"
 
 namespace QS {
 
@@ -37,37 +36,49 @@ using boost::shared_ptr;
 
 shared_ptr<Client> ClientFactory::MakeClient() {
   shared_ptr<Client> client = shared_ptr<Client>();
-  Http::Host::Value host = ClientConfiguration::Instance().GetHost();
-  switch (host) {
-    case Http::Host::QingStor: {
-      client = make_shared<QSClient>();
-      break;
-    }
-    // Add other cases here
-    case Http::Host::Null:  // Bypass
-    default: {
-      client = make_shared<NullClient>();
-      break;
-    }
-  }
+  // hotfix: we cannot construct manager based on host name only
+  // host name could be indiviual for private cloud
+  // so we just construct QSClient here, we need to figure out another
+  // way to switch different Client implementation <TODO>
+  client = make_shared<QSClient>();
+
+  // Http::Host::Value host = ClientConfiguration::Instance().GetHost();
+  // switch (host) {
+  //   case Http::Host::QingStor: {
+  //     client = make_shared<QSClient>();
+  //     break;
+  //   }
+  //   // Add other cases here
+  //   case Http::Host::Null:  // Bypass
+  //   default: {
+  //     client = make_shared<NullClient>();
+  //     break;
+  //   }
+  // }
   return client;
 }
 
 shared_ptr<ClientImpl> ClientFactory::MakeClientImpl() {
   shared_ptr<ClientImpl> clientImpl = shared_ptr<ClientImpl>();
-  Http::Host::Value host = ClientConfiguration::Instance().GetHost();
-  switch (host) {
-    case Http::Host::QingStor: {
-      clientImpl = make_shared<QSClientImpl>();
-      break;
-    }
-    // Add other cases here
-    case Http::Host::Null:  // Bypass
-    default: {
-      clientImpl = make_shared<NullClientImpl>();
-      break;
-    }
-  }
+
+  clientImpl = make_shared<QSClientImpl>();
+  // hotfix: we cannot construct manager based on host name only
+  // host name could be indiviual for private cloud
+  // so we just construct QSClientImpl here, we need to figure out another
+  // way to switch different Client implementation <TODO>
+  // Http::Host::Value host = ClientConfiguration::Instance().GetHost();
+  // switch (host) {
+  //   case Http::Host::QingStor: {
+  //     clientImpl = make_shared<QSClientImpl>();
+  //     break;
+  //   }
+  //   // Add other cases here
+  //   case Http::Host::Null:  // Bypass
+  //   default: {
+  //     clientImpl = make_shared<NullClientImpl>();
+  //     break;
+  //   }
+  // }
   return clientImpl;
 }
 

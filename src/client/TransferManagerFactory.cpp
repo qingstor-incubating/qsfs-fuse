@@ -22,7 +22,6 @@
 #include "client/NullTransferManager.h"
 #include "client/QSTransferManager.h"
 #include "client/TransferManager.h"
-#include "client/URI.h"
 
 namespace QS {
 
@@ -33,22 +32,28 @@ using boost::shared_ptr;
 shared_ptr<TransferManager> TransferManagerFactory::Create(
     const TransferManagerConfigure &config) {
   shared_ptr<TransferManager> transferManager = shared_ptr<TransferManager>();
-  Http::Host::Value host = ClientConfiguration::Instance().GetHost();
-  switch (host) {
-    case Http::Host::QingStor: {
-    transferManager =
-        shared_ptr<QSTransferManager>(new QSTransferManager(config));
-      break;
-    }
-    // Add other cases here
-    case Http::Host::Null:  // Bypass
-    default: {
-      TransferManagerConfigure nullConfig(0, 0, 0);
-      transferManager =
-          shared_ptr<NullTransferManager>(new NullTransferManager(nullConfig));
-      break;
-    }
-  }
+  // hotfix: we cannot construct manager based on host name only
+  // host name could be indiviual for private cloud
+  // so we just construct QSTransferManager here, we need to figure out another
+  // way to switch different transfer manager implementation <TODO>
+  transferManager =
+      shared_ptr<QSTransferManager>(new QSTransferManager(config));
+  // Http::Host::Value host = ClientConfiguration::Instance().GetHost();
+  // switch (host) {
+  //   case Http::Host::QingStor: {
+  //   transferManager =
+  //       shared_ptr<QSTransferManager>(new QSTransferManager(config));
+  //     break;
+  //   }
+  //   // Add other cases here
+  //   case Http::Host::Null:  // Bypass
+  //   default: {
+  //     TransferManagerConfigure nullConfig(0, 0, 0);
+  //     transferManager =
+  //         shared_ptr<NullTransferManager>(new NullTransferManager(nullConfig));
+  //     break;
+  //   }
+  // }
   return transferManager;
 }
 

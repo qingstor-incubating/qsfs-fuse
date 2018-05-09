@@ -25,7 +25,6 @@
 
 #include "client/Credentials.h"
 #include "client/Protocol.h"
-#include "client/URI.h"
 
 // Declare in global namespace before class ClientConfiguration, since friend
 // declarations can only introduce names in the surrounding namespace.
@@ -69,7 +68,7 @@ class ClientConfiguration {
   // accessor
   const std::string& GetBucket() const { return m_bucket; }
   const std::string& GetZone() const { return m_zone; }
-  Http::Host::Value GetHost() const { return m_host; }
+  const std::string GetHost() const { return m_host; }
   Http::Protocol::Value GetProtocol() const { return m_protocol; }
   uint16_t GetPort() const { return m_port; }
   bool IsDebugCurl() const { return m_debugCurl; }
@@ -102,7 +101,7 @@ class ClientConfiguration {
   std::string m_secretKey;
   std::string m_bucket;
   std::string m_zone;  // zone or region
-  Http::Host::Value m_host;
+  std::string m_host;
   Http::Protocol::Value m_protocol;
   uint16_t m_port;
   bool m_debugCurl;

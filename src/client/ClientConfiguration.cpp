@@ -34,7 +34,6 @@
 #include "base/Utils.h"
 #include "client/Credentials.h"
 #include "client/Protocol.h"
-#include "client/URI.h"
 #include "configure/Default.h"
 #include "configure/Options.h"
 
@@ -142,7 +141,7 @@ ClientConfiguration::ClientConfiguration(const Credentials &credentials)
     : m_accessKeyId(credentials.GetAccessKeyId()),
       m_secretKey(credentials.GetSecretKey()),
       m_zone(GetDefaultZone()),
-      m_host(QS::Client::Http::StringToHost(GetDefaultHostName())),
+      m_host(GetDefaultHostName()),
       m_protocol(QS::Client::Http::StringToProtocol(GetDefaultProtocolName())),
       m_port(GetDefaultPort(GetDefaultProtocolName())),
       m_debugCurl(false),
@@ -163,7 +162,7 @@ ClientConfiguration::ClientConfiguration(const CredentialsProvider &provider)
     : m_accessKeyId(provider.GetCredentials().GetAccessKeyId()),
       m_secretKey(provider.GetCredentials().GetSecretKey()),
       m_zone(GetDefaultZone()),
-      m_host(QS::Client::Http::StringToHost(GetDefaultHostName())),
+      m_host(GetDefaultHostName()),
       m_protocol(QS::Client::Http::StringToProtocol(GetDefaultProtocolName())),
       m_port(GetDefaultPort(GetDefaultProtocolName())),
       m_debugCurl(false),
@@ -184,7 +183,7 @@ void ClientConfiguration::InitializeByOptions() {
   const QS::Configure::Options &options = QS::Configure::Options::Instance();
   m_bucket = options.GetBucket();
   m_zone = options.GetZone();
-  m_host = Http::StringToHost(options.GetHost());
+  m_host = options.GetHost();
   m_protocol = Http::StringToProtocol(options.GetProtocol());
   m_port = options.GetPort();
   m_debugCurl = options.IsDebugCurl();
