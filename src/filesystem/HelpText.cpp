@@ -44,7 +44,6 @@ using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultParallelTransfers;
 using QS::Configure::Default::GetDefaultTransactionRetries;
 using QS::Configure::Default::GetDefaultTransferBufSize;
-using QS::Configure::Default::GetDefaultZone;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
@@ -70,9 +69,9 @@ void ShowQSFSHelp() {
   "\n"
   "qsfs Options:\n"
   "Mandatory argements to long options are mandatory for short options too.\n"
+  "  -z, --zone         Zone or region\n"
   "  -c, --credentials  Specify credentials file, default path is " << 
                           GetDefaultCredentialsFile() << "\n" <<
-  "  -z, --zone         Zone or region, default value is " << GetDefaultZone() << "\n"
   "  -l, --logdir       Specify log directory, default path is " <<
                           GetDefaultLogDirectory() << "\n" <<
   "  -L, --loglevel     Min log level, message lower than this level don't logged;\n"
@@ -137,8 +136,8 @@ void ShowQSFSHelp() {
 
 void ShowQSFSUsage() { 
   cout << 
-  "Usage: qsfs <BUCKET> <MOUNTPOINT>\n"
-  "       [-c|--credentials=[file path]] [-z|--zone=[value]]\n"
+  "Usage: qsfs <BUCKET> <MOUNTPOINT> <-z|--zone=value>\n"
+  "       [-c|--credentials=[file path]]\n"
   "       [-l|--logdir=[dir]] [-L|--loglevel=[INFO|WARN|ERROR|FATAL]] \n"
   "       [-F|--filemode=[octal-mode]] [-D|--dirmode=[octal-mode]]\n"
   "       [-u|--umaskmp=[octal-mode]]\n"

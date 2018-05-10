@@ -47,7 +47,6 @@ using QS::Configure::Default::GetDefaultPort;
 using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultParallelTransfers;
 using QS::Configure::Default::GetDefaultTransferBufSize;
-using QS::Configure::Default::GetDefaultZone;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
@@ -64,7 +63,7 @@ using std::string;
 Options::Options()
     : m_bucket(),
       m_mountPoint(),
-      m_zone(GetDefaultZone()),
+      m_zone(string()),
       m_credentialsFile(GetDefaultCredentialsFile()),
       m_logDirectory(GetDefaultLogDirectory()),
       m_logLevel(GetLogLevelByName(GetDefaultLogLevelName())),

@@ -63,7 +63,6 @@ using QS::Configure::Default::GetDefaultPort;
 using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultParallelTransfers;
 using QS::Configure::Default::GetDefaultTransferBufSize;
-using QS::Configure::Default::GetDefaultZone;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
@@ -239,7 +238,7 @@ void Parse(int argc, char **argv) {
   // can free the defaults if other values are specified.
   options.bucket         = strdup("");
   options.mountPoint     = strdup("");
-  options.zone           = strdup(GetDefaultZone().c_str());
+  options.zone           = strdup("");
   options.credentials    = strdup(GetDefaultCredentialsFile().c_str());
   options.logDirectory   = strdup(GetDefaultLogDirectory().c_str());
   options.logLevel       = strdup(GetDefaultLogLevelName().c_str());

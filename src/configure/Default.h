@@ -40,7 +40,6 @@ std::string GetDefaultLogLevelName();
 std::string GetDefaultHostName();
 uint16_t GetDefaultPort(const std::string& protocolName);
 std::string GetDefaultProtocolName();
-std::string GetDefaultZone();
 std::vector<std::string> GetMimeFiles();
 
 uint16_t GetPathMaxLen();

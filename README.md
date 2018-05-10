@@ -96,8 +96,8 @@ Supported general options are listed as following,
 
 | short | full | type | required | usage |
 | ----- |------|:------:|:----------:|------ |
+| -z | --zone        | string  | Y | Specify zone or region
 | -c | --credentials | string  | N | Specify credentials file, default path is `/etc/qsfs.cred`
-| -z | --zone        | string  | N | Specify zone or region, default value is `pek3a`
 | -l | --logdir      | string  | N | Specify log directory, default path is `/tmp/qsfs_log/`
 | -L | --loglevel    | string  | N | Specify min log level (INFO,WARN,ERROR or FATAL), message lower than this level don't logged; default value is `INFO`.
 | -F | --filemode    | octal   | N | Specify the permission bits in st_mode for file objects without x-qs-meta-mode header. The value is given in octal representation; default value is `0644`

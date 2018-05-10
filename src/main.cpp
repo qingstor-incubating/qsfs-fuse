@@ -41,6 +41,7 @@ using std::string;
 namespace {
 void CheckBucketName();
 void CheckMountPoint();
+void CheckZone();
 
 struct ErrorHandle {
   int *ret;
@@ -82,6 +83,7 @@ int main(int argc, char **argv) {
     } else {  // Mount qsfs
       CheckBucketName();
       CheckMountPoint();
+      CheckZone();
 
       string mountPoint = options.GetMountPoint();
       pair<bool, string> outcome =
@@ -138,6 +140,14 @@ void CheckMountPoint() {
   if (options.GetMountPoint().empty()) {
     ShowQSFSUsage();
     throw "Missing MOUNTPOINT parameter. Please provide mount directory";
+  }
+}
+
+void CheckZone() {
+  const Options &options = QS::Configure::Options::Instance();
+  if (options.GetZone().empty()) {
+    ShowQSFSUsage();
+    throw "Missing ZONE parameter. Please provide zone name";
   }
 }
 

@@ -52,7 +52,6 @@ using QS::Configure::Default::GetDefaultTransferBufSize;
 using QS::Configure::Default::GetDefaultHostName;
 using QS::Configure::Default::GetDefaultPort;
 using QS::Configure::Default::GetDefaultProtocolName;
-using QS::Configure::Default::GetDefaultZone;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetSDKLogFolderBaseName;
 using QS::Configure::Default::GetDefaultConnectTimeOut;
@@ -140,7 +139,7 @@ ClientConfiguration &ClientConfiguration::Instance() {
 ClientConfiguration::ClientConfiguration(const Credentials &credentials)
     : m_accessKeyId(credentials.GetAccessKeyId()),
       m_secretKey(credentials.GetSecretKey()),
-      m_zone(GetDefaultZone()),
+      m_zone(string()),
       m_host(GetDefaultHostName()),
       m_protocol(QS::Client::Http::StringToProtocol(GetDefaultProtocolName())),
       m_port(GetDefaultPort(GetDefaultProtocolName())),
@@ -161,7 +160,7 @@ ClientConfiguration::ClientConfiguration(const Credentials &credentials)
 ClientConfiguration::ClientConfiguration(const CredentialsProvider &provider)
     : m_accessKeyId(provider.GetCredentials().GetAccessKeyId()),
       m_secretKey(provider.GetCredentials().GetSecretKey()),
-      m_zone(GetDefaultZone()),
+      m_zone(string()),
       m_host(GetDefaultHostName()),
       m_protocol(QS::Client::Http::StringToProtocol(GetDefaultProtocolName())),
       m_port(GetDefaultPort(GetDefaultProtocolName())),

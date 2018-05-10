@@ -42,7 +42,6 @@ static const char* const QSFS_DEFAULT_LOG_DIR = "/tmp/qsfs_log/";
 static const char* const QSFS_DEFAULT_LOGLEVEL_NAME = "WARN";
 static const char* const QSFS_DEFAULT_HOST = "qingstor.com";
 static const char* const QSFS_DEFAULT_PROTOCOL = "https";
-static const char* const QSFS_DEFAULT_ZONE = "pek3a";
 static const char* const MIME_FILE_DEFAULT = "/etc/mime.types";
 static uint16_t const QSFS_DEFAULT_TRANSACTION_RETRIES = 3;
 static const int CLIENT_DEFAULT_POOL_SIZE = 5;
@@ -71,7 +70,6 @@ uint16_t GetDefaultPort(const string& protocolName) {
 }
 
 string GetDefaultProtocolName() { return QSFS_DEFAULT_PROTOCOL; }
-string GetDefaultZone() { return QSFS_DEFAULT_ZONE; }
 
 vector<string> GetMimeFiles() {
   vector<string> mimes;
