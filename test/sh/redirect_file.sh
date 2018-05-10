@@ -24,10 +24,13 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
+WORK_DIR_NAME="redirect_file"
+mk_test_dir ${WORK_DIR_NAME}
+
 DATA_LINE0='abcdefghijk'
 DATA_LINE1='ABCDEFGHIJK'
 DATA_LINE2='12345678900'
-FILE_NAME='test_redirects.txt'
+FILE_NAME="${WORK_DIR_NAME}/test_redirects.txt"
 FILE_="$QSFS_TEST_RUN_DIR/$FILE_NAME"
 
 mk_test_file $FILE_NAME $DATA_LINE0
@@ -58,4 +61,4 @@ if [ ${LINE2} != ${DATA_LINE2} ]; then
 fi
 
 rm_test_file $FILE_NAME
-
+rm_test_dir ${WORK_DIR_NAME}

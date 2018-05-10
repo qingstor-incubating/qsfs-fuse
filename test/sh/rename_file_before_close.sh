@@ -24,7 +24,10 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='test_rename_before_close.txt'
+WORK_DIR_NAME="rename_file_before_close"
+mk_test_dir ${WORK_DIR_NAME}
+
+FILE_NAME="${WORK_DIR_NAME}/test_rename_before_close.txt"
 FILE_NAME_NEW=${FILE_NAME}_new
 FILE_="$QSFS_TEST_RUN_DIR/$FILE_NAME" # to avoid name overloading from utils
 FILE_NEW="$QSFS_TEST_RUN_DIR/$FILE_NAME_NEW"
@@ -40,3 +43,4 @@ fi
 
 rm_test_file "${FILE_NAME_NEW}"
 rm -f ${FILE_}
+rm_test_dir ${WORK_DIR_NAME}

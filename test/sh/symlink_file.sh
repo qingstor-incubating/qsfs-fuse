@@ -24,8 +24,11 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='origin_file'
-FILE_NAME_TO='symlink_file'
+WORK_DIR_NAME="symlink_file"
+mk_test_dir ${WORK_DIR_NAME}
+
+FILE_NAME="${WORK_DIR_NAME}/origin_file"
+FILE_NAME_TO="${WORK_DIR_NAME}/symlink_file"
 FILE_="$QSFS_TEST_RUN_DIR/$FILE_NAME"  # avoid name overloading from utils
 FILE_TO="$QSFS_TEST_RUN_DIR/$FILE_NAME_TO"
 rm_test_file $FILE_NAME
@@ -48,3 +51,5 @@ fi
 
 rm_test_file $FILE_NAME_TO  # must remove symlink firstly
 rm_test_file $FILE_NAME
+
+rm_test_dir ${WORK_DIR_NAME}

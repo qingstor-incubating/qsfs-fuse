@@ -25,14 +25,14 @@ source "$current_path/common.sh"
 
 # 1. clean run dir
 echo "remove qsfs run dir [path=$QSFS_TEST_RUN_DIR]"
-rm -rf $QSFS_TEST_RUN_DIR
+#rm -rf $QSFS_TEST_RUN_DIR
 
 # 2. stop qsfs
 MOUNT_POINT=$(dirname "${QSFS_TEST_RUN_DIR}")
 echo "umount ${MOUNT_POINT}"
 TRY_COUNT=3
 while true; do
-  fusermount -u ${MOUNT_POINT}
+  fusermount -uz ${MOUNT_POINT}
   if [ -z "$(df | grep ${MOUNT_POINT})" ]; then
     break;
   fi

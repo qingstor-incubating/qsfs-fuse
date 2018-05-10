@@ -24,19 +24,24 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
+WORK_DIR_NAME="truncate_file"
+mk_test_dir ${WORK_DIR_NAME}
+
+FILE_NAME="${WORK_DIR_NAME}/file"
 
 # truncate empty test file to 0
-truncate_test_file
-rm_test_file
+truncate_test_file ${FILE_NAME}
+rm_test_file ${FILE_NAME}
 
 # truncate default test text file to 0
-mk_test_file
-truncate_test_file 
-rm_test_file
+FILE_NAME="${WORK_DIR_NAME}/file1"
+mk_test_file ${FILE_NAME}
+truncate_test_file ${FILE_NAME}
+rm_test_file ${FILE_NAME}
 
 # truncate file to a larger size
 FILE_DATA="0123456789"
-FILE_NAME='truncate_test_file.txt'
+FILE_NAME="${WORK_DIR_NAME}/truncate_test_file.txt"
 TARGET_SIZE=100
 mk_test_file $FILE_NAME $FILE_DATA
 truncate_test_file $FILE_NAME $TARGET_SIZE
@@ -44,8 +49,10 @@ rm_test_file $FILE_NAME
 
 # truncate empty file to a larger size
 FILE_DATA=
-FILE_NAME='truncate_empty_test_file.txt'
+FILE_NAME="${WORK_DIR_NAME}/truncate_empty_test_file.txt"
 TARGET_SIZE=100
 mk_test_file $FILE_NAME $FILE_DATA
 truncate_test_file $FILE_NAME $TARGET_SIZE
 rm_test_file $FILE_NAME
+
+rm_test_dir ${WORK_DIR_NAME}

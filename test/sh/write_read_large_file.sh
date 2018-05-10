@@ -24,10 +24,13 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
+WORK_DIR_NAME="write_read_large_file"
+mk_test_dir ${WORK_DIR_NAME}
+
 BIG_FILENAME="read-large-file.txt"
 BIG_FILENAME_COPY="read-large-file-download.txt"
 BIG_FILESIZE=$(( 25 * 1024 * 1024 ))
-BIG_FILE="$QSFS_TEST_RUN_DIR/$BIG_FILENAME"
+BIG_FILE="$QSFS_TEST_RUN_DIR/${WORK_DIR_NAME}/$BIG_FILENAME"
 BIG_FILE_COPY="/tmp/$BIG_FILENAME_COPY"
 BIG_TMPFILE="/tmp/${BIG_FILENAME}"
 
@@ -56,3 +59,5 @@ done
 rm -f ${BIG_TMPFILE}
 rm -f ${BIG_FILE_COPY}
 rm_test_file ${BIG_FILENAME}
+
+rm_test_dir ${WORK_DIR_NAME}

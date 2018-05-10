@@ -25,10 +25,14 @@ current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 cd $QSFS_TEST_RUN_DIR
 
+WORK_DIR_NAME="write_file_sequence_parallel"
+mk_test_dir ${WORK_DIR_NAME}
+
 THREADS=50
-FILENAME_TXT="write-sequence-parallel.txt"
+FILENAME_TXT="${WORK_DIR_NAME}/write-sequence-parallel.txt"
 
 append_test_file_parallel $FILENAME_TXT $THREADS
 
 # cleanup
 rm_test_file $FILENAME_TXT
+rm_test_dir ${WORK_DIR_NAME}

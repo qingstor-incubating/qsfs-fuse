@@ -24,11 +24,14 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
+WORK_DIR_NAME="multipart_upload_move"
+mk_test_dir ${WORK_DIR_NAME}
+
 BIG_FILENAME="multipart-big-file.txt"
 BIG_FILENAME_COPY="multipart-big-file-copy.txt"
 BIG_FILESIZE=$(( 25 * 1024 * 1024 ))
-BIG_FILE="$QSFS_TEST_RUN_DIR/$BIG_FILENAME"
-BIG_FILE_COPY="$QSFS_TEST_RUN_DIR/$BIG_FILENAME_COPY"
+BIG_FILE="$QSFS_TEST_RUN_DIR/${WORK_DIR_NAME}/$BIG_FILENAME"
+BIG_FILE_COPY="$QSFS_TEST_RUN_DIR/${WORK_DIR_NAME}/$BIG_FILENAME_COPY"
 BIG_TMPFILE="/tmp/${BIG_FILENAME}"
 
 # upload
@@ -50,4 +53,5 @@ fi
 
 
 rm -f ${BIG_TMPFILE}
-rm_test_file ${BIG_FILENAME_COPY}
+rm_test_file "${WORK_DIR_NAME}/${BIG_FILENAME_COPY}"
+rm_test_dir "${WORK_DIR_NAME}"

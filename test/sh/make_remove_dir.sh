@@ -24,26 +24,30 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-mk_test_dir
-rm_test_dir
+WORK_DIR_NAME="make_remove_dir"
+WORK_DIR="${QSFS_TEST_RUN_DIR}/${WORK_DIR_NAME}"
 
-DIR_NAME='QingCloudㅙ=글シン歓迎'
-mk_test_dir $DIR_NAME
-rm_test_dir $DIR_NAME
+mk_test_dir ${WORK_DIR_NAME}
+
+DIR_NAME="${WORK_DIR_NAME}/QingCloudㅙ=글シン歓迎"
+mk_test_dir ${DIR_NAME}
+rm_test_dir ${DIR_NAME}
 
 # remove non-empty dir
-DIR_NAME='dir_nonempty'
-FILE_IN_DIR="$DIR_NAME/file"
-mk_test_dir $DIR_NAME
+DIR_NAME="${WORK_DIR_NAME}/dir_nonempty"
+FILE_IN_DIR="${DIR_NAME}/file"
+mk_test_dir ${DIR_NAME}
 mk_test_file $FILE_IN_DIR '0123456789'
 rm_test_file $FILE_IN_DIR
-rm_test_dir $DIR_NAME
+rm_test_dir ${DIR_NAME}
 
 # remove non-empty dir with recursive rm
-FILE1_IN_DIR="$DIR_NAME/file1"
-FILE2_IN_DIR="$DIR_NAME/file2"
-mk_test_dir $DIR_NAME
+FILE1_IN_DIR="${DIR_NAME}/file1"
+FILE2_IN_DIR="${DIR_NAME}/file2"
+mk_test_dir ${DIR_NAME}
 mk_test_file $FILE1_IN_DIR
 mk_test_file $FILE2_IN_DIR
-rm_test_dir $DIR_NAME
+rm_test_dir ${DIR_NAME}
+
+rm_test_dir ${WORK_DIR_NAME}
 

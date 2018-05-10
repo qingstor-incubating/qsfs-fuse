@@ -24,7 +24,10 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-mv_test_file
+WORK_DIR_NAME="rename_file"
+mk_test_dir ${WORK_DIR_NAME}
 
-FILE_NAME='青云文件ㅙ=글シン歓迎'
+FILE_NAME="${WORK_DIR_NAME}青云文件ㅙ=글シン歓迎"
 mv_test_file $FILE_NAME
+
+rm_test_dir ${WORK_DIR_NAME}

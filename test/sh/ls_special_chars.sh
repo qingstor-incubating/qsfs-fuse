@@ -22,9 +22,14 @@ set -o xtrace
 set -o errexit
 
 current_path=$(dirname "$0")
-source "$current_path/common.sh"
+source "$current_path/utils.sh"
 
-cd $QSFS_TEST_RUN_DIR
+MY_DIR_NAME="special_chars"
+MY_DIR="${QSFS_TEST_RUN_DIR}/${MY_DIR_NAME}"
+
+mk_test_dir "${MY_DIR_NAME}"
+
+cd ${MY_DIR}
 ls 'special' 2>&1 | grep -q 'No such file or directory'
 ls 'special?' 2>&1 | grep -q 'No such file or directory'
 ls 'special*' 2>&1 | grep -q 'No such file or directory'
@@ -33,3 +38,6 @@ ls 'specialµ' 2>&1 | grep -q 'No such file or directory'
 ls 'special글' 2>&1 | grep -q 'No such file or directory'
 ls 'specialシ' 2>&1 | grep -q 'No such file or directory'
 ls 'special歓' 2>&1 | grep -q 'No such file or directory'
+
+rm_test_dir "${MY_DIR_NAME}"
+

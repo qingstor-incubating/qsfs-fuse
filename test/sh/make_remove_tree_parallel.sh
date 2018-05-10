@@ -25,7 +25,7 @@ current_path=$(dirname "$0")
 source "$current_path/common.sh"
 
 cd $QSFS_TEST_RUN_DIR
-DIR_TREE="tree"
+DIR_TREE="make_remove_tree"
 mkdir $DIR_TREE && cd $DIR_TREE
 
 BASE=5

@@ -24,7 +24,10 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='sequence_read_file_parallel.txt'
+WORK_DIR_NAME="read_file_sequence_parallel"
+mk_test_dir ${WORK_DIR_NAME}
+
+FILE_NAME="${WORK_DIR_NAME}/sequence_read_file_parallel.txt"
 FILE_SIZE=15
 
 # create a file at first
@@ -45,3 +48,4 @@ append_test_file $FILE_NAME $FILE_SIZE
 
 # cleanup
 rm_test_file $FILE_NAME
+rm_test_dir ${WORK_DIR_NAME}

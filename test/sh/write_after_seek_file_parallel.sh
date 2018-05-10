@@ -24,8 +24,11 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
+WORK_DIR_NAME="write_after_seek_file_parallel"
+mk_test_dir ${WORK_DIR_NAME}
+
 # write after seek ahead
-FILE_NAME="write_after_seek_parallel.txt"
+FILE_NAME="${WORK_DIR_NAME}/write_after_seek_parallel.txt"
 FILE_TEST="$QSFS_TEST_RUN_DIR/$FILE_NAME"
 THREADS=10
 NUM=$(( $THREADS - 1 ))
@@ -62,3 +65,4 @@ done
 
 # cleanup
 rm_test_file $FILE_NAME
+rm_test_dir ${WORK_DIR_NAME}

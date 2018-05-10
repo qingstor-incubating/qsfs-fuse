@@ -24,8 +24,11 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
+WORK_DIR_NAME="write_after_seek_file"
+mk_test_dir ${WORK_DIR_NAME}
+
 # write after seek ahead
-FILE_NAME="write_after_seek_ahead.txt"
+FILE_NAME="${WORK_DIR_NAME}/write_after_seek_ahead.txt"
 FILE_TEST="$QSFS_TEST_RUN_DIR/$FILE_NAME"
 dd if=/dev/zero of=$FILE_TEST seek=1 count=1 bs=1024
 
@@ -45,3 +48,4 @@ while true; do
 done
 
 rm_test_file $FILE_NAME
+rm_test_dir ${WORK_DIR_NAME}

@@ -24,7 +24,10 @@ set -o errexit
 current_path=$(dirname "$0")
 source "$current_path/utils.sh"
 
-FILE_NAME='random_read_file.txt'
+WORK_DIR_NAME="read_file_random"
+mk_test_dir ${WORK_DIR_NAME}
+
+FILE_NAME="${WORK_DIR_NAME}/random_read_file.txt"
 MAX_NUM=30
 HEAD_COUNT=8
 
@@ -49,3 +52,4 @@ done
 
 # clean up
 rm_test_file $FILE_NAME
+rm_test_dir ${WORK_DIR_NAME}
