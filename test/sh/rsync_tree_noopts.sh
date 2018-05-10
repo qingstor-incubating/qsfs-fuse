@@ -26,6 +26,9 @@ source "$current_path/common.sh"
 
 cd /tmp
 DIR_TREE="rsync-tree-noopts"
+if [ -d $DIR_TREE ]; then
+  rm -rf $DIR_TREE
+fi
 mkdir "$DIR_TREE" && cd $DIR_TREE
 BASE=3
 

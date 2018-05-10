@@ -286,6 +286,10 @@ function append_test_file {
     fi
   fi
 
+  if [ -e $FILE ]; then
+    rm -f $FILE
+  fi
+
   for x in $(seq 1 $SIZE); do
     echo $x >> $FILE
   done
@@ -336,6 +340,10 @@ function append_test_file_parallel {
         SIZE=$TEST_APPEND_FILE_LEN
       fi
     fi
+  fi
+
+  if [ -e $FILE ]; then
+    rm -f $FILE
   fi
 
   # write in parallel

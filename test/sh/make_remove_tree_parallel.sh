@@ -26,6 +26,9 @@ source "$current_path/common.sh"
 
 cd $QSFS_TEST_RUN_DIR
 DIR_TREE="make_remove_tree"
+if [ -d $DIR_TREE ]; then
+  rm -rf $DIR_TREE
+fi
 mkdir $DIR_TREE && cd $DIR_TREE
 
 BASE=5
