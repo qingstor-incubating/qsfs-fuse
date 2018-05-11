@@ -41,20 +41,21 @@ struct QSError {
     PARAMETER_MISSING,
 
     // sdk error
+    // QS_ERR_NO_ERROR means response is expected by api specs
     SDK_CONFIGURE_FILE_INAVLID,  // error when loading config file
     SDK_NO_REQUIRED_PARAMETER,   // request not send as missing required
                                  // parameters accoriding api specs
     SDK_REQUEST_SEND_ERROR,      // request send but get no response
     SDK_UNEXPECTED_RESPONSE,     // sdk get response but is not expected by api
                                  // specs
-    // QS_ERR_NO_ERROR means response is expected by api specs
+    SDK_SIGN_WITH_INVAILD_KEY,   // invalid key
 
     // specifics for http response
     NOT_FOUND  // Not Found (404)
   };
 };
 
-QSError::Value StringToQSError(const std::string &errorCode);
+QSError::Value StringToQSError(const char *errorCode);
 std::string QSErrorToString(QSError::Value err);
 
 ClientError<QSError::Value> GetQSErrorForCode(const std::string &errorCode);

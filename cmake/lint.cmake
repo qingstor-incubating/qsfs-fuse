@@ -16,7 +16,7 @@ endforeach()
 message(STATUS "found files: ${FOUND_FILES}")
 
 # find all files that should be excluded
-set(EXCLUDE_FILE_NAMES src/filesystem/HelpText.cpp src/client/QSError.cpp 
+set(EXCLUDE_FILE_NAMES src/filesystem/HelpText.cpp
                        src/base/MD5.h src/base/MD5.cpp)
 foreach(file ${EXCLUDE_FILE_NAMES})
     file(GLOB_RECURSE FOUND_FILES ${CMAKE_SOURCE_DIR}/${file})
