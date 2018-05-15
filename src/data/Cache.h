@@ -48,12 +48,13 @@ namespace FileSystem {
 class Drive;
 struct RenameDirCallback;
 struct DownloadFileContentRangeCallback;
-struct UploadFileCallback;
 }  // namespace FileSystem
 
 namespace Data {
 
 class DirectoryTree;
+struct DownloadRangeCallback;
+struct FlushCallback;
 
 typedef std::pair<std::string, boost::shared_ptr<File> > FileIdToFilePair;
 typedef std::list<FileIdToFilePair> CacheList;
@@ -65,6 +66,9 @@ typedef boost::unordered_map<std::string, CacheListIterator,
 typedef FileIdToCacheListIteratorMap::iterator CacheMapIterator;
 typedef FileIdToCacheListIteratorMap::const_iterator CacheMapConstIterator;
 
+//
+// Cache (FileManager)
+//
 class Cache : private boost::noncopyable {
  public:
   explicit Cache(uint64_t capacity) : m_size(0), m_capacity(capacity) {}
@@ -128,8 +132,8 @@ class Cache : private boost::noncopyable {
   // Find the file
   //
   // @param  : file path (absolute path)
-  // @return : const iterator point to cache list
-  CacheListIterator Find(const std::string &filePath);
+  // @return : shared_ptr<File>
+  boost::shared_ptr<File> FindFile(const std::string &filePath);
 
   // Begin of cache list
   CacheListIterator Begin();
@@ -253,10 +257,11 @@ class Cache : private boost::noncopyable {
   FileIdToCacheListIteratorMap m_map;
 
   friend class QS::Client::QSClient;
+  friend struct QS::Data::DownloadRangeCallback;
+  friend struct QS::Data::FlushCallback;
   friend class QS::FileSystem::Drive;
   friend struct QS::FileSystem::RenameDirCallback;
   friend struct QS::FileSystem::DownloadFileContentRangeCallback;
-  friend struct QS::FileSystem::UploadFileCallback;
   friend class CacheTest;
 };
 

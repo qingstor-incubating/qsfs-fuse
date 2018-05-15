@@ -56,6 +56,7 @@
 #include "configure/Options.h"
 #include "data/Cache.h"
 #include "data/DirectoryTree.h"
+#include "data/File.h"
 #include "data/FileMetaData.h"
 #include "data/FileMetaDataManager.h"
 #include "data/IOStream.h"
@@ -82,10 +83,10 @@ using QS::Client::TransferManagerConfigure;
 using QS::Client::TransferManagerFactory;
 using QS::Data::Cache;
 using QS::Data::ContentRangeDeque;
-using QS::Data::ChildrenMultiMapConstIterator;
 using QS::Data::DirectoryTree;
 using QS::Data::Entry;
 using QS::Data::FileMetaData;
+using QS::Data::File;
 using QS::Data::FileType;
 using QS::Data::FilePathToNodeUnorderedMap;
 using QS::Data::IOStream;
@@ -722,68 +723,8 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
 }
 
 // --------------------------------------------------------------------------
-struct UploadFileCallback {
-  string filePath;
-  uint64_t fileSize;
-  shared_ptr<Node> node;
-  shared_ptr<TransferManager> transferManager;
-  shared_ptr<Cache> cache;
-  shared_ptr<Client> client;
-  shared_ptr<DirectoryTree> dirTree;
-  Drive *drive;
-  bool releaseFile;
-  bool updateMeta;
-
-  UploadFileCallback(const string &filePath_, uint64_t fileSize_,
-                     const shared_ptr<Node> &node_,
-                     const shared_ptr<TransferManager> &transferManager_,
-                     const shared_ptr<Cache> &cache_,
-                     const shared_ptr<Client> &client_,
-                     const shared_ptr<DirectoryTree> &dirTree_, Drive *drive_,
-                     bool releaseFile_, bool updateMeta_)
-      : filePath(filePath_),
-        fileSize(fileSize_),
-        node(node_),
-        transferManager(transferManager_),
-        cache(cache_),
-        client(client_),
-        dirTree(dirTree_),
-        drive(drive_),
-        releaseFile(releaseFile_),
-        updateMeta(updateMeta_) {}
-
-  void operator()(const shared_ptr<TransferHandle> &handle) {
-    if (handle && cache && client && drive) {
-      if (releaseFile) {
-        // To gurantee the data consistency, file open state has been set in
-        // Cache
-        cache->SetFileOpen(filePath, false, dirTree);
-        Info("Close file " + FormatPath(filePath));
-      }
-      if (handle->IsMultipart()) {
-        transferManager->m_unfinishedMultipartUploadHandles.emplace(
-            handle->GetObjectKey(), handle);
-      }
-      handle->WaitUntilFinished();
-      transferManager->m_unfinishedMultipartUploadHandles.erase(handle->GetObjectKey());
-
-      if (handle->DoneTransfer() && !handle->HasFailedParts()) {
-        Info("Done Upload file [size=" + to_string(fileSize) + "] " +
-             FormatPath(filePath));
-        // update meta
-        if (updateMeta) {
-          ClientError<QSError::Value> err =
-              client->Stat(handle->GetObjectKey(), dirTree);
-          ErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
-        }  // update Meta
-      }    // Done Transfer
-    }
-  }
-};
-
-// --------------------------------------------------------------------------
-void Drive::UploadFile(const string &filePath, bool releaseFile,
-                       bool updateMeta, bool async) {
+void Drive::FlushFile(const string &filePath, bool releaseFile, bool updateMeta,
+                      bool async) {
   // upload should just get file node from local
   shared_ptr<Node> node = GetNodeSimple(filePath);
 
@@ -793,29 +734,14 @@ void Drive::UploadFile(const string &filePath, bool releaseFile,
   }
 
   uint64_t fileSize = GetTrueFileSize(node, filePath);
-  Info("Start upload file [size=" + to_string(fileSize) + "]" + FormatPath(filePath));
-  ContentRangeDeque ranges = m_cache->GetUnloadedRanges(filePath, 0, fileSize);
-  // download unloaded pages for file
-  // this is need as user could open a file and edit a part of it,
-  // but you need the completed file in order to upload it.
-  if (!ranges.empty()) {
-    DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
-              " file:" + m_cache->FileToString(filePath));
-    bool fileOpen = node->IsFileOpen();
-    DownloadFileContentRanges(filePath, ranges, fileOpen, false);  // sync
-  }
-
-  UploadFileCallback callback(filePath, fileSize, node, m_transferManager, m_cache, m_client,
-                              m_directoryTree, this, releaseFile, updateMeta);
-  if (async) {
-    GetTransferManager()->GetExecutor()->SubmitAsync(
-        bind(boost::type<void>(), callback, _1),
-        bind(boost::type<shared_ptr<TransferHandle> >(),
-             &QS::Client::TransferManager::UploadFile, m_transferManager.get(),
-             _1, fileSize, m_cache, false),
-        filePath);
+  Info("Start upload file [size=" + to_string(fileSize) + "]" +
+       FormatPath(filePath));
+  shared_ptr<File> file = m_cache->FindFile(filePath);
+  if (file) {
+    file->Flush(fileSize, m_transferManager, m_directoryTree, m_cache, m_client,
+                releaseFile, updateMeta, async);
   } else {
-    callback(m_transferManager->UploadFile(filePath, fileSize, m_cache));
+    Error("File not exists in cache.");
   }
 }
 
@@ -862,11 +788,11 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
 
 // --------------------------------------------------------------------------
 void Drive::DownloadFileContentRanges(const string &filePath,
-                                      const ContentRangeDeque &ranges,
-                                      bool open, bool async) {
-  BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
-    DownloadFileContentRange(filePath, range, open, async);
-  }
+  const ContentRangeDeque &ranges,
+  bool open, bool async) {
+BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
+DownloadFileContentRange(filePath, range, open, async);
+}
 }
 
 // --------------------------------------------------------------------------

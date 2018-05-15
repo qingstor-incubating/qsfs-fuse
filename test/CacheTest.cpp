@@ -86,7 +86,7 @@ class CacheTest : public Test {
     EXPECT_EQ(cache.GetCapacity(), cacheCap);
     EXPECT_EQ(cache.GetNumFile(), 1u);
     EXPECT_TRUE(cache.Begin() != cache.End());
-    EXPECT_EQ(cache.Find("file1"), cache.Begin());
+    EXPECT_TRUE(cache.FindFile("file1"));
     EXPECT_TRUE(cache.HasFile("file1"));
     EXPECT_TRUE(cache.HasFileData("file1", off1, len1));
     EXPECT_FALSE(cache.HasFileData("file1", off1, len1 + 1));
@@ -154,9 +154,9 @@ class CacheTest : public Test {
     cache.Write("file2", off1, len1, page1, dirTree);
     EXPECT_EQ(cache.GetNumFile(), 2u);
     EXPECT_EQ(cache.GetSize(), 2 * len1 + len2 + len3);
-    EXPECT_EQ(cache.Find("file2"), cache.Begin());
+    EXPECT_TRUE(cache.FindFile("file2"));
     EXPECT_TRUE(cache.HasFile("file1"));
-    EXPECT_EQ(cache.Find("file1"), ++cache.Begin());
+    EXPECT_TRUE(cache.FindFile("file1"));
     EXPECT_TRUE(cache.Free(cacheCap - len1, "file2"));
     EXPECT_FALSE(cache.HasFile("file1"));
     EXPECT_EQ(cache.GetSize(), len1);
@@ -172,8 +172,9 @@ class CacheTest : public Test {
     off_t off1 = 0;
     cache.Write("file1", off1, len1, page1, dirTree);
 
-    CacheListIterator pfile = cache.Find("file1");
-    EXPECT_EQ(pfile, cache.Begin());
+    shared_ptr<File> pfile = cache.FindFile("file1");
+    EXPECT_TRUE(pfile);
+    //EXPECT_EQ(pfile, cache.Begin());
 
     const char *data = "abc";
     size_t len2 = strlen(data);
@@ -187,8 +188,8 @@ class CacheTest : public Test {
     cache.Write("file1", off3, len3, page3, dirTree);
 
     EXPECT_EQ(cache.GetFileSize("file1"), len1 + len2 + len3);
-    pfile = cache.Find("file1");
-    EXPECT_TRUE(pfile->second->UseDiskFile());
+    //pfile = cache.Find("file1");
+    EXPECT_TRUE(pfile->UseDiskFile());
 
     EXPECT_EQ(cache.GetSize(), len1);
     EXPECT_TRUE(cache.HasFileData("file1", off1, len1 + len2));
@@ -203,7 +204,8 @@ class CacheTest : public Test {
     EXPECT_FALSE(cache.HasFile("file1"));
     EXPECT_EQ(cache.GetNumFile(), 1u);
     EXPECT_EQ(cache.GetSize(), len1);
-    EXPECT_EQ(cache.Find("file2"), cache.Begin());
+    //EXPECT_EQ(cache.Find("file2"), cache.Begin());
+    EXPECT_TRUE(cache.FindFile("file2"));
     EXPECT_TRUE(cache.Free(cacheCap, ""));
     EXPECT_FALSE(cache.HasFile("file2"));
     EXPECT_EQ(cache.GetSize(), 0u);

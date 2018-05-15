@@ -42,6 +42,7 @@ using boost::array;
 using boost::make_shared;
 using boost::shared_ptr;
 using boost::tuple;
+using QS::Utils::AppendPathDelim;
 using std::list;
 using std::make_pair;
 using std::pair;
@@ -66,7 +67,11 @@ class FileTest : public Test {
 
   void TestWrite() {
     string filename = "file1";
-    File file1(filename);  // empty file
+    string filepath =
+        AppendPathDelim(
+            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
+        filename;
+    File file1(filepath);  // empty file
 
     const char *page1 = "012";
     size_t len1 = 3;
@@ -174,7 +179,12 @@ class FileTest : public Test {
 
   void TestWriteDiskFile() {
     string filename = "file1";
-    File file1(filename);  // empty file
+    string filepath =
+        AppendPathDelim(
+            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
+        filename;
+
+    File file1(filepath);  // empty file
     file1.SetUseDiskFile(true);
 
     const char *page1 = "012";
@@ -229,7 +239,12 @@ class FileTest : public Test {
 
   void TestRead() {
     string filename = "file1";
-    File file1(filename);  // empty file
+    string filepath =
+        AppendPathDelim(
+            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
+        filename;
+
+    File file1(filepath);  // empty file
 
     const char *page1 = "012";
     size_t len1 = 3;
@@ -306,7 +321,12 @@ class FileTest : public Test {
 
   void TestReadDiskFile() {
     string filename = "file2";
-    File file1(filename);  // empty file
+    string filepath =
+        AppendPathDelim(
+            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
+        filename;
+
+    File file1(filepath);  // empty file
     file1.SetUseDiskFile(true);
 
     const char *page1 = "012";
@@ -359,8 +379,10 @@ class FileTest : public Test {
 TEST_F(FileTest, Default) {
   string filename = "file1";
   string filepath =
-      QS::Configure::Options::Instance().GetDiskCacheDirectory() + filename;
-  File file1(filename);
+      AppendPathDelim(
+          QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
+      filename;
+  File file1(filepath);
   EXPECT_EQ(file1.GetBaseName(), filename);
   EXPECT_EQ(file1.GetSize(), 0u);
   EXPECT_EQ(file1.GetCachedSize(), 0u);

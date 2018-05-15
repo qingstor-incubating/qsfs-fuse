@@ -129,9 +129,31 @@ if (BUILD_TESTING)
   add_executable(
     FileTest
     FileTest.cpp
+    ${QSFS_SOURCE_DIR}/client/ClientConfiguration.cpp
+    ${QSFS_SOURCE_DIR}/client/Credentials.cpp
+    ${QSFS_SOURCE_DIR}/client/Protocol.cpp
+    ${QSFS_SOURCE_DIR}/client/TransferHandle.cpp
+    ${QSFS_SOURCE_DIR}/client/TransferManager.cpp
+    ${QSFS_SOURCE_DIR}/client/QSTransferManager.cpp
+    ${QSFS_SOURCE_DIR}/client/NullClient.cpp
+    ${QSFS_SOURCE_DIR}/client/Client.cpp
+    ${QSFS_SOURCE_DIR}/client/QSError.cpp
+    ${QSFS_SOURCE_DIR}/client/Utils.cpp
+    ${QSFS_SOURCE_DIR}/client/RetryStrategy.cpp
     ${QSFS_SOURCE_DIR}/data/Page.cpp
     ${QSFS_SOURCE_DIR}/data/File.cpp
+    ${QSFS_SOURCE_DIR}/data/Cache.cpp
+    ${QSFS_SOURCE_DIR}/data/DirectoryTree.cpp
+    ${QSFS_SOURCE_DIR}/data/Entry.cpp
+    ${QSFS_SOURCE_DIR}/data/Node.cpp
+    ${QSFS_SOURCE_DIR}/data/FileMetaDataManager.cpp
+    ${QSFS_SOURCE_DIR}/data/FileMetaData.cpp
+    ${QSFS_SOURCE_DIR}/data/ResourceManager.cpp
     ${QSFS_SOURCE_DIR}/base/UtilsWithLog.cpp
+    ${QSFS_SOURCE_DIR}/base/TimeUtils.cpp
+    ${QSFS_SOURCE_DIR}/base/ThreadPool.cpp
+    ${QSFS_SOURCE_DIR}/base/TaskHandle.cpp
+    ${QSFS_SOURCE_DIR}/base/ThreadPoolInitializer.cpp
     ${QSFS_SOURCE_DIR}/configure/Options.cpp
     $<TARGET_OBJECTS:qsfsStream>
     $<TARGET_OBJECTS:qsfsLogging>
@@ -147,14 +169,29 @@ if (BUILD_TESTING)
   add_executable(
     CacheTest
     CacheTest.cpp
+    ${QSFS_SOURCE_DIR}/client/ClientConfiguration.cpp
+    ${QSFS_SOURCE_DIR}/client/Credentials.cpp
+    ${QSFS_SOURCE_DIR}/client/Protocol.cpp
+    ${QSFS_SOURCE_DIR}/client/TransferHandle.cpp
+    ${QSFS_SOURCE_DIR}/client/TransferManager.cpp
+    ${QSFS_SOURCE_DIR}/client/QSTransferManager.cpp
+    ${QSFS_SOURCE_DIR}/client/NullClient.cpp
+    ${QSFS_SOURCE_DIR}/client/Client.cpp
+    ${QSFS_SOURCE_DIR}/client/QSError.cpp
+    ${QSFS_SOURCE_DIR}/client/Utils.cpp
+    ${QSFS_SOURCE_DIR}/client/RetryStrategy.cpp
     ${QSFS_SOURCE_DIR}/data/Page.cpp
     ${QSFS_SOURCE_DIR}/data/File.cpp
     ${QSFS_SOURCE_DIR}/data/Cache.cpp
     ${QSFS_SOURCE_DIR}/data/DirectoryTree.cpp
     ${QSFS_SOURCE_DIR}/data/Entry.cpp
     ${QSFS_SOURCE_DIR}/data/Node.cpp
+    ${QSFS_SOURCE_DIR}/data/ResourceManager.cpp
     ${QSFS_SOURCE_DIR}/base/UtilsWithLog.cpp
     ${QSFS_SOURCE_DIR}/base/TimeUtils.cpp
+    ${QSFS_SOURCE_DIR}/base/ThreadPool.cpp
+    ${QSFS_SOURCE_DIR}/base/TaskHandle.cpp
+    ${QSFS_SOURCE_DIR}/base/ThreadPoolInitializer.cpp
     $<TARGET_OBJECTS:qsfsStream>
     $<TARGET_OBJECTS:qsfsFileMetaData>
     $<TARGET_OBJECTS:qsfsLogging>

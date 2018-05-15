@@ -1215,7 +1215,7 @@ int qsfs_flush(const char* path, struct fuse_file_info* fi) {
       bool releasefile = false;
       bool updatemeta = true;
       bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
-      Drive::Instance().UploadFile(path_, releasefile, updatemeta, async);
+      Drive::Instance().FlushFile(path_, releasefile, updatemeta, async);
     } catch (const QSException& err) {
       Error(err.get());
       return -EAGAIN;  // Try again
@@ -1305,7 +1305,7 @@ int qsfs_fsync(const char* path, int datasync, struct fuse_file_info* fi) {
       bool releasefile = false;
       bool updatemeta = datasync == 0;
       bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
-      Drive::Instance().UploadFile(path_, releasefile, updatemeta, async);
+      Drive::Instance().FlushFile(path_, releasefile, updatemeta, async);
     } catch (const QSException& err) {
       Error(err.get());
       return -EAGAIN;  // Try again

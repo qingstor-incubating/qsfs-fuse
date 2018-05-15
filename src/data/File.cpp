@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/bind.hpp"
 #include "boost/exception/to_string.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/scoped_ptr.hpp"
@@ -34,10 +35,18 @@
 
 #include "base/LogMacros.h"
 #include "base/StringUtils.h"
+#include "base/ThreadPool.h"
 #include "base/Utils.h"
 #include "base/UtilsWithLog.h"
+#include "client/Client.h"
+#include "client/ClientConfiguration.h"
+#include "client/QSError.h"
+#include "client/TransferHandle.h"
+#include "client/TransferManager.h"
 #include "configure/Options.h"
+#include "data/Cache.h"
 #include "data/IOStream.h"
+#include "filesystem/Drive.h"
 
 namespace QS {
 
@@ -51,8 +60,17 @@ using boost::scoped_ptr;
 using boost::shared_ptr;
 using boost::to_string;
 using boost::tuple;
+using QS::Client::Client;
+using QS::Client::ClientError;
+using QS::Client::TransferHandle;
+using QS::Client::TransferManager;
+using QS::Data::Cache;
+using QS::Data::DirectoryTree;
+using QS::Data::IOStream;
 using QS::StringUtils::PointerAddress;
 using QS::StringUtils::BoolToString;
+using QS::StringUtils::ContentRangeDequeToString;
+using QS::StringUtils::FormatPath;
 using std::iostream;
 using std::list;
 using std::make_pair;
@@ -78,6 +96,15 @@ string BuildDiskFilePath(const string &basename) {
 string PrintFileName(const string &file) { return "[file=" + file + "]"; }
 
 }  // namespace
+
+// --------------------------------------------------------------------------
+File::File(const string &filePath, size_t size)
+    : m_filePath(filePath),
+      m_baseName(QS::Utils::GetBaseName(filePath)),
+      m_size(size),
+      m_cacheSize(size),
+      m_useDiskFile(false),
+      m_open(false) {}
 
 // --------------------------------------------------------------------------
 File::~File() {
@@ -400,6 +427,101 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
 }
 
 // --------------------------------------------------------------------------
+struct FlushCallback {
+  string filePath;
+  uint64_t fileSize;
+  shared_ptr<TransferManager> transferManager;
+  shared_ptr<DirectoryTree> dirTree;
+  shared_ptr<Cache> cache;
+  shared_ptr<Client> client;
+  bool releaseFile;
+  bool updateMeta;
+
+  FlushCallback(const string &filePath_, uint64_t fileSize_,
+                const shared_ptr<TransferManager> &transferManager_,
+                const shared_ptr<DirectoryTree> &dirTree_,
+                const shared_ptr<Cache> &cache_,
+                const shared_ptr<Client> &client_, bool releaseFile_,
+                bool updateMeta_)
+      : filePath(filePath_),
+        fileSize(fileSize_),
+        transferManager(transferManager_),
+        dirTree(dirTree_),
+        cache(cache_),
+        client(client_),
+        releaseFile(releaseFile_),
+        updateMeta(updateMeta_) {}
+
+  void operator()(const shared_ptr<TransferHandle> &handle) {
+    if (handle && cache && client) {
+      if (releaseFile) {
+        // To gurantee the data consistency, file open state has been set in
+        // Cache
+        cache->SetFileOpen(filePath, false, dirTree);
+        Info("Close file " + FormatPath(filePath));
+      }
+
+      handle->WaitUntilFinished();
+      if (handle->DoneTransfer() && !handle->HasFailedParts()) {
+        Info("Done Upload file [size=" + to_string(fileSize) + "] " +
+             FormatPath(filePath));
+        // update meta
+        if (updateMeta) {
+          ClientError<QS::Client::QSError::Value> err =
+              client->Stat(handle->GetObjectKey(), dirTree);
+          ErrorIf(!QS::Client::IsGoodQSError(err),
+                  QS::Client::GetMessageForQSError(err));
+        }  // update Meta
+      } else {
+        if (handle->IsMultipart()) {
+          transferManager->m_unfinishedMultipartUploadHandles.emplace(
+              handle->GetObjectKey(), handle);
+        }
+      }    // Done Transfer
+    }
+  }
+};
+
+// --------------------------------------------------------------------------
+void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
+                 shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
+                 shared_ptr<Client> client, bool releaseFile, bool updateMeta,
+                 bool async) {
+  // download unloaded pages for file
+  // this is need as user could open a file and edit a part of it,
+  // but you need the completed file in order to upload it.
+  Load(fileSize, transferManager, dirTree, cache, async);
+
+  lock_guard<recursive_mutex> lock(m_mutex);
+  FlushCallback callback(m_filePath, fileSize, transferManager, dirTree, cache, client,
+                         releaseFile, updateMeta);
+  if (async) {
+    transferManager->GetExecutor()->SubmitAsync(
+        bind(boost::type<void>(), callback, _1),
+        bind(boost::type<shared_ptr<TransferHandle> >(),
+             &QS::Client::TransferManager::UploadFile, transferManager.get(),
+             _1, fileSize, cache, false),
+        m_filePath);
+  } else {
+    callback(transferManager->UploadFile(m_filePath, fileSize, cache));
+  }
+}
+
+// --------------------------------------------------------------------------
+void File::Load(size_t fileSize, shared_ptr<TransferManager> transferManager,
+                shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
+                bool async) {
+  lock_guard<recursive_mutex> lock(m_mutex);
+  ContentRangeDeque ranges = GetUnloadedRanges(0, fileSize);
+  if (!ranges.empty()) {
+    DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
+              " file:" + ToString());
+
+    DownloadRanges(ranges, transferManager, dirTree, cache, async);
+  }
+}
+
+// --------------------------------------------------------------------------
 void File::ResizeToSmallerSize(size_t smallerSize) {
   size_t curSize = GetSize();
   if (smallerSize == curSize) {
@@ -519,6 +641,94 @@ const shared_ptr<Page> &File::Back() {
   lock_guard<recursive_mutex> lock(m_mutex);
   assert(!m_pages.empty());
   return *(m_pages.rbegin());
+}
+
+// --------------------------------------------------------------------------
+struct DownloadRangeCallback {
+  string filePath;
+  off_t offset;
+  size_t downloadSize;
+  shared_ptr<IOStream> stream;
+  bool fileOpen;
+  shared_ptr<Cache> cache;
+  shared_ptr<DirectoryTree> dirTree;
+
+  DownloadRangeCallback(const string &filePath_, off_t offset_,
+                        size_t downloadSize_,
+                        const shared_ptr<IOStream> &stream_, bool open_,
+                        const shared_ptr<Cache> &cache_,
+                        const shared_ptr<DirectoryTree> &dirTree_)
+      : filePath(filePath_),
+        offset(offset_),
+        downloadSize(downloadSize_),
+        stream(stream_),
+        fileOpen(open_),
+        cache(cache_),
+        dirTree(dirTree_) {}
+
+  void operator()(const shared_ptr<TransferHandle> &handle) {
+    if (handle) {
+      handle->WaitUntilFinished();
+      if (handle->DoneTransfer() && !handle->HasFailedParts()) {
+        // TODO (jim): write to file directly
+        bool success = cache->Write(filePath, offset, downloadSize, stream,
+                                    dirTree, fileOpen);
+        ErrorIf(!success,
+                "Fail to write cache [file:offset:len=" + filePath + ":" +
+                    to_string(offset) + ":" + to_string(downloadSize) + "]");
+      }
+    }
+  }
+};
+
+// --------------------------------------------------------------------------
+void File::DownloadRanges(const ContentRangeDeque &ranges,
+                          shared_ptr<TransferManager> transferManager,
+                          shared_ptr<DirectoryTree> dirTree,
+                          shared_ptr<Cache> cache, bool async) {
+  BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
+    off_t offset = range.first;
+    size_t size = range.second;
+    bool fileContentExist = HasData(offset, size);
+    if (fileContentExist) {
+      return;
+    }
+
+    uint64_t bufSize = QS::Client::ClientConfiguration::Instance()
+                           .GetTransferBufferSizeInMB() *
+                       QS::Size::MB1;
+    size_t remainingSize = size;
+    uint64_t downloadedSize = 0;
+
+    while (remainingSize > 0) {
+      off_t offset_ = offset + downloadedSize;
+      int64_t downloadSize_ = remainingSize > bufSize ? bufSize : remainingSize;
+      if (downloadSize_ <= 0) {
+        break;
+      }
+
+      shared_ptr<IOStream> stream_ = make_shared<IOStream>(downloadSize_);
+      DownloadRangeCallback callback(m_filePath, offset_, downloadSize_,
+                                     stream_, m_open, cache, dirTree);
+
+      if (async) {
+        transferManager->GetExecutor()->SubmitAsync(
+            bind(boost::type<void>(), callback, _1),
+            bind(boost::type<shared_ptr<TransferHandle> >(),
+                 &QS::Client::TransferManager::DownloadFile,
+                 transferManager.get(), _1, offset_, downloadSize_, stream_,
+                 false),
+            m_filePath);
+      } else {
+        shared_ptr<TransferHandle> handle = transferManager->DownloadFile(
+            m_filePath, offset_, downloadSize_, stream_);
+        callback(handle);
+      }
+
+      downloadedSize += downloadSize_;
+      remainingSize -= downloadSize_;
+    }
+  }
 }
 
 // --------------------------------------------------------------------------

@@ -229,12 +229,12 @@ class Drive : public Singleton<Drive> {
   // @return : void
   void TruncateFile(const std::string &filePath, size_t newSize);
 
-  // Upload a file
+  // Flush a file
   //
   // @param  : file path
   // @return : void
-  void UploadFile(const std::string &filePath, bool releaseFile,
-                  bool updateMeta, bool async = false);
+  void FlushFile(const std::string &filePath, bool releaseFile, bool updateMeta,
+                 bool async = false);
 
   // Release a file
   void ReleaseFile(const std::string &filePath);
@@ -253,19 +253,19 @@ class Drive : public Singleton<Drive> {
                 const char *buf);
 
  private:
-  // Download file contents
-  //
-  // @param  : file path, file content ranges, asynchronously or synchronizely
-  // @return : void
-  void DownloadFileContentRanges(const std::string &filePath,
-                                 const QS::Data::ContentRangeDeque &ranges,
-                                 bool fileOpen, bool async = false);
-
-  void DownloadFileContentRange(const std::string &filePath,
-                                const std::pair<off_t, size_t> &range,
+ // Download file contents
+ //
+ // @param  : file path, file content ranges, asynchronously or synchronizely
+ // @return : void
+ void DownloadFileContentRanges(const std::string &filePath,
+                                const QS::Data::ContentRangeDeque &ranges,
                                 bool fileOpen, bool async = false);
 
-  // An workaroud to get file size
+ void DownloadFileContentRange(const std::string &filePath,
+                               const std::pair<off_t, size_t> &range,
+                               bool fileOpen, bool async = false);
+
+ // An workaroud to get file size
   // This probably need to be refactored in the future
   //
   // File size is maintained by Cache, but only for files which has been
@@ -318,9 +318,7 @@ class Drive : public Singleton<Drive> {
   boost::shared_ptr<QS::Data::DirectoryTree> m_directoryTree;
 
   friend class Singleton<Drive>;
-  friend class QS::Client::QSClient;
   friend void qsfs_destroy(void *userdata);
-  friend struct UploadFileCallback;
 };
 
 }  // namespace FileSystem

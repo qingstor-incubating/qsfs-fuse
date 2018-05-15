@@ -37,24 +37,30 @@
 
 namespace QS {
 
+namespace Client {
+class Client;
+class TransferManager;
+}
+
+namespace FileSystem {
+class Drive;
+}
+
 namespace Data {
 class Cache;
+class DirectoryTree;
 
 // Range represented by a pair of {offset, size}
 typedef std::deque<std::pair<off_t, size_t> > ContentRangeDeque;
 
 class File : private boost::noncopyable {
  public:
-  explicit File(const std::string &baseName, size_t size = 0)
-      : m_baseName(baseName),
-        m_size(size),
-        m_cacheSize(size),
-        m_useDiskFile(false),
-        m_open(false) {}
+  explicit File(const std::string &filePath, size_t size = 0);
 
   ~File();
 
  public:
+  std::string GetFilePath() const { return m_filePath; }
   std::string GetBaseName() const { return m_baseName; }
   size_t GetSize() const {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
@@ -146,6 +152,17 @@ class File : private boost::noncopyable {
       off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream,
       bool open = false);
 
+  void Flush(size_t fileSize,
+             boost::shared_ptr<QS::Client::TransferManager> transferManager,
+             boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
+             boost::shared_ptr<QS::Data::Cache> cache,
+             boost::shared_ptr<QS::Client::Client> client,
+             bool releaseFile, bool updateMeta, bool async = false);
+  void Load(size_t fileSize,
+            boost::shared_ptr<QS::Client::TransferManager> transferManager,
+            boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
+            boost::shared_ptr<QS::Data::Cache> cache, bool async = false);
+
   // Resize the total pages' size to a smaller size.
   void ResizeToSmallerSize(size_t smallerSize);
 
@@ -194,6 +211,12 @@ class File : private boost::noncopyable {
   // Return the last key in the page set.
   const boost::shared_ptr<Page> &Back();
 
+  void DownloadRanges(
+      const ContentRangeDeque &ranges,
+      boost::shared_ptr<QS::Client::TransferManager> transferManager,
+      boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
+      boost::shared_ptr<QS::Data::Cache> cache, bool async = false);
+
   // Add a new page from a block of character without checking input.
   // Return {pointer to addedpage, success, added size in cache, added size}
   // internal use only
@@ -203,6 +226,7 @@ class File : private boost::noncopyable {
       off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream);
 
  private:
+  std::string m_filePath;
   std::string m_baseName;  // file base name
 
   mutable boost::mutex m_sizeLock;
@@ -223,6 +247,7 @@ class File : private boost::noncopyable {
 
   friend class Cache;
   friend class FileTest;
+  friend class QS::FileSystem::Drive;
 };
 
 }  // namespace Data

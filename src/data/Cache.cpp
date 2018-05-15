@@ -151,10 +151,10 @@ string Cache::FileToString(const string &filePath) const {
 }
 
 // --------------------------------------------------------------------------
-CacheListIterator Cache::Find(const string &filePath) {
+shared_ptr<File> Cache::FindFile(const string &filePath) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(filePath);
-  return it != m_map.end() ? it->second : m_cache.end();
+  return it != m_map.end() ? it->second->second : shared_ptr<File>();
 }
 
 // --------------------------------------------------------------------------
@@ -635,8 +635,7 @@ void Cache::Resize(const string &fileId, size_t newFileSize,
 
 // --------------------------------------------------------------------------
 CacheListIterator Cache::UnguardedNewEmptyFile(const string &fileId) {
-  m_cache.push_front(make_pair(
-      fileId, make_shared<File>(QS::Utils::GetBaseName(fileId))));
+  m_cache.push_front(make_pair(fileId, make_shared<File>(fileId)));
   if (m_cache.begin()->first == fileId) {  // insert to cache sucessfully
     pair<CacheMapIterator, bool> res = m_map.emplace(fileId, m_cache.begin());
     if (res.second) {

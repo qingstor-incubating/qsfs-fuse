@@ -37,11 +37,12 @@ namespace QS {
 namespace Data {
 class Cache;
 class ResourceManager;
+class File;
+struct FlushCallback;
 }  // namespace Data
 
 namespace FileSystem {
 class Drive;
-struct UploadFileCallback;
 }  // namespace FileSystem
 
 namespace Threading {
@@ -178,7 +179,8 @@ class TransferManager : private boost::noncopyable {
   StringToTransferHandleMap m_unfinishedMultipartUploadHandles;  
 
   friend class QS::FileSystem::Drive;
-  friend struct QS::FileSystem::UploadFileCallback;
+  friend class QS::Data::File;
+  friend struct QS::Data::FlushCallback;
 };
 
 }  // namespace Client
