@@ -88,6 +88,9 @@ class QSTransferManager : public TransferManager {
   // to retry it, abort the multipart upload request after cancelled or failed.
   void AbortMultipartUpload(const boost::shared_ptr<TransferHandle> &handle);
 
+  // Clean up
+  void Cleanup();
+
  private:
   bool PrepareDownload(const boost::shared_ptr<TransferHandle> &handle);
   void DoSinglePartDownload(const boost::shared_ptr<TransferHandle> &handle,

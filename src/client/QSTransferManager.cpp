@@ -716,5 +716,17 @@ ClientError<QSError::Value> QSTransferManager::MultipleUploadWrapper(
       part->GetSize(), stream);
 }
 
+// --------------------------------------------------------------------------
+void QSTransferManager::Cleanup() {
+  // abort unfinished multipart uploads
+  if (!m_unfinishedMultipartUploadHandles.empty()) {
+    BOOST_FOREACH (StringToTransferHandleMap::value_type &p,
+                   m_unfinishedMultipartUploadHandles) {
+      AbortMultipartUpload(p.second);
+    }
+    m_unfinishedMultipartUploadHandles.clear();
+  }
+}
+
 }  // namespace Client
 }  // namespace QS

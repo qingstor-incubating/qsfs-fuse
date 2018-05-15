@@ -63,6 +63,8 @@ class NullTransferManager : public TransferManager {
   }
 
   void AbortMultipartUpload(const boost::shared_ptr<TransferHandle> &handle) {}
+
+  void Cleanup() {}
 };
 
 }  // namespace Client

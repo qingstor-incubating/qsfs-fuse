@@ -25,7 +25,9 @@
 
 #include "boost/noncopyable.hpp"
 #include "boost/shared_ptr.hpp"
+#include "boost/unordered_map.hpp"
 
+#include "base/HashUtils.h"
 #include "base/Size.h"
 #include "client/ClientConfiguration.h"
 #include "data/ResourceManager.h"
@@ -39,6 +41,7 @@ class ResourceManager;
 
 namespace FileSystem {
 class Drive;
+struct UploadFileCallback;
 }  // namespace FileSystem
 
 namespace Threading {
@@ -49,6 +52,11 @@ namespace Client {
 
 class Client;
 class TransferHandle;
+
+typedef boost::unordered_map<std::string,
+                             boost::shared_ptr<QS::Client::TransferHandle>,
+                             HashUtils::StringHash>
+    StringToTransferHandleMap;
 
 struct TransferManagerConfigure {
   // Memory size allocated for one transfer buffer
@@ -129,6 +137,9 @@ class TransferManager : private boost::noncopyable {
   virtual void AbortMultipartUpload(
       const boost::shared_ptr<TransferHandle> &handle) = 0;
 
+  // Clean up
+  virtual void Cleanup() = 0;
+
  public:
   uint64_t GetBufferMaxHeapSize() const {
     return m_configure.m_bufferMaxHeapSize;
@@ -163,7 +174,11 @@ class TransferManager : private boost::noncopyable {
   boost::shared_ptr<QS::Threading::ThreadPool> m_executor;
   boost::shared_ptr<Client> m_client;
 
+ protected:
+  StringToTransferHandleMap m_unfinishedMultipartUploadHandles;  
+
   friend class QS::FileSystem::Drive;
+  friend struct QS::FileSystem::UploadFileCallback;
 };
 
 }  // namespace Client

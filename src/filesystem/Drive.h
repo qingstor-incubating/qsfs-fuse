@@ -27,10 +27,8 @@
 #include "boost/shared_ptr.hpp"
 #include "boost/thread/locks.hpp"
 #include "boost/thread/mutex.hpp"
-#include "boost/unordered_map.hpp"
 #include "boost/weak_ptr.hpp"
 
-#include "base/HashUtils.h"
 #include "base/Singleton.hpp"
 #include "data/Cache.h"
 #include "data/DirectoryTree.h"
@@ -48,14 +46,10 @@ class TransferManager;
 namespace Data {
 class DirectoryTree;
 class Node;
+class File;
 }
 
 namespace FileSystem {
-
-typedef boost::unordered_map<std::string,
-                             boost::shared_ptr<QS::Client::TransferHandle>,
-                             HashUtils::StringHash>
-    StringToTransferHandleMap;
 
 class Drive : public Singleton<Drive> {
  public:
@@ -322,11 +316,9 @@ class Drive : public Singleton<Drive> {
   boost::shared_ptr<QS::Client::TransferManager> m_transferManager;
   boost::shared_ptr<QS::Data::Cache> m_cache;
   boost::shared_ptr<QS::Data::DirectoryTree> m_directoryTree;
-  StringToTransferHandleMap m_unfinishedMultipartUploadHandles;
 
   friend class Singleton<Drive>;
   friend class QS::Client::QSClient;
-  friend class QS::Client::QSTransferManager;  // for cache
   friend void qsfs_destroy(void *userdata);
   friend struct UploadFileCallback;
 };

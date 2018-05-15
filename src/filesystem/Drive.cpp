@@ -153,13 +153,6 @@ Drive::~Drive() { CleanUp(); }
 // --------------------------------------------------------------------------
 void Drive::CleanUp() {
   if (!GetCleanup()) {
-    // abort unfinished multipart uploads
-    if (!m_unfinishedMultipartUploadHandles.empty()) {
-      BOOST_FOREACH (StringToTransferHandleMap::value_type &p,
-                     m_unfinishedMultipartUploadHandles) {
-        m_transferManager->AbortMultipartUpload(p.second);
-      }
-    }
     // remove disk cache folder if existing
     // log off, to avoid dead reference to log (a singleton)
     string diskfolder =
@@ -170,10 +163,10 @@ void Drive::CleanUp() {
     }
 
     m_client.reset();
+    m_transferManager->Cleanup();
     m_transferManager.reset();
     m_cache.reset();
     m_directoryTree.reset();
-    m_unfinishedMultipartUploadHandles.clear();
 
     SetCleanup(true);
   }
@@ -733,6 +726,7 @@ struct UploadFileCallback {
   string filePath;
   uint64_t fileSize;
   shared_ptr<Node> node;
+  shared_ptr<TransferManager> transferManager;
   shared_ptr<Cache> cache;
   shared_ptr<Client> client;
   shared_ptr<DirectoryTree> dirTree;
@@ -742,6 +736,7 @@ struct UploadFileCallback {
 
   UploadFileCallback(const string &filePath_, uint64_t fileSize_,
                      const shared_ptr<Node> &node_,
+                     const shared_ptr<TransferManager> &transferManager_,
                      const shared_ptr<Cache> &cache_,
                      const shared_ptr<Client> &client_,
                      const shared_ptr<DirectoryTree> &dirTree_, Drive *drive_,
@@ -749,6 +744,7 @@ struct UploadFileCallback {
       : filePath(filePath_),
         fileSize(fileSize_),
         node(node_),
+        transferManager(transferManager_),
         cache(cache_),
         client(client_),
         dirTree(dirTree_),
@@ -765,11 +761,11 @@ struct UploadFileCallback {
         Info("Close file " + FormatPath(filePath));
       }
       if (handle->IsMultipart()) {
-        drive->m_unfinishedMultipartUploadHandles.emplace(
+        transferManager->m_unfinishedMultipartUploadHandles.emplace(
             handle->GetObjectKey(), handle);
       }
       handle->WaitUntilFinished();
-      drive->m_unfinishedMultipartUploadHandles.erase(handle->GetObjectKey());
+      transferManager->m_unfinishedMultipartUploadHandles.erase(handle->GetObjectKey());
 
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
         Info("Done Upload file [size=" + to_string(fileSize) + "] " +
@@ -809,7 +805,7 @@ void Drive::UploadFile(const string &filePath, bool releaseFile,
     DownloadFileContentRanges(filePath, ranges, fileOpen, false);  // sync
   }
 
-  UploadFileCallback callback(filePath, fileSize, node, m_cache, m_client,
+  UploadFileCallback callback(filePath, fileSize, node, m_transferManager, m_cache, m_client,
                               m_directoryTree, this, releaseFile, updateMeta);
   if (async) {
     GetTransferManager()->GetExecutor()->SubmitAsync(
