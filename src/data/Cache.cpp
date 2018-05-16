@@ -170,6 +170,12 @@ CacheListIterator Cache::End() {
 }
 
 // --------------------------------------------------------------------------
+bool Cache::MakeFile(const string &fileId) {
+  lock_guard<recursive_mutex> locker(m_mutex);
+  UnguardedNewEmptyFile(fileId) != m_cache.end();
+}
+
+// --------------------------------------------------------------------------
 pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
                                             size_t len, char *buffer) {
   ContentRangeDeque unloadedRanges;

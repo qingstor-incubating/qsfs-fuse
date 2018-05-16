@@ -151,6 +151,9 @@ class Cache : private boost::noncopyable {
                                             off_t offset, size_t len,
                                             char *buffer);
 
+  // Make a new file
+  bool MakeFile(const std::string &fileId);
+
  private:
   // Write a block of bytes into file cache
   //

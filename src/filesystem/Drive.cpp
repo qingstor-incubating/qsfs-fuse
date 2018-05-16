@@ -406,20 +406,17 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
   }
 
   if (type == FileType::File) {
+    Info("Create file " + FormatPath(filePath));
     ClientError<QSError::Value> err = GetClient()->MakeFile(filePath);
     if (!IsGoodQSError(err)) {
       Error(GetMessageForQSError(err));
       return;
     }
-
-    Info("Create file " + FormatPath(filePath));
-
     // QSClient::MakeFile doesn't update directory tree (refer it for details)
     // with the created file node, So we call Stat synchronizely.
     err = GetClient()->Stat(filePath, m_directoryTree);
     ErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
-    shared_ptr<Node> node = GetNodeSimple(filePath);
-    GetCache()->UnguardedNewEmptyFile(filePath);
+    GetCache()->MakeFile(filePath);
   } else {
     Error("Not support to create a special file (block, char, FIFO, etc.)");
     // This only make file of other types in local dir tree, nothing happens
@@ -434,14 +431,12 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
 
 // --------------------------------------------------------------------------
 void Drive::MakeDir(const string &dirPath, mode_t mode) {
+  Info("Create directory " + FormatPath(dirPath));
   ClientError<QSError::Value> err = GetClient()->MakeDirectory(dirPath);
   if (!IsGoodQSError(err)) {
     Error(GetMessageForQSError(err));
     return;
   }
-
-  Info("Create directory " + FormatPath(dirPath));
-
   // QSClient::MakeDirectory doesn't grow directory tree with the created dir
   // node, So we call Stat synchronizely.
   err = GetClient()->Stat(dirPath, m_directoryTree);
@@ -452,7 +447,6 @@ void Drive::MakeDir(const string &dirPath, mode_t mode) {
 void Drive::OpenFile(const string &filePath, bool async) {
   pair<shared_ptr<Node>, bool> res = GetNode(filePath, true, false, false);
   shared_ptr<Node> node = res.first;
-  bool modified = res.second;
 
   if (!(node && *node)) {
     Warning("File not exist " + FormatPath(filePath));
@@ -466,25 +460,15 @@ void Drive::OpenFile(const string &filePath, bool async) {
   if (fileSize == 0) {
     m_cache->Write(filePath, 0, 0, NULL, m_directoryTree, true);
   } else if (fileSize > 0) {
-    bool fileContentExist = m_cache->HasFileData(filePath, 0, fileSize);
-    if (!fileContentExist || modified) {
-      if (!fileContentExist) {
-        Info("File data not found in cache, download it ");
-      } else {
-        Info("File data modified, download it");
-      }
-      QS::Data::ContentRangeDeque ranges =
-          m_cache->GetUnloadedRanges(filePath, 0, fileSize);
-      if (!ranges.empty()) {
-        DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
-                  " file:" + m_cache->FileToString(filePath));
-        DownloadFileContentRanges(filePath, ranges, true, async);
-      }
+    // To gurantee the data consistency, file open state has been set in Cache
+    m_cache->SetFileOpen(filePath, true, m_directoryTree);
+    shared_ptr<File> file = m_cache->FindFile(filePath);
+    if (file) {
+      file->Load(fileSize, m_transferManager, m_directoryTree, m_cache, async);
+    } else {
+      Error("File not exists in cache");
     }
   }
-
-  // To gurantee the data consistency, file open state has been set in Cache
-  m_cache->SetFileOpen(filePath, true, m_directoryTree);
 }
 
 // --------------------------------------------------------------------------

@@ -45,6 +45,7 @@
 #include "client/TransferManager.h"
 #include "configure/Options.h"
 #include "data/Cache.h"
+#include "data/DirectoryTree.h"
 #include "data/IOStream.h"
 #include "filesystem/Drive.h"
 
