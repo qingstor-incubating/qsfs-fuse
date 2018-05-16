@@ -55,6 +55,7 @@ namespace Data {
 using boost::lock_guard;
 using boost::make_shared;
 using boost::make_tuple;
+using boost::mutex;
 using boost::recursive_mutex;
 using boost::scoped_ptr;
 using boost::shared_ptr;
@@ -493,17 +494,17 @@ void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
   Load(fileSize, transferManager, dirTree, cache, async);
 
   lock_guard<recursive_mutex> lock(m_mutex);
-  FlushCallback callback(m_filePath, fileSize, transferManager, dirTree, cache, client,
-                         releaseFile, updateMeta);
+  FlushCallback callback(GetFilePath(), fileSize, transferManager, dirTree,
+                         cache, client, releaseFile, updateMeta);
   if (async) {
     transferManager->GetExecutor()->SubmitAsync(
         bind(boost::type<void>(), callback, _1),
         bind(boost::type<shared_ptr<TransferHandle> >(),
              &QS::Client::TransferManager::UploadFile, transferManager.get(),
              _1, fileSize, cache, false),
-        m_filePath);
+        GetFilePath());
   } else {
-    callback(transferManager->UploadFile(m_filePath, fileSize, cache));
+    callback(transferManager->UploadFile(GetFilePath(), fileSize, cache));
   }
 }
 
@@ -584,6 +585,13 @@ void File::Clear() {
   m_cacheSize = 0;
   RemoveDiskFileIfExists(true);
   m_useDiskFile = false;
+}
+
+// --------------------------------------------------------------------------
+void File::Rename(const std::string &newFilePath) {
+  lock_guard<mutex> locker(m_filePathLock);
+  m_filePath = newFilePath;
+  m_baseName = QS::Utils::GetBaseName(newFilePath);
 }
 
 // --------------------------------------------------------------------------
@@ -708,7 +716,7 @@ void File::DownloadRanges(const ContentRangeDeque &ranges,
       }
 
       shared_ptr<IOStream> stream_ = make_shared<IOStream>(downloadSize_);
-      DownloadRangeCallback callback(m_filePath, offset_, downloadSize_,
+      DownloadRangeCallback callback(GetFilePath(), offset_, downloadSize_,
                                      stream_, m_open, cache, dirTree);
 
       if (async) {
@@ -718,10 +726,10 @@ void File::DownloadRanges(const ContentRangeDeque &ranges,
                  &QS::Client::TransferManager::DownloadFile,
                  transferManager.get(), _1, offset_, downloadSize_, stream_,
                  false),
-            m_filePath);
+            GetFilePath());
       } else {
         shared_ptr<TransferHandle> handle = transferManager->DownloadFile(
-            m_filePath, offset_, downloadSize_, stream_);
+            GetFilePath(), offset_, downloadSize_, stream_);
         callback(handle);
       }
 

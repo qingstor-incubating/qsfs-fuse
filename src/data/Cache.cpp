@@ -556,6 +556,7 @@ void Cache::Rename(const string &oldFileId, const string &newFileId) {
   if (it != m_map.end()) {
     it->second->first = newFileId;
     CacheListIterator pos = UnguardedMakeFileMostRecentlyUsed(it->second);
+    pos->second->Rename(newFileId);
 
     pair<CacheMapIterator, bool> res = m_map.emplace(newFileId, pos);
     if (!res.second) {

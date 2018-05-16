@@ -60,7 +60,10 @@ class File : private boost::noncopyable {
   ~File();
 
  public:
-  std::string GetFilePath() const { return m_filePath; }
+  std::string GetFilePath() const { 
+    boost::lock_guard<boost::mutex> locker(m_filePathLock);
+    return m_filePath;
+  }
   std::string GetBaseName() const { return m_baseName; }
   size_t GetSize() const {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
@@ -184,6 +187,9 @@ class File : private boost::noncopyable {
     m_open = open;
   }
 
+  // Rename
+  void Rename(const std::string &newFilePath);
+
   // Returns an iterator pointing to the first Page that is not ahead of offset.
   // If no such Page is found, a past-the-end iterator is returned.
   PageSetConstIterator LowerBoundPage(off_t offset) const;
@@ -226,6 +232,7 @@ class File : private boost::noncopyable {
       off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream);
 
  private:
+  mutable boost::mutex m_filePathLock;
   std::string m_filePath;
   std::string m_baseName;  // file base name
 
