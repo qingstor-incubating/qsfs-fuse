@@ -183,7 +183,7 @@ class Drive : public Singleton<Drive> {
   // @return : number of bytes has been read
   //
   size_t ReadFile(const std::string &filePath, off_t offset, size_t size,
-                  char *buf);
+                  char *buf, bool async = false);
 
   // Read target of a symlink file
   //

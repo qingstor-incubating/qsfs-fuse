@@ -479,7 +479,7 @@ void Drive::OpenFile(const string &filePath, bool async) {
 
 // --------------------------------------------------------------------------
 size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
-                       char *buf) {
+                       char *buf, bool async) {
   DebugInfo("Start read [offset:size=" + to_string(offset) + ":" +
             to_string(size) + FormatPath(filePath));
   // read is only called if the file has been opend with the correct flags
@@ -492,12 +492,15 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
 
   // Ajust size or calculate remaining size
   uint64_t readSize = size;
+  int64_t remainingSize = 0;
   uint64_t fileSize = GetTrueFileSize(node, filePath);
   if (offset + size > fileSize) {
     readSize = fileSize - offset;
     DebugInfo("Overflow [file size=" + to_string(fileSize) + "] " +
               " ajust read size to " + to_string(readSize) +
               FormatPath(filePath));
+  } else {
+    remainingSize = fileSize - (offset + size);
   }
 
   if (readSize == 0) {
@@ -515,6 +518,10 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     if (!outcome.second.empty()) {
       DebugWarning("Unloaded ranges " +
                    ContentRangeDequeToString(outcome.second));
+    }
+    if (remainingSize > 0) {  // prefecth
+      file->Load(0, fileSize, m_transferManager, m_directoryTree, m_cache,
+                 async);
     }
     return outcome.first;
   } else {
