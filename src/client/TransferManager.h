@@ -35,7 +35,6 @@
 namespace QS {
 
 namespace Data {
-class Cache;
 class ResourceManager;
 class File;
 struct FlushCallback;
@@ -116,7 +115,7 @@ class TransferManager : private boost::noncopyable {
   // @return : transfer handle
   virtual boost::shared_ptr<TransferHandle> UploadFile(
       const std::string &filePath, uint64_t fileSize,
-      const boost::shared_ptr<QS::Data::Cache> &cache, bool async = false) = 0;
+      const QS::Data::File *file, bool async = false) = 0;
 
   // Retry a failed upload
   //
@@ -124,7 +123,7 @@ class TransferManager : private boost::noncopyable {
   // @return : transfer handle after been retried
   virtual boost::shared_ptr<TransferHandle> RetryUpload(
       const boost::shared_ptr<TransferHandle> &handle,
-      const boost::shared_ptr<QS::Data::Cache> &cache, bool async = false) = 0;
+      const QS::Data::File *file, bool async = false) = 0;
 
   // Abort a multipart upload
   //

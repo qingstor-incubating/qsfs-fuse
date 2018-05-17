@@ -179,17 +179,11 @@ class Drive : public Singleton<Drive> {
 
   // Read data from a file
   //
-  // @param  : file path to read data from, offset, size, buf, flag doCheck
+  // @param  : file path to read data from, offset, size, buf
   // @return : number of bytes has been read
   //
-  // If cannot find or file need update, download it, otherwise read from cache.
-  // For download, if besides the size need to be download for this time, the
-  // file has more data need to be download, in this case, an asynchronize task
-  // will be submit to download extra partial data of the file.
-  //
-  // Flag doCheck control whether to check the file existence and file type.
   size_t ReadFile(const std::string &filePath, off_t offset, size_t size,
-                  char *buf, bool async = false);
+                  char *buf);
 
   // Read target of a symlink file
   //

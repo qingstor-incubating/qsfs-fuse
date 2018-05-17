@@ -28,7 +28,7 @@
 namespace QS {
 
 namespace Data {
-class Cache;
+class File;
 class IOStream;
 }  // namespace Data
 
@@ -67,7 +67,7 @@ class QSTransferManager : public TransferManager {
   // @return : transfer handle
   boost::shared_ptr<TransferHandle> UploadFile(
       const std::string &filePath, uint64_t fileSize,
-      const boost::shared_ptr<QS::Data::Cache> &cache, bool async = false);
+      const QS::Data::File *file, bool async = false);
 
   // Retry a failed upload
   //
@@ -75,7 +75,7 @@ class QSTransferManager : public TransferManager {
   // @return : transfer handle after been retried
   boost::shared_ptr<TransferHandle> RetryUpload(
       const boost::shared_ptr<TransferHandle> &handle,
-      const boost::shared_ptr<QS::Data::Cache> &cache, bool async = false);
+      const QS::Data::File *file, bool async = false);
 
   // Abort a multipart upload
   //
@@ -102,13 +102,13 @@ class QSTransferManager : public TransferManager {
 
   bool PrepareUpload(const boost::shared_ptr<TransferHandle> &handle);
   void DoSinglePartUpload(const boost::shared_ptr<TransferHandle> &handle,
-                          const boost::shared_ptr<QS::Data::Cache> &cache,
+                          const QS::Data::File *file,
                           bool async = false);
   void DoMultiPartUpload(const boost::shared_ptr<TransferHandle> &handle,
-                         const boost::shared_ptr<QS::Data::Cache> &cache,
+                         const QS::Data::File *file,
                          bool async = false);
   void DoUpload(const boost::shared_ptr<TransferHandle> &handlebool,
-                const boost::shared_ptr<QS::Data::Cache> &cache,
+                const QS::Data::File *file,
                 bool async = false);
 
  private:

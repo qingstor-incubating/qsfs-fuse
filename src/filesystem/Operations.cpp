@@ -258,7 +258,9 @@ tuple<shared_ptr<Node>, bool, string> GetFile(const char* path,
 
 // --------------------------------------------------------------------------
 void InitializeFUSECallbacks(struct fuse_operations* fuseOps) {
-  memset(fuseOps, 0, sizeof(*fuseOps));  // clear input
+  if(fuseOps != NULL) {
+    memset(fuseOps, 0, sizeof(*fuseOps));  // clear input
+  }
 
   fuseOps->getattr = qsfs_getattr;
   fuseOps->readlink = qsfs_readlink;
@@ -1047,6 +1049,8 @@ int qsfs_read(const char* path, char* buf, size_t size, off_t offset,
     // For such case, just return
     return 0;
   }
+  
+  memset(buf, 0, size);
 
   int readSize = 0;
   Drive& drive = Drive::Instance();
@@ -1066,8 +1070,7 @@ int qsfs_read(const char* path, char* buf, size_t size, off_t offset,
 
     // Do Read
     try {
-      bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
-      readSize = drive.ReadFile(path, offset, size, buf, async);
+      readSize = drive.ReadFile(path, offset, size, buf);
     } catch (const QSException& err) {
       errno = EAGAIN;  // try again
       throw;           // rethrow

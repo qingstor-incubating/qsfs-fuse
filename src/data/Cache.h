@@ -47,7 +47,6 @@ class QSClient;
 namespace FileSystem {
 class Drive;
 struct RenameDirCallback;
-struct DownloadFileContentRangeCallback;
 }  // namespace FileSystem
 
 namespace Data {
@@ -140,16 +139,6 @@ class Cache : private boost::noncopyable {
 
   // End of cache list
   CacheListIterator End();
-
-  // Read file cache into a buffer
-  //
-  // @param  : file path, offset, len, buffer
-  // @return : {size of bytes have been writen to buffer, unloaded ranges}
-  //
-  // If not found fileId in cache, create it in cache and load its pages.
-  std::pair<size_t, ContentRangeDeque> Read(const std::string &fileId,
-                                            off_t offset, size_t len,
-                                            char *buffer);
 
   // Make a new file
   bool MakeFile(const std::string &fileId);
@@ -264,7 +253,6 @@ class Cache : private boost::noncopyable {
   friend struct QS::Data::FlushCallback;
   friend class QS::FileSystem::Drive;
   friend struct QS::FileSystem::RenameDirCallback;
-  friend struct QS::FileSystem::DownloadFileContentRangeCallback;
   friend class CacheTest;
 };
 

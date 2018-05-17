@@ -154,7 +154,19 @@ string Cache::FileToString(const string &filePath) const {
 shared_ptr<File> Cache::FindFile(const string &filePath) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(filePath);
-  return it != m_map.end() ? it->second->second : shared_ptr<File>();
+  CacheListIterator pos;
+  if (it != m_map.end()) {
+    pos = UnguardedMakeFileMostRecentlyUsed(it->second);
+  } else {
+    // make a file
+    pos = UnguardedNewEmptyFile(filePath);
+  }
+  if (pos != m_cache.end()) {
+    return pos->second;
+  } else {
+    DebugError("Fail to find file" + FormatPath(filePath));
+    return shared_ptr<File>();
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -175,101 +187,7 @@ bool Cache::MakeFile(const string &fileId) {
   UnguardedNewEmptyFile(fileId) != m_cache.end();
 }
 
-// --------------------------------------------------------------------------
-pair<size_t, ContentRangeDeque> Cache::Read(const string &fileId, off_t offset,
-                                            size_t len, char *buffer) {
-  ContentRangeDeque unloadedRanges;
-  lock_guard<recursive_mutex> locker(m_mutex);
-  if (len == 0) {
-    return make_pair(0, unloadedRanges);  // do nothing, this case could happen
-                                          // for truncate file to empty
-  }
 
-  bool validInput =
-      !fileId.empty() && offset >= 0 && len >= 0 && buffer != NULL;
-  assert(validInput);
-  if (!validInput) {
-    DebugError("Try to read cache with invalid input " +
-               ToStringLine(fileId, offset, len, buffer));
-    return make_pair(0, unloadedRanges);
-  }
-
-  DebugInfo("Read cache [offset:len=" + to_string(offset) + ":" +
-            to_string(len) + "] " + FormatPath(fileId));
-  memset(buffer, 0, len);  // Clear input buffer.
-  size_t cachedSizeBegin = 0;
-  CacheListIterator pos = m_cache.begin();
-  CacheMapIterator it = m_map.find(fileId);
-  if (it != m_map.end()) {
-    pos = UnguardedMakeFileMostRecentlyUsed(it->second);
-    cachedSizeBegin = pos->second->GetCachedSize();
-  } else {
-    DebugInfo("File not exist in cache. Create new one" + fileId);
-    pos = UnguardedNewEmptyFile(fileId);
-    unloadedRanges.push_back(make_pair(offset, len));
-    return make_pair(0, unloadedRanges);
-  }
-
-  assert(pos != m_cache.end());
-  shared_ptr<File> &file = pos->second;
-  tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> outcome =
-      file->Read(offset, len);
-  size_t readedFileSize = boost::get<0>(outcome);
-  list<shared_ptr<Page> > &pagelist = boost::get<1>(outcome);
-  unloadedRanges = boost::get<2>(outcome);
-  if (readedFileSize == 0 || pagelist.empty()) {
-    DebugWarning("Read no bytes from file [offset:len=" + to_string(offset) +
-                 ":" + to_string(len) + "] " + FormatPath(fileId));
-    return make_pair(0, unloadedRanges);
-  }
-
-  size_t addedCacheSize = file->GetCachedSize() - cachedSizeBegin;
-  if (addedCacheSize > 0) {
-    // Update cache status.
-    bool success = Free(addedCacheSize, fileId);
-    if (!success) {
-      DebugWarning("Cache is full. Unable to free added" +
-                   to_string(addedCacheSize) + " bytes when reading file " +
-                   FormatPath(fileId));
-    }
-    m_size += addedCacheSize;
-  }
-
-  // Notice outcome pagelist could has more content than required
-  shared_ptr<Page> page = pagelist.front();  // copy instead use reference
-  pagelist.pop_front();
-  if (pagelist.empty()) {  // Only a single page.
-    size_t sz = std::min(len, readedFileSize);
-    size_t readSize = 0;
-    if(page->Offset() > offset) {
-      readSize += page->Read(sz, buffer + page->Offset() - offset);
-    } else {
-      readSize += page->Read(offset, sz, buffer);
-    }
-    return make_pair(readSize, unloadedRanges);
-  } else {  // Have Multipule pages.
-    size_t readSize = 0;
-    // read first page
-    if (page->Offset() > offset) {
-      readSize += page->Read(buffer + page->Offset() - offset);
-    } else {
-      readSize += page->Read(static_cast<off_t>(offset), buffer);
-    }
-    page = pagelist.front();
-    pagelist.pop_front();
-    // read middle pages
-    while (!pagelist.empty()) {
-      readSize += page->Read(buffer + page->Offset() - offset);
-      page = pagelist.front();
-      pagelist.pop_front();
-    }
-    // read last page
-    size_t sz = std::min(readedFileSize - readSize, len - readSize);
-    readSize +=
-        page->Read(static_cast<size_t>(sz), buffer + page->Offset() - offset);
-    return make_pair(readSize, unloadedRanges);
-  }
-}
 
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,

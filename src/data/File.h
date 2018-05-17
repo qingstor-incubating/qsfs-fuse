@@ -40,6 +40,7 @@ namespace QS {
 namespace Client {
 class Client;
 class TransferManager;
+class QSTransferManager;
 }
 
 namespace FileSystem {
@@ -121,17 +122,22 @@ class File : private boost::noncopyable {
  private:
   // Read from the cache (file pages)
   //
-  // @param  : file offset, len of bytes
-  // @return : a pair of {read size, page list containing data, unloaded ranges}
+  // @param  : file offset, len of bytes, buf
+  // @return : a pair of {readed size, unloaded ranges}
   //
   // If any bytes is not present, download it as a new page.
   // Pagelist of outcome is sorted by page offset.
-  //
-  // Notes: the pagelist of outcome could containing more bytes than given
-  // input asking for, for example, the 1st page of outcome could has a
-  // offset which is ahead of input 'offset'.
-  boost::tuple<size_t, std::list<boost::shared_ptr<Page> >, ContentRangeDeque>
-  Read(off_t offset, size_t len);
+  // Notes: buf at least has bytes of 'len' memory
+  std::pair<size_t, ContentRangeDeque> Read(
+      off_t offset, size_t len, char *buf,
+      boost::shared_ptr<QS::Client::TransferManager> transferManager,
+      boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
+      boost::shared_ptr<QS::Data::Cache> cache);
+
+  // Read from the cache with no load
+  // Notes: buf at least has bytes of 'len' memory
+  std::pair<size_t, ContentRangeDeque> ReadNoLoad(off_t offset, size_t len,
+                                                  char *buf) const;
 
   // Write a block of bytes into pages
   //
@@ -161,7 +167,7 @@ class File : private boost::noncopyable {
              boost::shared_ptr<QS::Data::Cache> cache,
              boost::shared_ptr<QS::Client::Client> client,
              bool releaseFile, bool updateMeta, bool async = false);
-  void Load(size_t fileSize,
+  void Load(off_t offset, size_t size,
             boost::shared_ptr<QS::Client::TransferManager> transferManager,
             boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
             boost::shared_ptr<QS::Data::Cache> cache, bool async = false);
@@ -222,6 +228,11 @@ class File : private boost::noncopyable {
       boost::shared_ptr<QS::Client::TransferManager> transferManager,
       boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
       boost::shared_ptr<QS::Data::Cache> cache, bool async = false);
+  void DownloadRange(
+      off_t offset, size_t len,
+      boost::shared_ptr<QS::Client::TransferManager> transferManager,
+      boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
+      boost::shared_ptr<QS::Data::Cache> cache, bool async = false);
 
   // Add a new page from a block of character without checking input.
   // Return {pointer to addedpage, success, added size in cache, added size}
@@ -255,6 +266,7 @@ class File : private boost::noncopyable {
   friend class Cache;
   friend class FileTest;
   friend class QS::FileSystem::Drive;
+  friend class QS::Client::QSTransferManager;
 };
 
 }  // namespace Data

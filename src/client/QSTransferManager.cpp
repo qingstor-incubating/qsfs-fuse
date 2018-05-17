@@ -40,8 +40,8 @@
 #include "client/TransferHandle.h"
 #include "client/Utils.h"
 #include "configure/Default.h"
-#include "data/Cache.h"
 #include "data/DirectoryTree.h"
+#include "data/File.h"
 #include "data/IOStream.h"
 #include "data/Node.h"
 #include "data/ResourceManager.h"
@@ -58,9 +58,9 @@ using boost::to_string;
 using QS::Client::Utils::BuildRequestRange;
 using QS::StringUtils::ContentRangeDequeToString;
 using QS::Data::Buffer;
-using QS::Data::Cache;
 using QS::Data::ContentRangeDeque;
 using QS::Data::DirectoryTree;
+using QS::Data::File;
 using QS::Data::IOStream;
 using QS::Data::Node;
 using QS::Data::ResourceManager;
@@ -291,25 +291,25 @@ shared_ptr<TransferHandle> QSTransferManager::RetryDownload(
 }
 
 // --------------------------------------------------------------------------
-shared_ptr<TransferHandle> QSTransferManager::UploadFile(
-    const string &filePath, uint64_t fileSize,
-    const shared_ptr<Cache> &cache, bool async) {
+shared_ptr<TransferHandle> QSTransferManager::UploadFile(const string &filePath,
+                                                         uint64_t fileSize,
+                                                         const File *file,
+                                                         bool async) {
   string bucket = ClientConfiguration::Instance().GetBucket();
   shared_ptr<TransferHandle> handle = make_shared<TransferHandle>(
       bucket, filePath, 0, fileSize, TransferDirection::Upload);
-  if (!cache) {
-    DebugError("Null Cache input");
+  if (!file) {
+    DebugError("Null file input");
     return handle;
   }
-  DoUpload(handle, cache, async);
+  DoUpload(handle, file, async);
 
   return handle;
 }
 
 // --------------------------------------------------------------------------
 shared_ptr<TransferHandle> QSTransferManager::RetryUpload(
-    const shared_ptr<TransferHandle> &handle,
-    const shared_ptr<Cache> &cache, bool async) {
+    const shared_ptr<TransferHandle> &handle, const File *file, bool async) {
   if (handle->GetStatus() == TransferStatus::InProgress ||
       handle->GetStatus() == TransferStatus::Completed ||
       handle->GetStatus() == TransferStatus::NotStarted) {
@@ -317,18 +317,17 @@ shared_ptr<TransferHandle> QSTransferManager::RetryUpload(
     return handle;
   }
 
-  if (!cache) {
-    DebugError("Null Cache input");
+  if (!file) {
+    DebugError("Null file input");
     return handle;
   }
-
   if (handle->GetStatus() == TransferStatus::Aborted) {
-    return UploadFile(handle->GetObjectKey(), handle->GetBytesTotalSize(),
-                      cache, async);
+    return UploadFile(handle->GetObjectKey(), handle->GetBytesTotalSize(), file,
+                      async);
   } else {
     handle->UpdateStatus(TransferStatus::NotStarted);
     handle->Restart();
-    DoUpload(handle, cache, async);
+    DoUpload(handle, file, async);
     return handle;
   }
 }
@@ -552,7 +551,7 @@ bool QSTransferManager::PrepareUpload(
 
 // --------------------------------------------------------------------------
 void QSTransferManager::DoSinglePartUpload(
-    const shared_ptr<TransferHandle> &handle, const shared_ptr<Cache> &cache,
+    const shared_ptr<TransferHandle> &handle, const File *file,
     bool async) {
   PartIdToPartMap queuedParts = handle->GetQueuedParts();
   assert(queuedParts.size() == 1);
@@ -562,10 +561,10 @@ void QSTransferManager::DoSinglePartUpload(
   Buffer buf = Buffer(new vector<char>(fileSize));
   string objKey = handle->GetObjectKey();
   pair<size_t, ContentRangeDeque> res =
-      cache->Read(objKey, 0, fileSize, &(*buf)[0]);
+      file->ReadNoLoad(0, fileSize, &(*buf)[0]);
   size_t readSize = res.first;
   if (readSize != fileSize) {
-    DebugError("Fail to read cache [file:offset:len:readsize=" + objKey +
+    DebugError("Fail to read file [file:offset:len:readsize=" + objKey +
                ":0:" + to_string(fileSize) + ":" + to_string(readSize) +
                " unloaded ranges:" + ContentRangeDequeToString(res.second) +
                "], stop upload");
@@ -596,7 +595,7 @@ void QSTransferManager::DoSinglePartUpload(
 
 // --------------------------------------------------------------------------
 void QSTransferManager::DoMultiPartUpload(
-    const shared_ptr<TransferHandle> &handle, const shared_ptr<Cache> &cache,
+    const shared_ptr<TransferHandle> &handle, const File *file,
     bool async) {
   PartIdToPartMap queuedParts = handle->GetQueuedParts();
   string objKey = handle->GetObjectKey();
@@ -615,11 +614,11 @@ void QSTransferManager::DoMultiPartUpload(
     }
 
     pair<size_t, ContentRangeDeque> res =
-        cache->Read(objKey, part->GetRangeBegin(), part->GetSize(),
+        file->ReadNoLoad(part->GetRangeBegin(), part->GetSize(),
                     &(*buffer)[0]);
     size_t readSize = res.first;
     if (readSize != part->GetSize()) {
-      DebugError("Fail to read cache [file:offset:len:readsize=" + objKey +
+      DebugError("Fail to read file [file:offset:len:readsize=" + objKey +
                  ":" + to_string(part->GetRangeBegin()) + ":" +
                  to_string(part->GetSize()) + ":" + to_string(readSize) +
                  " unloaded ranges:" + ContentRangeDequeToString(res.second) +
@@ -664,16 +663,16 @@ void QSTransferManager::DoMultiPartUpload(
 
 // --------------------------------------------------------------------------
 void QSTransferManager::DoUpload(const shared_ptr<TransferHandle> &handle,
-                                 const shared_ptr<Cache> &cache,
+                                 const File *file,
                                  bool async) {
   handle->UpdateStatus(TransferStatus::InProgress);
   if (!PrepareUpload(handle)) {
     return;
   }
   if (handle->IsMultipart()) {
-    DoMultiPartUpload(handle, cache, async);
+    DoMultiPartUpload(handle, file, async);
   } else {
-    DoSinglePartUpload(handle, cache, async);
+    DoSinglePartUpload(handle, file, async);
   }
 }
 

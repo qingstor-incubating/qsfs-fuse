@@ -22,7 +22,6 @@
 #include "boost/shared_ptr.hpp"
 
 #include "client/TransferManager.h"
-#include "data/Cache.h"
 
 namespace QS {
 
@@ -52,13 +51,13 @@ class NullTransferManager : public TransferManager {
 
   boost::shared_ptr<TransferHandle> UploadFile(
       const std::string &filePath, uint64_t fileSize,
-      const boost::shared_ptr<QS::Data::Cache> &cache, bool async = false) {
+      const QS::Data::File *file, bool async = false) {
     return boost::shared_ptr<TransferHandle>();
   }
 
   boost::shared_ptr<TransferHandle> RetryUpload(
       const boost::shared_ptr<TransferHandle> &handle,
-      const boost::shared_ptr<QS::Data::Cache> &cache, bool async = false) {
+      const QS::Data::File *file, bool async = false) {
     return boost::shared_ptr<TransferHandle>();
   }
 

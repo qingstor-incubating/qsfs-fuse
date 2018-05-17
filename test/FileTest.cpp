@@ -66,7 +66,7 @@ class FileTest : public Test {
   static void SetUpTestCase() { InitLog(); }
 
   void TestWrite() {
-    string filename = "file1";
+    string filename = "File_TestWrite";
     string filepath =
         AppendPathDelim(
             QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
@@ -178,7 +178,7 @@ class FileTest : public Test {
   }
 
   void TestWriteDiskFile() {
-    string filename = "file1";
+    string filename = "File_TestWriteDiskFile";
     string filepath =
         AppendPathDelim(
             QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
@@ -237,14 +237,17 @@ class FileTest : public Test {
     EXPECT_EQ(buf2, arr2);
   }
 
-  void TestRead() {
-    string filename = "file1";
+  void TestRead(bool useDisk) {
+    string filename = "File_TestRead";
     string filepath =
         AppendPathDelim(
             QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
         filename;
 
     File file1(filepath);  // empty file
+    if (useDisk) {
+      file1.SetUseDiskFile(true);
+    }
 
     const char *page1 = "012";
     size_t len1 = 3;
@@ -259,125 +262,129 @@ class FileTest : public Test {
     const char *page3 = "ABC";
     size_t len3 = 3;
     size_t holeLen = 10;
-    off_t off3 = off2 + holeLen + len3;
+    off_t off3 = off2 + len2 + holeLen;
     file1.Write(off3, len3, page3);
+    // now file1 data should be
+    // column: 01234567890123456789
+    //
+    // data:   012abc          ABC
+    //
+    {
+      array<char, 3> buf;
+      pair<size_t, ContentRangeDeque> res =
+          file1.ReadNoLoad(off1, len1, &buf[0]);
+      EXPECT_EQ(res.first, len1);
+      array<char, 3> arr;
+      arr[0] = '0';
+      arr[1] = '1';
+      arr[2] = '2';
+      EXPECT_EQ(buf, arr);
+      ContentRangeDeque &unloadPages = res.second;
+      EXPECT_TRUE(unloadPages.empty());
+    }
+    {
+      array<char, 3> buf;
+      pair<size_t, ContentRangeDeque> res =
+          file1.ReadNoLoad(off2, len2, &buf[0]);
+      EXPECT_EQ(res.first, 3);
+      array<char, 3> arr;
+      arr[0] = 'a';
+      arr[1] = 'b';
+      arr[2] = 'c';
+      EXPECT_EQ(buf, arr);
+      ContentRangeDeque &unloadPages = res.second;
+      EXPECT_TRUE(unloadPages.empty());
+    }
+    {
+      array<char, 3> buf;
+      pair<size_t, ContentRangeDeque> res =
+          file1.ReadNoLoad(off1 + 1, 3, &buf[0]);
+      EXPECT_EQ(res.first, 3);
+      array<char, 3> arr;
+      arr[0] = '1';
+      arr[1] = '2';
+      arr[2] = 'a';
+      EXPECT_EQ(buf, arr);
+      ContentRangeDeque &unloadPages = res.second;
+      EXPECT_TRUE(unloadPages.empty());
 
-    tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res1 =
-        file1.Read(off1, len1);
-    EXPECT_EQ(boost::get<0>(res1), len1);
-    list<shared_ptr<Page> > &pages1 = boost::get<1>(res1);
-    EXPECT_EQ(pages1.size(), 1u);
-    array<char, 3> buf1;
-    pages1.front()->Read(&buf1[0]);
-    array<char, 3> arr1;
-    arr1[0] = '0';
-    arr1[1] = '1';
-    arr1[2] = '2';
-    EXPECT_EQ(buf1, arr1);
-    ContentRangeDeque &unloadPages1 = boost::get<2>(res1);
-    EXPECT_TRUE(unloadPages1.empty());
+      pair<size_t, ContentRangeDeque> res_ =
+          file1.ReadNoLoad(off2 + len2, holeLen, NULL);
+      EXPECT_EQ(res_.first, 0u);
+      ContentRangeDeque &unloadPages_ = res_.second;
+      EXPECT_FALSE(unloadPages_.empty());
+    }
+    {
+      array<char, 3> buf;
+      pair<size_t, ContentRangeDeque> res =
+          file1.ReadNoLoad(off3, len3, &buf[0]);
+      EXPECT_EQ(res.first, len3);
+      array<char, 3> arr;
+      arr[0] = 'A';
+      arr[1] = 'B';
+      arr[2] = 'C';
+      EXPECT_EQ(buf, arr);
+      ContentRangeDeque &unloadPages = res.second;
+      EXPECT_TRUE(unloadPages.empty());
+    }
+    {
+      array<char, 3> buf;
+      pair<size_t, ContentRangeDeque> res =
+          file1.ReadNoLoad(off2, len2 + 1, &buf[0]);
+      EXPECT_EQ(res.first, len2);
+      array<char, 3> arr;
+      arr[0] = 'a';
+      arr[1] = 'b';
+      arr[2] = 'c';
+      EXPECT_EQ(buf, arr);
+      ContentRangeDeque &unloadPages = res.second;
+      EXPECT_EQ(unloadPages.size(), 1u);
+      EXPECT_EQ(unloadPages.front(), make_pair(off_t(off2 + len2), 1ul));
+    }
+    {
+      array<char, 13> buf;
+      pair<size_t, ContentRangeDeque> res =
+          file1.ReadNoLoad(off2 + len2, holeLen + len3, &buf[0]);
+      EXPECT_EQ(res.first, len3);
+      array<char, 13> arr;
+      for (int i = 0; i < 10; ++i) {
+        arr[i] = '\0';
+      }
+      arr[10] = 'A';
+      arr[11] = 'B';
+      arr[12] = 'C';
+      EXPECT_EQ(buf, arr);
+      ContentRangeDeque &unloadPages = res.second;
+      EXPECT_EQ(unloadPages.size(), 1u);
+      EXPECT_EQ(unloadPages.front(),
+                make_pair(off_t(off2 + len2), size_t(holeLen)));
+    }
 
-    tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res2 =
-        file1.Read(off1 + 1, len1);
-    EXPECT_EQ(boost::get<0>(res2), len1 + len2);
-    list<shared_ptr<Page> > &pages2 = boost::get<1>(res2);
-    EXPECT_EQ(pages2.size(), 2u);
-    array<char, 3> buf2;
-    pages2.front()->Read(&buf2[0]);
-    EXPECT_EQ(buf2, arr1);
-    array<char, 3> buf3;
-    pages2.back()->Read(&buf3[0]);
-    array<char, 3> arr2;
-    arr2[0] = 'a';
-    arr2[1] = 'b';
-    arr2[2] = 'c';
-    EXPECT_EQ(buf3, arr2);
-    ContentRangeDeque &unloadPages2 = boost::get<2>(res2);
-    EXPECT_TRUE(unloadPages2.empty());
-
-    tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res3 =
-        file1.Read(off2 + len2, holeLen);
-    EXPECT_EQ(boost::get<0>(res3), 0u);
-    list<shared_ptr<Page> > &pages3 = boost::get<1>(res3);
-    EXPECT_TRUE(pages3.empty());
-    ContentRangeDeque &unloadPages3 = boost::get<2>(res3);
-    EXPECT_FALSE(unloadPages3.empty());
-
-    tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res4 =
-        file1.Read(off3, len3);
-    EXPECT_EQ(boost::get<0>(res4), len3);
-    list<shared_ptr<Page> > &pages4 = boost::get<1>(res4);
-    EXPECT_EQ(pages4.size(), 1u);
-    array<char, 3> buf4;
-    pages4.front()->Read(&buf4[0]);
-    array<char, 3> arr3;
-    arr3[0] = 'A';
-    arr3[1] = 'B';
-    arr3[2] = 'C';
-    EXPECT_EQ(buf4, arr3);
-    ContentRangeDeque &unloadPages4 = boost::get<2>(res4);
-    EXPECT_TRUE(unloadPages4.empty());
-  }
-
-  void TestReadDiskFile() {
-    string filename = "file2";
-    string filepath =
-        AppendPathDelim(
-            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
-        filename;
-
-    File file1(filepath);  // empty file
-    file1.SetUseDiskFile(true);
-
-    const char *page1 = "012";
-    size_t len1 = 3;
-    off_t off1 = 0;
-    file1.Write(off1, len1, page1);
-
-    const char *page2 = "abc";
-    size_t len2 = 3;
-    off_t off2 = off_t(len1);
-    file1.Write(off2, len2, page2);
-
-    const char *page3 = "ABC";
-    size_t len3 = 3;
-    size_t holeLen = 10;
-    off_t off3 = off2 + holeLen + len3;
-    file1.Write(off3, len3, page3);
-
-    tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res1 =
-        file1.Read(off1, len1);
-    EXPECT_EQ(boost::get<0>(res1), len1);
-    list<shared_ptr<Page> > &pages1 = boost::get<1>(res1);
-    EXPECT_EQ(pages1.size(), 1u);
-    array<char, 3> buf1;
-    pages1.front()->Read(&buf1[0]);
-    array<char, 3> arr1;
-    arr1[0] = '0';
-    arr1[1] = '1';
-    arr1[2] = '2';
-    EXPECT_EQ(buf1, arr1);
-
-    tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> res2 =
-        file1.Read(off1 + 1, len1);
-    EXPECT_EQ(boost::get<0>(res2), len1 + len2);
-    list<shared_ptr<Page> > &pages2 = boost::get<1>(res2);
-    EXPECT_EQ(pages2.size(), 2u);
-    array<char, 3> buf2;
-    pages2.front()->Read(&buf2[0]);
-    EXPECT_EQ(buf2, arr1);
-    array<char, 3> buf3;
-    pages2.back()->Read(&buf3[0]);
-    array<char, 3> arr2;
-    arr2[0] = 'a';
-    arr2[1] = 'b';
-    arr2[2] = 'c';
-    EXPECT_EQ(buf3, arr2);
+    {
+        array<char, 13> buf;
+        pair<size_t, ContentRangeDeque> res =
+            file1.ReadNoLoad(off2 + len2, holeLen + len3 + 1, &buf[0]);
+        EXPECT_EQ(res.first, len3);
+        array<char, 13> arr;
+        for (int i = 0; i < 10; ++i) {
+          arr[i] = '\0';
+        }
+        arr[10] = 'A';
+        arr[11] = 'B';
+        arr[12] = 'C';
+        EXPECT_EQ(buf, arr);
+        ContentRangeDeque &unloadPages = res.second;
+        EXPECT_EQ(unloadPages.size(), 2u);
+        EXPECT_EQ(unloadPages.front(),
+                  make_pair(off_t(off2 + len2), size_t(holeLen)));
+        EXPECT_EQ(unloadPages.back(),
+                  make_pair(off_t(off3 + len3), size_t(1u)));
+      }
   }
 };
 
 TEST_F(FileTest, Default) {
-  string filename = "file1";
+  string filename = "File_TestDefault";
   string filepath =
       AppendPathDelim(
           QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
@@ -404,9 +411,9 @@ TEST_F(FileTest, Write) { TestWrite(); }
 
 TEST_F(FileTest, WriteDiskFile) { TestWriteDiskFile(); }
 
-TEST_F(FileTest, Read) { TestRead(); }
+TEST_F(FileTest, Read) { TestRead(false); }
 
-TEST_F(FileTest, ReadDiskFile) { TestReadDiskFile(); }
+TEST_F(FileTest, ReadDiskFile) { TestRead(true); }
 
 }  // namespace Data
 }  // namespace QS

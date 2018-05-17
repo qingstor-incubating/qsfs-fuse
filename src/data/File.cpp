@@ -112,7 +112,7 @@ File::File(const string &filePath, size_t size)
 File::~File() {
   // As pages using disk file will reference to the same disk file, so File
   // should manage the life cycle of the disk file.
-  RemoveDiskFileIfExists(false);  // log off
+   RemoveDiskFileIfExists(false);  // log off
 }
 
 // --------------------------------------------------------------------------
@@ -231,24 +231,35 @@ string File::ToString() const {
 }
 
 // --------------------------------------------------------------------------
-tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> File::Read(
-    off_t offset, size_t len) {
-  // Cache already check input.
-  // bool isValidInput = offset >= 0 && len > 0 && entry != nullptr && (*entry);
-  // assert(isValidInput);
-  // if (!isValidInput) {
-  //   DebugError("Fail to read file with invalid input " +
-  //              ToStringLine(offset, len));
-  //   return {0, list<shared_ptr<Page>>()};
-  // }
+pair<size_t, ContentRangeDeque> File::Read(
+    off_t offset, size_t len, char *buf,
+    shared_ptr<TransferManager> transferManager,
+    shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache) {
+  lock_guard<recursive_mutex> lock(m_mutex);
+  Load(offset, len, transferManager, dirTree, cache, false);
+  return ReadNoLoad(offset, len, buf);
+}
 
+// --------------------------------------------------------------------------
+pair<size_t, ContentRangeDeque> File::ReadNoLoad(off_t offset, size_t len,
+                                                 char *buf) const {
+  DebugInfo("Read cache [offset:len=" + to_string(offset) + ":" +
+            to_string(len) + "] " + FormatPath(GetFilePath()));
+  if (buf != NULL) {
+    memset(buf, 0, len);
+  }
   ContentRangeDeque unloadedRanges;
-  size_t outcomeSize = 0;
-  list<shared_ptr<Page> > outcomePages;
+  size_t readSize = 0;
+  bool isValidInput = offset >= 0 && len >= 0;
+  assert(isValidInput);
+  if (!isValidInput) {
+    DebugError("Invalid input " + ToStringLine(offset, len));
+    return make_pair(readSize, unloadedRanges);
+  }
 
   if (len == 0) {
     unloadedRanges.push_back(make_pair(offset, len));
-    return make_tuple(outcomeSize, outcomePages, unloadedRanges);
+    return make_pair(readSize, unloadedRanges);
   }
 
   {
@@ -257,7 +268,7 @@ tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> File::Read(
     // If pages is empty.
     if (m_pages.empty()) {
       unloadedRanges.push_back(make_pair(offset, len));
-      return make_tuple(outcomeSize, outcomePages, unloadedRanges);
+      return make_pair(readSize, unloadedRanges);
     }
 
     pair<PageSetConstIterator, PageSetConstIterator> range =
@@ -279,13 +290,16 @@ tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> File::Read(
         len_ -= lenNewPage;
       } else {  // Collect existing pages.
         if (len_ <= static_cast<size_t>(page->Next() - offset_)) {
-          outcomePages.push_back(page);
-          outcomeSize += page->m_size;
-          return make_tuple(outcomeSize, outcomePages, unloadedRanges);
+          if (buf != NULL) {
+            page->Read(offset_, len_, buf + offset_ - offset);
+          }
+          readSize += len_;
+          return make_pair(readSize, unloadedRanges);
         } else {
-          outcomePages.push_back(page);
-          outcomeSize += page->m_size;
-
+          if (buf != NULL) {
+            page->Read(offset_, buf + offset_ - offset);
+          }
+          readSize += page->Next() - offset_;
           len_ -= page->Next() - offset_;
           offset_ = page->Next();
           ++it1;
@@ -298,7 +312,7 @@ tuple<size_t, list<shared_ptr<Page> >, ContentRangeDeque> File::Read(
     }
   }  // end of lock_guard
 
-  return make_tuple(outcomeSize, outcomePages, unloadedRanges);
+  return make_pair(readSize, unloadedRanges);
 }
 
 // --------------------------------------------------------------------------
@@ -492,7 +506,7 @@ void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
   // download unloaded pages for file
   // this is need as user could open a file and edit a part of it,
   // but you need the completed file in order to upload it.
-  Load(fileSize, transferManager, dirTree, cache, async);
+  Load(0, fileSize, transferManager, dirTree, cache, async);
 
   lock_guard<recursive_mutex> lock(m_mutex);
   FlushCallback callback(GetFilePath(), fileSize, transferManager, dirTree,
@@ -502,19 +516,20 @@ void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
         bind(boost::type<void>(), callback, _1),
         bind(boost::type<shared_ptr<TransferHandle> >(),
              &QS::Client::TransferManager::UploadFile, transferManager.get(),
-             _1, fileSize, cache, false),
+             _1, fileSize, this, false),
         GetFilePath());
   } else {
-    callback(transferManager->UploadFile(GetFilePath(), fileSize, cache));
+    callback(transferManager->UploadFile(GetFilePath(), fileSize, this));
   }
 }
 
 // --------------------------------------------------------------------------
-void File::Load(size_t fileSize, shared_ptr<TransferManager> transferManager,
+void File::Load(off_t offset, size_t size,
+                shared_ptr<TransferManager> transferManager,
                 shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
                 bool async) {
   lock_guard<recursive_mutex> lock(m_mutex);
-  ContentRangeDeque ranges = GetUnloadedRanges(0, fileSize);
+  ContentRangeDeque ranges = GetUnloadedRanges(offset, size);
   if (!ranges.empty()) {
     DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
               " file:" + ToString());
@@ -680,11 +695,16 @@ struct DownloadRangeCallback {
       handle->WaitUntilFinished();
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
         // TODO (jim): write to file directly
+        // UnguardAddPage
+        // Update cache (size)
         bool success = cache->Write(filePath, offset, downloadSize, stream,
                                     dirTree, fileOpen);
         ErrorIf(!success,
                 "Fail to write cache [file:offset:len=" + filePath + ":" +
                     to_string(offset) + ":" + to_string(downloadSize) + "]");
+      } else {
+        Error("Fail to download [file:offset:len=" + filePath + ":" +
+              to_string(offset) + ":" + to_string(downloadSize) + "]");
       }
     }
   }
@@ -697,46 +717,54 @@ void File::DownloadRanges(const ContentRangeDeque &ranges,
                           shared_ptr<Cache> cache, bool async) {
   BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
     off_t offset = range.first;
-    size_t size = range.second;
-    bool fileContentExist = HasData(offset, size);
-    if (fileContentExist) {
-      return;
+    size_t len = range.second;
+    DownloadRange(offset, len, transferManager, dirTree, cache, async);
+  }
+}
+
+// --------------------------------------------------------------------------
+void File::DownloadRange(off_t offset, size_t size,
+                         shared_ptr<TransferManager> transferManager,
+                         shared_ptr<DirectoryTree> dirTree,
+                         shared_ptr<Cache> cache, bool async) {
+  bool fileContentExist = HasData(offset, size);
+  if (fileContentExist) {
+    return;
+  }
+
+  uint64_t bufSize =
+      QS::Client::ClientConfiguration::Instance().GetTransferBufferSizeInMB() *
+      QS::Size::MB1;
+  size_t remainingSize = size;
+  uint64_t downloadedSize = 0;
+
+  while (remainingSize > 0) {
+    off_t offset_ = offset + downloadedSize;
+    int64_t downloadSize_ = remainingSize > bufSize ? bufSize : remainingSize;
+    if (downloadSize_ <= 0) {
+      break;
     }
 
-    uint64_t bufSize = QS::Client::ClientConfiguration::Instance()
-                           .GetTransferBufferSizeInMB() *
-                       QS::Size::MB1;
-    size_t remainingSize = size;
-    uint64_t downloadedSize = 0;
+    shared_ptr<IOStream> stream_ = make_shared<IOStream>(downloadSize_);
+    DownloadRangeCallback callback(GetFilePath(), offset_, downloadSize_,
+                                   stream_, m_open, cache, dirTree);
 
-    while (remainingSize > 0) {
-      off_t offset_ = offset + downloadedSize;
-      int64_t downloadSize_ = remainingSize > bufSize ? bufSize : remainingSize;
-      if (downloadSize_ <= 0) {
-        break;
-      }
-
-      shared_ptr<IOStream> stream_ = make_shared<IOStream>(downloadSize_);
-      DownloadRangeCallback callback(GetFilePath(), offset_, downloadSize_,
-                                     stream_, m_open, cache, dirTree);
-
-      if (async) {
-        transferManager->GetExecutor()->SubmitAsync(
-            bind(boost::type<void>(), callback, _1),
-            bind(boost::type<shared_ptr<TransferHandle> >(),
-                 &QS::Client::TransferManager::DownloadFile,
-                 transferManager.get(), _1, offset_, downloadSize_, stream_,
-                 false),
-            GetFilePath());
-      } else {
-        shared_ptr<TransferHandle> handle = transferManager->DownloadFile(
-            GetFilePath(), offset_, downloadSize_, stream_);
-        callback(handle);
-      }
-
-      downloadedSize += downloadSize_;
-      remainingSize -= downloadSize_;
+    if (async) {
+      transferManager->GetExecutor()->SubmitAsync(
+          bind(boost::type<void>(), callback, _1),
+          bind(boost::type<shared_ptr<TransferHandle> >(),
+               &QS::Client::TransferManager::DownloadFile,
+               transferManager.get(), _1, offset_, downloadSize_, stream_,
+               false),
+          GetFilePath());
+    } else {
+      shared_ptr<TransferHandle> handle = transferManager->DownloadFile(
+          GetFilePath(), offset_, downloadSize_, stream_);
+      callback(handle);
     }
+
+    downloadedSize += downloadSize_;
+    remainingSize -= downloadSize_;
   }
 }
 
@@ -746,6 +774,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
   pair<PageSetConstIterator, bool> res;
   size_t addedSize = 0;
   size_t addedSizeInCache = 0;
+  // TODO(jim): prepare to add page
   if (UseDiskFile()) {
     res = m_pages.insert(
         make_shared<Page>(offset, len, buffer, AskDiskFilePath()));
@@ -774,6 +803,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
   pair<PageSetConstIterator, bool> res;
   size_t addedSize = 0;
   size_t addedSizeInCache = 0;
+  // TODO(jim): prepare to add page
   if (UseDiskFile()) {
     res = m_pages.insert(
         make_shared<Page>(offset, len, stream, AskDiskFilePath()));
