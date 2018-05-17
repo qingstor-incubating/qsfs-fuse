@@ -104,7 +104,7 @@ class Cache : private boost::noncopyable {
   size_t GetNumFile() const;
 
   // Get cache size
-  uint64_t GetSize() const { return m_size; }
+  uint64_t GetSize() const;
 
   // Get cache Capacity
   uint64_t GetCapacity() const { return m_capacity; }
@@ -208,6 +208,12 @@ class Cache : private boost::noncopyable {
               size_t newSize, const boost::shared_ptr<DirectoryTree> &dirTree);
 
  private:
+  // Add size
+  void AddSize(uint64_t delta);
+
+  // Substract size
+  void SubstractSize(uint64_t delta);
+
   // Create an empty File with fileId in cache, without checking input.
   // If success return reference to insert file, else return m_cache.end().
   CacheListIterator UnguardedNewEmptyFile(const std::string &fileId);
@@ -222,6 +228,7 @@ class Cache : private boost::noncopyable {
  private:
   // Record sum of the cache files' size, not including disk file
   uint64_t m_size;
+  mutable boost::mutex m_sizeLock;
 
   uint64_t m_capacity;  // in bytes
 

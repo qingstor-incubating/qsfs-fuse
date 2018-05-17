@@ -49,6 +49,7 @@ namespace Data {
 
 using boost::lock_guard;
 using boost::make_shared;
+using boost::mutex;
 using boost::recursive_mutex;
 using boost::shared_ptr;
 using boost::to_string;
@@ -93,6 +94,12 @@ size_t Cache::GetNumFile() const {
 }
 
 // --------------------------------------------------------------------------
+uint64_t Cache::GetSize() const {
+  lock_guard<mutex> locker(m_sizeLock);
+  return m_size;
+}
+
+// --------------------------------------------------------------------------
 uint64_t Cache::GetFileSize(const std::string &filePath) const {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapConstIterator it = m_map.find(filePath);
@@ -134,11 +141,16 @@ CacheListIterator Cache::End() {
 // --------------------------------------------------------------------------
 boost::shared_ptr<File> Cache::MakeFile(const string &fileId) {
   lock_guard<recursive_mutex> locker(m_mutex);
-  CacheListIterator pos = UnguardedNewEmptyFile(fileId);
-  if (pos != m_cache.end()) {
-    return pos->second;
+  shared_ptr<File> f = FindFile(fileId);
+  if (f) {
+    return f;
   } else {
-    return shared_ptr<File>();
+    CacheListIterator pos = UnguardedNewEmptyFile(fileId);
+    if (pos != m_cache.end()) {
+      return pos->second;
+    } else {
+      return shared_ptr<File>();
+    }
   }
 }
 
@@ -177,7 +189,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
         file->Write(offset, len, buffer, open);
     success = boost::get<0>(res);
     if (success) {
-      m_size += boost::get<1>(res);  // added size in cache
+      AddSize(boost::get<1>(res));
     }
   }
 
@@ -240,7 +252,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
         file->Write(offset, len, stream, open);
     success = boost::get<0>(res);
     if (success) {
-      m_size += boost::get<1>(res);  // added size in cache
+      AddSize(boost::get<1>(res));
     }
   }
 
@@ -326,7 +338,7 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
       freedDiskSpace += it->second->GetSize() - fileCacheSz;
-      m_size -= fileCacheSz;
+      SubstractSize(fileCacheSz);
       it->second->Clear();
       m_cache.erase((++it).base());
       m_map.erase(fileId);
@@ -376,7 +388,7 @@ bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
       freedDiskSpace += it->second->GetSize() - fileCacheSz;
-      m_size -= fileCacheSz;
+      SubstractSize(fileCacheSz);
       it->second->Clear();
       m_cache.erase((++it).base());
       m_map.erase(fileId);
@@ -495,7 +507,7 @@ void Cache::Resize(const string &fileId, size_t newFileSize,
   } else {
     file->ResizeToSmallerSize(newFileSize);
   }
-  m_size += file->GetCachedSize() - oldFileCacheSize;
+  AddSize(file->GetCachedSize() - oldFileCacheSize);
 
   if (file->GetSize() == newFileSize) {
     if (dirTree) {
@@ -509,6 +521,18 @@ void Cache::Resize(const string &fileId, size_t newFileSize,
                  " to " + to_string(newFileSize) + ". But now file size is " +
                  to_string(file->GetSize()) + FormatPath(fileId));
   }
+}
+
+// --------------------------------------------------------------------------
+void Cache::AddSize(uint64_t delta) {
+  lock_guard<mutex> locker(m_sizeLock);
+  m_size += delta;
+}
+
+// --------------------------------------------------------------------------
+void Cache::SubstractSize(uint64_t delta) {
+  lock_guard<mutex> locker(m_sizeLock);
+  m_size -= delta;
 }
 
 // --------------------------------------------------------------------------
@@ -533,7 +557,7 @@ CacheListIterator Cache::UnguardedErase(
     FileIdToCacheListIteratorMap::iterator pos) {
   CacheListIterator cachePos = pos->second;
   shared_ptr<File> &file = cachePos->second;
-  m_size -= file->GetCachedSize();
+  SubstractSize(file->GetCachedSize());
   file->Clear();
   CacheListIterator next = m_cache.erase(cachePos);
   m_map.erase(pos);
