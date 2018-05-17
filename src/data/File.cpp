@@ -47,6 +47,7 @@
 #include "data/Cache.h"
 #include "data/DirectoryTree.h"
 #include "data/IOStream.h"
+#include "data/Node.h"
 #include "filesystem/Drive.h"
 
 namespace QS {
@@ -69,6 +70,7 @@ using QS::Client::TransferManager;
 using QS::Data::Cache;
 using QS::Data::DirectoryTree;
 using QS::Data::IOStream;
+using QS::Data::Node;
 using QS::StringUtils::PointerAddress;
 using QS::StringUtils::BoolToString;
 using QS::StringUtils::ContentRangeDequeToString;
@@ -328,10 +330,10 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
   // }
 
   lock_guard<recursive_mutex> lock(m_mutex);
-
-  SetOpen(open);
-  size_t addedSizeInCache = 0;
-  size_t addedSize = 0;
+  
+    SetOpen(open);
+    size_t addedSizeInCache = 0;
+    size_t addedSize = 0;
   // If pages is empty.
   if (m_pages.empty()) {
     tuple<PageSetConstIterator, bool, size_t, size_t> res =
@@ -448,35 +450,22 @@ struct FlushCallback {
   uint64_t fileSize;
   shared_ptr<TransferManager> transferManager;
   shared_ptr<DirectoryTree> dirTree;
-  shared_ptr<Cache> cache;
   shared_ptr<Client> client;
-  bool releaseFile;
   bool updateMeta;
 
   FlushCallback(const string &filePath_, uint64_t fileSize_,
                 const shared_ptr<TransferManager> &transferManager_,
                 const shared_ptr<DirectoryTree> &dirTree_,
-                const shared_ptr<Cache> &cache_,
-                const shared_ptr<Client> &client_, bool releaseFile_,
-                bool updateMeta_)
+                const shared_ptr<Client> &client_, bool updateMeta_)
       : filePath(filePath_),
         fileSize(fileSize_),
         transferManager(transferManager_),
         dirTree(dirTree_),
-        cache(cache_),
         client(client_),
-        releaseFile(releaseFile_),
         updateMeta(updateMeta_) {}
 
   void operator()(const shared_ptr<TransferHandle> &handle) {
-    if (handle && cache && client) {
-      if (releaseFile) {
-        // To gurantee the data consistency, file open state has been set in
-        // Cache
-        cache->SetFileOpen(filePath, false, dirTree);
-        Info("Close file " + FormatPath(filePath));
-      }
-
+    if (handle && client) {
       handle->WaitUntilFinished();
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
         Info("Done Upload file [size=" + to_string(fileSize) + "] " +
@@ -509,8 +498,11 @@ void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
   Load(0, fileSize, transferManager, dirTree, cache, async);
 
   lock_guard<recursive_mutex> lock(m_mutex);
+  if (releaseFile) {
+    SetOpen(false, dirTree);
+  }
   FlushCallback callback(GetFilePath(), fileSize, transferManager, dirTree,
-                         cache, client, releaseFile, updateMeta);
+                         client, updateMeta);
   if (async) {
     transferManager->GetExecutor()->SubmitAsync(
         bind(boost::type<void>(), callback, _1),
@@ -601,6 +593,18 @@ void File::Clear() {
   m_cacheSize = 0;
   RemoveDiskFileIfExists(true);
   m_useDiskFile = false;
+}
+
+// --------------------------------------------------------------------------
+void File::SetOpen(bool open, shared_ptr<DirectoryTree> dirTree) {
+  boost::lock_guard<boost::mutex> locker(m_openLock);
+  m_open = open;
+  if (dirTree) {
+    shared_ptr<Node> node = dirTree->Find(GetFilePath());
+    if (node) {
+      node->SetFileOpen(open);
+    }
+  }
 }
 
 // --------------------------------------------------------------------------

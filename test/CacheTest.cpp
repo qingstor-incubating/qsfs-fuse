@@ -68,7 +68,6 @@ class CacheTest : public Test {
     EXPECT_EQ(cache.GetNumFile(), 0u);
     EXPECT_TRUE(cache.Begin() == cache.End());
     EXPECT_TRUE(cache.Free(cacheCap, ""));
-    EXPECT_FALSE(cache.IsLastFileOpen());
   }
 
   // --------------------------------------------------------------------------
@@ -92,11 +91,6 @@ class CacheTest : public Test {
     EXPECT_TRUE(file1->HasData(off1, len1));
     EXPECT_FALSE(file1->HasData(off1, len1 + 1));
     EXPECT_FALSE(file1->HasData(off1 + 1, len1));
-
-    EXPECT_FALSE(cache.IsLastFileOpen());
-    cache.SetFileOpen("file1", true, dirTree);
-    EXPECT_TRUE(cache.IsLastFileOpen());
-    cache.SetFileOpen("file1", false, dirTree);
 
     size_t newSize = 2;
     cache.Resize("file1", newSize, dirTree);

@@ -456,24 +456,17 @@ void Drive::OpenFile(const string &filePath, bool async) {
   uint64_t fileSize = GetTrueFileSize(node, filePath);
   Info("Open file [size=" + to_string(fileSize) + "] " + FormatPath(filePath));
 
-  assert(fileSize >= 0);
-  if (fileSize == 0) {
-    m_cache->Write(filePath, 0, 0, NULL, m_directoryTree, true);
-  } else if (fileSize > 0) {
-    // To gurantee the data consistency, file open state has been set in Cache
-    m_cache->SetFileOpen(filePath, true, m_directoryTree);
-    shared_ptr<File> file;
-    if(m_cache->HasFile(filePath)) {
-      file = m_cache->FindFile(filePath);
-    } else {
-      file = m_cache->MakeFile(filePath);
-    }
-    if (file) {
-      file->Load(0, fileSize, m_transferManager, m_directoryTree, m_cache,
-                 async);
-    } else {
-      Error("File not exists in cache");
-    }
+  shared_ptr<File> file;
+  if (m_cache->HasFile(filePath)) {
+    file = m_cache->FindFile(filePath);
+  } else {
+    file = m_cache->MakeFile(filePath);
+  }
+  if (file) {
+    file->SetOpen(true, m_directoryTree);
+    file->Load(0, fileSize, m_transferManager, m_directoryTree, m_cache, async);
+  } else {
+    Error("File not exists in cache");
   }
 }
 
@@ -725,8 +718,10 @@ void Drive::ReleaseFile(const string &filePath) {
     return;
   }
 
-  // To gurantee the data consistency, file open state has been set in Cache
-  m_cache->SetFileOpen(filePath, false, m_directoryTree);
+  shared_ptr<File> file = m_cache->FindFile(filePath);
+  if (file) {
+    file->SetOpen(false, m_directoryTree);
+  }
 }
 
 // --------------------------------------------------------------------------

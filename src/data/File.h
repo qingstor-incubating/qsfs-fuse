@@ -193,6 +193,8 @@ class File : private boost::noncopyable {
     m_open = open;
   }
 
+  void SetOpen(bool open, boost::shared_ptr<QS::Data::DirectoryTree> dirTree);
+
   // Rename
   void Rename(const std::string &newFilePath);
 

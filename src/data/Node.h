@@ -42,6 +42,7 @@ class Drive;
 namespace Data {
 
 class Cache;
+class File;
 class DirectoryTree;
 class Node;
 
@@ -186,6 +187,7 @@ class Node : private boost::noncopyable {
   FilePathToNodeUnorderedMap m_children;
 
   friend class QS::Data::Cache;  // for GetEntry
+  friend class QS::Data::File;
   friend class QS::Data::DirectoryTree;
   friend class QS::FileSystem::Drive;  // for SetSymbolicLink, IncreaseNumLink
 };

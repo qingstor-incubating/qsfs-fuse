@@ -84,16 +84,6 @@ class Cache : private boost::noncopyable {
   // then there is no avaiable needSize space.
   bool HasFreeSpace(size_t needSize) const;  // size in byte
 
-  // Is the last file in cache open
-  //
-  // @param  : void
-  // @return : bool
-  //
-  // NOTES:
-  // we put least recently used File at back and free the cache starting
-  // from back, so IsLastFileOpen can be used as a condition when freeing cache.
-  bool IsLastFileOpen() const;
-
   // Whether a file exists in cache
   //
   // @param  : file path
@@ -192,13 +182,6 @@ class Cache : private boost::noncopyable {
   // @param  : file id, new file id
   // @return : void
   void Rename(const std::string &oldFileId, const std::string &newFileId);
-
-  // Change file open state
-  //
-  // @param  : file id, open state
-  // @return : void
-  void SetFileOpen(const std::string &fileId, bool open,
-                   const boost::shared_ptr<DirectoryTree> &dirTree);
 
   // Resize a file
   //

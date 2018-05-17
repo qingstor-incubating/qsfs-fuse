@@ -73,15 +73,6 @@ bool Cache::HasFreeSpace(size_t size) const {
 }
 
 // --------------------------------------------------------------------------
-bool Cache::IsLastFileOpen() const {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  if (m_cache.empty()) {
-    return false;
-  }
-  return m_cache.back().second->IsOpen();
-}
-
-// --------------------------------------------------------------------------
 bool Cache::HasFile(const string &filePath) const {
   lock_guard<recursive_mutex> locker(m_mutex);
   return m_map.find(filePath) != m_map.end();
@@ -121,7 +112,6 @@ shared_ptr<File> Cache::FindFile(const string &filePath) {
     pos = UnguardedMakeFileMostRecentlyUsed(it->second);
     return pos->second;
   } else {
-    DebugError("Fail to find file" + FormatPath(filePath));
     return shared_ptr<File>();
   }
 }
@@ -455,26 +445,6 @@ void Cache::Rename(const string &oldFileId, const string &newFileId) {
     DebugInfo("Renamed file in cache" + FormatPath(oldFileId, newFileId));
   } else {
     DebugInfo("File not exists, no rename " + FormatPath(oldFileId, newFileId));
-  }
-}
-
-// --------------------------------------------------------------------------
-void Cache::SetFileOpen(const std::string &fileId, bool open,
-                        const shared_ptr<DirectoryTree> &dirTree) {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  CacheMapIterator it = m_map.find(fileId);
-  if (it != m_map.end()) {
-    shared_ptr<File> &file = it->second->second;
-    file->SetOpen(open);
-  } else {
-    DebugInfo("File not exists, no set open" + FormatPath(fileId));
-  }
-
-  if (dirTree) {
-    shared_ptr<Node> node = dirTree->Find(fileId);
-    if (node) {
-      node->SetFileOpen(open);
-    }
   }
 }
 
