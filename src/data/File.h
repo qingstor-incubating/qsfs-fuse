@@ -147,8 +147,7 @@ class File : private boost::noncopyable {
   // From pointer of buffer, number of len bytes will be writen.
   // The owning file's offset is set with 'offset'.
   boost::tuple<bool, size_t, size_t> Write(off_t offset, size_t len,
-                                           const char *buffer,
-                                           bool open = false);
+                                           const char *buffer);
 
   // Write stream into pages
   //
@@ -158,8 +157,7 @@ class File : private boost::noncopyable {
   // The stream will be moved to the pages.
   // The owning file's offset is set with 'offset'.
   boost::tuple<bool, size_t, size_t> Write(
-      off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream,
-      bool open = false);
+      off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream);
 
   void Flush(size_t fileSize,
              boost::shared_ptr<QS::Client::TransferManager> transferManager,

@@ -744,9 +744,8 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
     return 0;
   }
 
-  bool isOpen = node->IsFileOpen();
   bool success =
-      m_cache->Write(filePath, offset, size, buf, m_directoryTree, isOpen);
+      m_cache->Write(filePath, offset, size, buf, m_directoryTree);
 
   return success ? size : 0;
 }

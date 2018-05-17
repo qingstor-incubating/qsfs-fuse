@@ -319,7 +319,7 @@ pair<size_t, ContentRangeDeque> File::ReadNoLoad(off_t offset, size_t len,
 
 // --------------------------------------------------------------------------
 tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
-                                        const char *buffer, bool open) {
+                                        const char *buffer) {
   // Cache has checked input.
   // bool isValidInput = = offset >= 0 && len > 0 &&  buffer != NULL;
   // assert(isValidInput);
@@ -331,7 +331,6 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
 
   lock_guard<recursive_mutex> lock(m_mutex);
   
-    SetOpen(open);
     size_t addedSizeInCache = 0;
     size_t addedSize = 0;
   // If pages is empty.
@@ -413,10 +412,8 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
 
 // --------------------------------------------------------------------------
 tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
-                                        const shared_ptr<iostream> &stream,
-                                        bool open) {
+                                        const shared_ptr<iostream> &stream) {
   lock_guard<recursive_mutex> lock(m_mutex);
-  SetOpen(open);
   if (m_pages.empty()) {
     tuple<PageSetConstIterator, bool, size_t, size_t> res =
         UnguardedAddPage(offset, len, stream);
@@ -439,7 +436,7 @@ tuple<bool, size_t, size_t> File::Write(off_t offset, size_t len,
       stream->seekg(0, std::ios_base::beg);
       stream->read(&(*buf)[0], len);
 
-      return Write(offset, len, &(*buf)[0], open);
+      return Write(offset, len, &(*buf)[0]);
     }
   }
 }
@@ -677,20 +674,18 @@ struct DownloadRangeCallback {
   off_t offset;
   size_t downloadSize;
   shared_ptr<IOStream> stream;
-  bool fileOpen;
   shared_ptr<Cache> cache;
   shared_ptr<DirectoryTree> dirTree;
 
   DownloadRangeCallback(const string &filePath_, off_t offset_,
                         size_t downloadSize_,
-                        const shared_ptr<IOStream> &stream_, bool open_,
+                        const shared_ptr<IOStream> &stream_,
                         const shared_ptr<Cache> &cache_,
                         const shared_ptr<DirectoryTree> &dirTree_)
       : filePath(filePath_),
         offset(offset_),
         downloadSize(downloadSize_),
         stream(stream_),
-        fileOpen(open_),
         cache(cache_),
         dirTree(dirTree_) {}
 
@@ -702,7 +697,7 @@ struct DownloadRangeCallback {
         // UnguardAddPage
         // Update cache (size)
         bool success = cache->Write(filePath, offset, downloadSize, stream,
-                                    dirTree, fileOpen);
+                                    dirTree);
         ErrorIf(!success,
                 "Fail to write cache [file:offset:len=" + filePath + ":" +
                     to_string(offset) + ":" + to_string(downloadSize) + "]");
@@ -751,7 +746,7 @@ void File::DownloadRange(off_t offset, size_t size,
 
     shared_ptr<IOStream> stream_ = make_shared<IOStream>(downloadSize_);
     DownloadRangeCallback callback(GetFilePath(), offset_, downloadSize_,
-                                   stream_, m_open, cache, dirTree);
+                                   stream_, cache, dirTree);
 
     if (async) {
       transferManager->GetExecutor()->SubmitAsync(

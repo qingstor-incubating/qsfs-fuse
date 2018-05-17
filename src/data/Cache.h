@@ -127,8 +127,7 @@ class Cache : private boost::noncopyable {
   // From pointer of buffer, number of len bytes will be writen.
   bool Write(const std::string &fileId, off_t offset, size_t len,
              const char *buffer,
-             const boost::shared_ptr<DirectoryTree> &dirTree,
-             bool open = false);
+             const boost::shared_ptr<DirectoryTree> &dirTree);
 
   // Write stream into file cache
   //
@@ -139,8 +138,7 @@ class Cache : private boost::noncopyable {
   // Stream will be moved to cache.
   bool Write(const std::string &fileId, off_t offset, size_t len,
              const boost::shared_ptr<std::iostream> &stream,
-             const boost::shared_ptr<DirectoryTree> &dirTree,
-             bool open = false);
+             const boost::shared_ptr<DirectoryTree> &dirTree);
 
   // Prepare for Write
   //

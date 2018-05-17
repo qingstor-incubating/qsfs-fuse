@@ -146,8 +146,8 @@ boost::shared_ptr<File> Cache::MakeFile(const string &fileId) {
 
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,
-                  const char *buffer, const shared_ptr<DirectoryTree> &dirTree,
-                  bool open) {
+                  const char *buffer,
+                  const shared_ptr<DirectoryTree> &dirTree) {
   lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
     CacheMapIterator it = m_map.find(fileId);
@@ -176,7 +176,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
     shared_ptr<File> &file = res.second;
     assert(file);
     tuple<bool, size_t, size_t> res =
-        file->Write(offset, len, buffer, open);
+        file->Write(offset, len, buffer);
     success = boost::get<0>(res);
     if (success) {
       AddSize(boost::get<1>(res));
@@ -191,7 +191,6 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
       if (offset + len > oldFileSize) {
         node->SetFileSize(offset + len);
       }
-      node->SetFileOpen(open);
     }
   }
 
@@ -201,7 +200,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,
                   const shared_ptr<iostream> &stream,
-                  const shared_ptr<DirectoryTree> &dirTree, bool open) {
+                  const shared_ptr<DirectoryTree> &dirTree) {
   lock_guard<recursive_mutex> locker(m_mutex);
   if (len == 0) {
     CacheMapIterator it = m_map.find(fileId);
@@ -239,7 +238,7 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
     shared_ptr<File> &file = res.second;
     assert(file);
     tuple<bool, size_t, size_t> res =
-        file->Write(offset, len, stream, open);
+        file->Write(offset, len, stream);
     success = boost::get<0>(res);
     if (success) {
       AddSize(boost::get<1>(res));
@@ -254,7 +253,6 @@ bool Cache::Write(const string &fileId, off_t offset, size_t len,
       if (offset + len > oldFileSize) {
         node->SetFileSize(offset + len);
       }
-      node->SetFileOpen(open);
     }
   }
 
@@ -473,7 +471,7 @@ void Cache::Resize(const string &fileId, size_t newFileSize,
     DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
               to_string(holeSize) + "] " + FormatPath(fileId));
     bool fileOpen = file->IsOpen();
-    Write(fileId, oldFileSize, holeSize, &hole[0], dirTree, fileOpen);
+    Write(fileId, oldFileSize, holeSize, &hole[0], dirTree);
   } else {
     file->ResizeToSmallerSize(newFileSize);
   }
