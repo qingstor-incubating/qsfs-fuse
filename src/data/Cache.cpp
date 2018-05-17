@@ -81,38 +81,6 @@ bool Cache::IsLastFileOpen() const {
 }
 
 // --------------------------------------------------------------------------
-bool Cache::HasFileData(const string &filePath, off_t start,
-                        size_t size) const {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  if (!HasFile(filePath)) {
-    return false;
-  }
-  assert(size > 0);
-  if (size == 0) {
-    return true;
-  }
-  CacheMapConstIterator it = m_map.find(filePath);
-  shared_ptr<File> &file = it->second->second;
-  return file->HasData(start, size);
-}
-
-// --------------------------------------------------------------------------
-ContentRangeDeque Cache::GetUnloadedRanges(const string &filePath, off_t start,
-                                           size_t size) const {
-  ContentRangeDeque ranges;
-  lock_guard<recursive_mutex> locker(m_mutex);
-  if (!HasFile(filePath)) {
-    ranges.push_back(make_pair(start, size));
-    return ranges;
-  }
-  CacheMapConstIterator it = m_map.find(filePath);
-  assert(it != m_map.end());
-  shared_ptr<File> &file = it->second->second;
-
-  return file->GetUnloadedRanges(start, size);
-}
-
-// --------------------------------------------------------------------------
 bool Cache::HasFile(const string &filePath) const {
   lock_guard<recursive_mutex> locker(m_mutex);
   return m_map.find(filePath) != m_map.end();
@@ -138,30 +106,12 @@ uint64_t Cache::GetFileSize(const std::string &filePath) const {
 }
 
 // --------------------------------------------------------------------------
-string Cache::FileToString(const string &filePath) const {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  CacheMapConstIterator it = m_map.find(filePath);
-  if (it != m_map.end()) {
-    shared_ptr<File> &file = it->second->second;
-    return file->ToString();
-  } else {
-    // file is not in cache, return empty
-    return string();
-  }
-}
-
-// --------------------------------------------------------------------------
 shared_ptr<File> Cache::FindFile(const string &filePath) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(filePath);
   CacheListIterator pos;
   if (it != m_map.end()) {
     pos = UnguardedMakeFileMostRecentlyUsed(it->second);
-  } else {
-    // make a file
-    pos = UnguardedNewEmptyFile(filePath);
-  }
-  if (pos != m_cache.end()) {
     return pos->second;
   } else {
     DebugError("Fail to find file" + FormatPath(filePath));
@@ -182,12 +132,15 @@ CacheListIterator Cache::End() {
 }
 
 // --------------------------------------------------------------------------
-bool Cache::MakeFile(const string &fileId) {
+boost::shared_ptr<File> Cache::MakeFile(const string &fileId) {
   lock_guard<recursive_mutex> locker(m_mutex);
-  UnguardedNewEmptyFile(fileId) != m_cache.end();
+  CacheListIterator pos = UnguardedNewEmptyFile(fileId);
+  if (pos != m_cache.end()) {
+    return pos->second;
+  } else {
+    return shared_ptr<File>();
+  }
 }
-
-
 
 // --------------------------------------------------------------------------
 bool Cache::Write(const string &fileId, off_t offset, size_t len,

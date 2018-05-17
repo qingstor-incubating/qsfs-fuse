@@ -260,6 +260,8 @@ class File : private boost::noncopyable {
   mutable boost::mutex m_openLock;
   bool m_open;         // file open/close state
 
+  boost::mutex m_clearLock;  // clear file
+
   mutable boost::recursive_mutex m_mutex;
   PageSet m_pages;              // a set of pages suppose to be successive
 

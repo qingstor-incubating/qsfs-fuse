@@ -462,9 +462,15 @@ void Drive::OpenFile(const string &filePath, bool async) {
   } else if (fileSize > 0) {
     // To gurantee the data consistency, file open state has been set in Cache
     m_cache->SetFileOpen(filePath, true, m_directoryTree);
-    shared_ptr<File> file = m_cache->FindFile(filePath);
+    shared_ptr<File> file;
+    if(m_cache->HasFile(filePath)) {
+      file = m_cache->FindFile(filePath);
+    } else {
+      file = m_cache->MakeFile(filePath);
+    }
     if (file) {
-      file->Load(0, fileSize, m_transferManager, m_directoryTree, m_cache, async);
+      file->Load(0, fileSize, m_transferManager, m_directoryTree, m_cache,
+                 async);
     } else {
       Error("File not exists in cache");
     }
@@ -747,7 +753,7 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
 uint64_t Drive::GetTrueFileSize(const shared_ptr<Node> &node,
                                 const string &filePath) const {
   assert(node && *node);
-  uint64_t szMeta = node->GetFileSize();
+  uint64_t szMeta = node && *node ? node->GetFileSize() : 0;
   uint64_t szCache = m_cache->GetFileSize(filePath);
   return m_cache->HasFile(filePath) ? szCache : szMeta;
 }

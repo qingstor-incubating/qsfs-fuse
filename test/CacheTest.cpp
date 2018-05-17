@@ -86,16 +86,12 @@ class CacheTest : public Test {
     EXPECT_EQ(cache.GetCapacity(), cacheCap);
     EXPECT_EQ(cache.GetNumFile(), 1u);
     EXPECT_TRUE(cache.Begin() != cache.End());
-    EXPECT_TRUE(cache.FindFile("file1"));
     EXPECT_TRUE(cache.HasFile("file1"));
-    EXPECT_TRUE(cache.HasFileData("file1", off1, len1));
-    EXPECT_FALSE(cache.HasFileData("file1", off1, len1 + 1));
-    EXPECT_FALSE(cache.HasFileData("file1", off1 + 1, len1));
-    EXPECT_TRUE(cache.GetUnloadedRanges("file1", 0, len1).empty());
-    EXPECT_FALSE(cache.GetUnloadedRanges("file1", 0, len1 + 1).empty());
-    ContentRangeDeque range1;
-    range1.push_back(make_pair(len1, 1));
-    EXPECT_EQ(cache.GetUnloadedRanges("file1", 0, len1 + 1), range1);
+    shared_ptr<File> file1 = cache.FindFile("file1");
+    ASSERT_TRUE(file1);
+    EXPECT_TRUE(file1->HasData(off1, len1));
+    EXPECT_FALSE(file1->HasData(off1, len1 + 1));
+    EXPECT_FALSE(file1->HasData(off1 + 1, len1));
 
     EXPECT_FALSE(cache.IsLastFileOpen());
     cache.SetFileOpen("file1", true, dirTree);
@@ -132,10 +128,6 @@ class CacheTest : public Test {
     cache.Write("file1", off2, len2, page2, dirTree);
     EXPECT_EQ(cache.GetNumFile(), 1u);
     EXPECT_EQ(cache.GetSize(), len1 + len2);
-    EXPECT_TRUE(cache.GetUnloadedRanges("file1", 0, len1 + len2).empty());
-    ContentRangeDeque range2;
-    range2.push_back(make_pair(len1 + len2, 1));
-    EXPECT_EQ(cache.GetUnloadedRanges("file1", 0, len1 + len2 + 1), range2);
 
     const char *page3 = "ABC";
     size_t len3 = strlen(page3);
@@ -143,13 +135,11 @@ class CacheTest : public Test {
     off_t off3 = off2 + holeLen + len3;
     cache.Write("file1", off3, len3, page3, dirTree);
     EXPECT_EQ(cache.GetSize(), len1 + len2 + len3);
-    EXPECT_TRUE(cache.HasFileData("file1", off1, len1 + len2));
-    EXPECT_FALSE(cache.HasFileData("file1", off1, len1 + len2 + 1));
-    EXPECT_FALSE(cache.HasFileData("file1", off2 + len2, 1));
-    ContentRangeDeque range3;
-    range3.push_back(make_pair(len1 + len2, holeLen));
-    EXPECT_EQ(cache.GetUnloadedRanges("file1", 0, len1 + len2 + holeLen + len3),
-              range3);
+    file1 = cache.FindFile("file1");
+    ASSERT_TRUE(file1);
+    EXPECT_TRUE(file1->HasData(off1, len1 + len2));
+    EXPECT_FALSE(file1->HasData(off1, len1 + len2 + 1));
+    EXPECT_FALSE(file1->HasData(off2 + len2, 1));
 
     cache.Write("file2", off1, len1, page1, dirTree);
     EXPECT_EQ(cache.GetNumFile(), 2u);
@@ -192,13 +182,11 @@ class CacheTest : public Test {
     EXPECT_TRUE(pfile->UseDiskFile());
 
     EXPECT_EQ(cache.GetSize(), len1);
-    EXPECT_TRUE(cache.HasFileData("file1", off1, len1 + len2));
-    EXPECT_FALSE(cache.HasFileData("file1", off1, len1 + len2 + 1));
-    EXPECT_FALSE(cache.HasFileData("file1", off2 + len2, 1));
-    ContentRangeDeque range3;
-    range3.push_back(make_pair(len1 + len2, holeLen));
-    EXPECT_EQ(cache.GetUnloadedRanges("file1", 0, len1 + len2 + holeLen + len3),
-              range3);
+    shared_ptr<File> file1 = cache.FindFile("file1");
+    ASSERT_TRUE(file1);
+    EXPECT_TRUE(file1->HasData(off1, len1 + len2));
+    EXPECT_FALSE(file1->HasData(off1, len1 + len2 + 1));
+    EXPECT_FALSE(file1->HasData(off2 + len2, 1));
 
     cache.Write("file2", off1, len1, page1, dirTree);
     EXPECT_FALSE(cache.HasFile("file1"));

@@ -595,7 +595,7 @@ void File::RemoveDiskFileIfExists(bool logOn) const {
 
 // --------------------------------------------------------------------------
 void File::Clear() {
-  lock_guard<recursive_mutex> lock(m_mutex);
+  lock_guard<mutex> lock(m_clearLock);
   m_pages.clear();
   m_size = 0;
   m_cacheSize = 0;
