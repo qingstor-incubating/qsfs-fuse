@@ -150,7 +150,7 @@ bool File::HasData(off_t start, size_t size) const {
       IntesectingRange(start, stop);
   if (range.first == range.second) {
     if (range.first == m_pages.end()) {
-      if (size == 0 && start <= static_cast<off_t>(m_size)) {
+      if (size == 0 && start <= static_cast<off_t>(GetSize())) {
         return true;
       }
     }
@@ -174,7 +174,7 @@ bool File::HasData(off_t start, size_t size) const {
 ContentRangeDeque File::GetUnloadedRanges(off_t start, size_t size) const {
   lock_guard<recursive_mutex> lock(m_mutex);
   ContentRangeDeque ranges;
-  if (size == 0 || m_size == 0 || m_pages.empty()) {
+  if (size == 0 || GetSize() == 0 || m_pages.empty()) {
     return ranges;
   }
 
@@ -229,7 +229,7 @@ size_t File::GetNumPages() const {
 
 // --------------------------------------------------------------------------
 string File::ToString() const {
-  return "[" + m_baseName + " size:" + to_string(m_size) +
+  return "[" + m_baseName + " size:" + to_string(GetSize()) +
          ", cachedsize:" + to_string(m_cacheSize) +
          ", useDisk:" + BoolToString(m_useDiskFile) +
          ", open:" + BoolToString(m_open) +
@@ -638,23 +638,23 @@ void File::ResizeToSmallerSize(size_t smallerSize) {
   {
     lock_guard<recursive_mutex> lock(m_mutex);
 
-    while (!m_pages.empty() && smallerSize < m_size) {
+    while (!m_pages.empty() && smallerSize < GetSize()) {
       PageSetConstIterator lastPage = --m_pages.end();
       size_t lastPageSize = (*lastPage)->Size();
-      if (smallerSize + lastPageSize <= m_size) {
+      if (smallerSize + lastPageSize <= GetSize()) {
         if (!(*lastPage)->UseDiskFile()) {
           m_cacheSize -= lastPageSize;
         }
-        m_size -= lastPageSize;
+        SubtractSize(lastPageSize);
         m_pages.erase(lastPage);
       } else {
-        size_t newSize = lastPageSize - (m_size - smallerSize);
+        size_t newSize = lastPageSize - (GetSize() - smallerSize);
         // Do a lazy remove for last page.
         (*lastPage)->ResizeToSmallerSize(newSize);
         if (!(*lastPage)->UseDiskFile()) {
           m_cacheSize -= lastPageSize - newSize;
         }
-        m_size -= lastPageSize - newSize;
+        SubtractSize(lastPageSize - newSize);
         break;
       }
     }
@@ -680,7 +680,7 @@ void File::RemoveDiskFileIfExists(bool logOn) const {
 void File::Clear() {
   lock_guard<mutex> lock(m_clearLock);
   m_pages.clear();
-  m_size = 0;
+  SetSize(0);
   m_cacheSize = 0;
   RemoveDiskFileIfExists(true);
   m_useDiskFile = false;
@@ -883,7 +883,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
   }
   if (res.second) {
     addedSize = len;
-    m_size += len;
+    AddSize(len);
   } else {
     DebugError("Fail to new a page from a buffer " +
                ToStringLine(offset, len, buffer) + PrintFileName(m_baseName));
@@ -911,7 +911,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
   }
   if (res.second) {
     addedSize = len;
-    m_size += len;
+    AddSize(len);
   } else {
     DebugError("Fail to new a page from a stream " + ToStringLine(offset, len) +
                PrintFileName(m_baseName));

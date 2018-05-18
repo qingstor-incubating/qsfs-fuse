@@ -160,7 +160,7 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
       freedDiskSpace += it->second->GetSize() - fileCacheSz;
-      SubstractSize(fileCacheSz);
+      Subtract(fileCacheSz);
       it->second->Clear();
       m_cache.erase((++it).base());
       m_map.erase(fileId);
@@ -210,7 +210,7 @@ bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
       freedDiskSpace += it->second->GetSize() - fileCacheSz;
-      SubstractSize(fileCacheSz);
+      Subtract(fileCacheSz);
       it->second->Clear();
       m_cache.erase((++it).base());
       m_map.erase(fileId);
@@ -342,7 +342,7 @@ void Cache::AddSize(uint64_t delta) {
 }
 
 // --------------------------------------------------------------------------
-void Cache::SubstractSize(uint64_t delta) {
+void Cache::Subtract(uint64_t delta) {
   lock_guard<mutex> locker(m_sizeLock);
   m_size -= delta;
 }
@@ -369,7 +369,7 @@ CacheListIterator Cache::UnguardedErase(
     FileIdToCacheListIteratorMap::iterator pos) {
   CacheListIterator cachePos = pos->second;
   shared_ptr<File> &file = cachePos->second;
-  SubstractSize(file->GetCachedSize());
+  Subtract(file->GetCachedSize());
   file->Clear();
   CacheListIterator next = m_cache.erase(cachePos);
   m_map.erase(pos);

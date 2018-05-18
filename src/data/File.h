@@ -67,6 +67,7 @@ class File : private boost::noncopyable {
     return m_filePath;
   }
   std::string GetBaseName() const { return m_baseName; }
+
   size_t GetSize() const {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
     return m_size;
@@ -216,6 +217,23 @@ class File : private boost::noncopyable {
   }
 
   void SetOpen(bool open, boost::shared_ptr<QS::Data::DirectoryTree> dirTree);
+
+  // Set size
+  void SetSize(size_t sz) {
+    boost::lock_guard<boost::mutex> locker(m_sizeLock);
+    m_size += sz;
+  }
+  // Add size
+  void AddSize(size_t delta) {
+    boost::lock_guard<boost::mutex> locker(m_sizeLock);
+    m_size += delta;
+  }
+
+  // Subtract size
+  void SubtractSize(size_t delta) {
+    boost::lock_guard<boost::mutex> locker(m_sizeLock);
+    m_size -= delta;
+  }
 
   // Rename
   void Rename(const std::string &newFilePath);

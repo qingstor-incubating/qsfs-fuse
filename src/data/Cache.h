@@ -163,8 +163,8 @@ class Cache : private boost::noncopyable {
   // Add size
   void AddSize(uint64_t delta);
 
-  // Substract size
-  void SubstractSize(uint64_t delta);
+  // Subtract size
+  void Subtract(uint64_t delta);
 
   // Create an empty File with fileId in cache, without checking input.
   // If success return reference to insert file, else return m_cache.end().
