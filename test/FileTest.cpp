@@ -31,6 +31,8 @@
 #include "base/Logging.h"
 #include "base/Utils.h"
 #include "configure/Options.h"
+#include "data/Cache.h"
+#include "data/DirectoryTree.h"
 #include "data/File.h"
 #include "data/Page.h"
 
@@ -60,26 +62,34 @@ void InitLog() {
 uid_t uid_ = 1000U;
 gid_t gid_ = 1000U;
 mode_t fileMode_ = S_IRWXU | S_IRWXG | S_IROTH;
+shared_ptr<DirectoryTree> nullDirTree = shared_ptr<DirectoryTree>();
 
 class FileTest : public Test {
  protected:
   static void SetUpTestCase() { InitLog(); }
 
-  void TestWrite() {
+  void TestWrite(bool useDisk) {
     string filename = "File_TestWrite";
     string filepath =
         AppendPathDelim(
             QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
         filename;
     File file1(filepath);  // empty file
+    if (useDisk) {
+      file1.SetUseDiskFile(true);
+    }
 
     const char *page1 = "012";
     size_t len1 = 3;
     off_t off1 = 0;
     file1.DoWrite(off1, len1, page1);
     EXPECT_EQ(file1.GetSize(), len1);
-    EXPECT_EQ(file1.GetCachedSize(), len1);
-    EXPECT_FALSE(file1.UseDiskFile());
+    if (useDisk) {
+      EXPECT_EQ(file1.GetCachedSize(), 0u);
+    } else {
+      EXPECT_EQ(file1.GetCachedSize(), len1);
+    }
+    EXPECT_EQ(file1.UseDiskFile(), useDisk);
     EXPECT_TRUE(file1.HasData(0, len1 - 1));
     EXPECT_TRUE(file1.HasData(0, len1));
     EXPECT_FALSE(file1.HasData(0, len1 + 1));
@@ -93,7 +103,11 @@ class FileTest : public Test {
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
     file1.DoWrite(off2, len2, page2);
     EXPECT_EQ(file1.GetSize(), len1 + len2);
-    EXPECT_EQ(file1.GetCachedSize(), len1 + len2);
+    if (useDisk) {
+      EXPECT_EQ(file1.GetCachedSize(), 0u);
+    } else {
+      EXPECT_EQ(file1.GetCachedSize(), len1 + len2);
+    }
     EXPECT_TRUE(file1.HasData(0, len1 + len2 - 1));
     EXPECT_TRUE(file1.HasData(0, len1 + len2));
     EXPECT_FALSE(file1.HasData(0, len1 + len2 + 1));
@@ -147,7 +161,11 @@ class FileTest : public Test {
     off_t off3 = off2 + holeLen + len3;
     file1.DoWrite(off3, len3, page3);
     EXPECT_EQ(file1.GetSize(), len1 + len2 + len3);
-    EXPECT_EQ(file1.GetCachedSize(), len1 + len2 + len3);
+    if (useDisk) {
+      EXPECT_EQ(file1.GetCachedSize(), 0u);
+    } else {
+      EXPECT_EQ(file1.GetCachedSize(), len1 + len2 + len3);
+    }
     EXPECT_TRUE(file1.HasData(off2, len2));
     EXPECT_TRUE(file1.HasData(off3, len3));
     EXPECT_FALSE(file1.HasData(off2 + len3, len3));
@@ -175,66 +193,6 @@ class FileTest : public Test {
         file1.IntesectingRange(off3 + 1, off3 + 1);
     EXPECT_TRUE(range4.first == --file1.EndPage());
     EXPECT_TRUE(range4.second == file1.EndPage());
-  }
-
-  void TestWriteDiskFile() {
-    string filename = "File_TestWriteDiskFile";
-    string filepath =
-        AppendPathDelim(
-            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
-        filename;
-
-    File file1(filepath);  // empty file
-    file1.SetUseDiskFile(true);
-
-    const char *page1 = "012";
-    size_t len1 = 3;
-    off_t off1 = 0;
-    file1.DoWrite(off1, len1, page1);
-    EXPECT_EQ(file1.GetSize(), len1);
-    EXPECT_EQ(file1.GetCachedSize(), 0u);
-    EXPECT_TRUE(file1.UseDiskFile());
-    EXPECT_TRUE(file1.HasData(0, len1 - 1));
-    EXPECT_TRUE(file1.HasData(0, len1));
-    EXPECT_FALSE(file1.HasData(0, len1 + 1));
-    EXPECT_TRUE(file1.GetUnloadedRanges(0, len1).empty());
-    EXPECT_FALSE(file1.GetUnloadedRanges(0, len1 + 1).empty());
-    EXPECT_EQ(file1.GetNumPages(), 1u);
-
-    const char *data = "abc";
-    size_t len2 = 3;
-    off_t off2 = off_t(len1);
-    shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    file1.DoWrite(off2, len2, page2);
-    EXPECT_EQ(file1.GetSize(), len1 + len2);
-    EXPECT_EQ(file1.GetCachedSize(), 0u);
-    EXPECT_TRUE(file1.HasData(0, len1 + len2 - 1));
-    EXPECT_TRUE(file1.HasData(0, len1 + len2));
-    EXPECT_FALSE(file1.HasData(0, len1 + len2 + 1));
-    EXPECT_TRUE(file1.GetUnloadedRanges(0, len1 + len2).empty());
-    EXPECT_FALSE(file1.GetUnloadedRanges(0, len1 + len2 + 1).empty());
-    EXPECT_EQ(file1.GetNumPages(), 2u);
-
-    pair<PageSetConstIterator, PageSetConstIterator> consecutivePages =
-        file1.ConsecutivePageRangeAtFront();
-    EXPECT_TRUE(consecutivePages.first == file1.BeginPage());
-    EXPECT_TRUE(consecutivePages.second == file1.EndPage());
-
-    array<char, 3> arr1;
-    arr1[0] = '0';
-    arr1[1] = '1';
-    arr1[2] = '2';
-    array<char, 3> buf1;
-    file1.Front()->Read(&buf1[0]);
-    EXPECT_EQ(buf1, arr1);
-
-    array<char, 3> arr2;
-    arr2[0] = 'a';
-    arr2[1] = 'b';
-    arr2[2] = 'c';
-    array<char, 3> buf2;
-    file1.Back()->Read(&buf2[0]);
-    EXPECT_EQ(buf2, arr2);
   }
 
   void TestRead(bool useDisk) {
@@ -381,6 +339,37 @@ class FileTest : public Test {
                   make_pair(off_t(off3 + len3), size_t(1u)));
       }
   }
+
+  void TestResize(bool useDisk) {
+    uint64_t cacheCap = 100;
+    if (useDisk) {
+      cacheCap = 3;
+    }
+    shared_ptr<Cache> cache = shared_ptr<Cache>(new Cache(cacheCap));
+
+    const char *filename = "File_TestResize";
+    const char *page1 = "012";
+    size_t len1 = strlen(page1);
+    off_t off1 = 0;
+    shared_ptr<File> file = cache->MakeFile(filename);
+    file->Write(off1, len1, page1, nullDirTree, cache);
+    const char *data = "abc";
+    size_t len2 = strlen(data);
+    off_t off2 = off_t(len1);
+    shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
+    file->Write(off2, len2, page2, nullDirTree, cache);
+    const char *page3 = "ABC";
+    size_t len3 = strlen(page3);
+    size_t holeLen = 10;
+    off_t off3 = off2 + holeLen + len3;
+    file->Write(off3, len3, page3, nullDirTree,cache);
+
+    EXPECT_EQ(file->GetSize(), len1 + len2 + len3);
+
+    size_t newFileSz1 = len1 + len2 + 1;
+    file->Resize(newFileSz1, nullDirTree, cache);
+    EXPECT_EQ(file->GetSize(), newFileSz1);
+  }
 };
 
 TEST_F(FileTest, Default) {
@@ -407,13 +396,17 @@ TEST_F(FileTest, Default) {
   EXPECT_EQ(file1.GetNumPages(), 0u);
 }
 
-TEST_F(FileTest, DoWrite) { TestWrite(); }
+TEST_F(FileTest, Write) { TestWrite(false); }
 
-TEST_F(FileTest, WriteDiskFile) { TestWriteDiskFile(); }
+TEST_F(FileTest, WriteDiskFile) { TestWrite(true); }
 
 TEST_F(FileTest, Read) { TestRead(false); }
 
 TEST_F(FileTest, ReadDiskFile) { TestRead(true); }
+
+TEST_F(FileTest, Resize) { TestResize(false); }
+
+TEST_F(FileTest, ResizeDiskFile) { TestResize(true); }
 
 }  // namespace Data
 }  // namespace QS

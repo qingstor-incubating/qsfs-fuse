@@ -160,7 +160,7 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
       freedDiskSpace += it->second->GetSize() - fileCacheSz;
-      Subtract(fileCacheSz);
+      SubtractSize(fileCacheSz);
       it->second->Clear();
       m_cache.erase((++it).base());
       m_map.erase(fileId);
@@ -210,7 +210,7 @@ bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
       freedDiskSpace += it->second->GetSize() - fileCacheSz;
-      Subtract(fileCacheSz);
+      SubtractSize(fileCacheSz);
       it->second->Clear();
       m_cache.erase((++it).base());
       m_map.erase(fileId);
@@ -281,52 +281,6 @@ void Cache::Rename(const string &oldFileId, const string &newFileId) {
 }
 
 // --------------------------------------------------------------------------
-void Cache::Resize(const string &fileId, size_t newFileSize,
-                   const shared_ptr<DirectoryTree> &dirTree) {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  CacheMapIterator it = m_map.find(fileId);
-  CacheListIterator pos;
-  if (it != m_map.end()) {
-    pos = it->second;
-  } else {
-    // File not cached yet, maybe because its content's empty
-    pos = UnguardedNewEmptyFile(fileId);
-  }
-
-  shared_ptr<File> &file = pos->second;
-  size_t oldFileSize = file->GetSize();
-  size_t oldFileCacheSize = file->GetCachedSize();
-  if (newFileSize == oldFileSize) {
-    return;  // do nothing
-  } else if (newFileSize > oldFileSize) {
-    // fill the hole
-    size_t holeSize = newFileSize - oldFileSize;
-    vector<char> hole(holeSize);  // value initialization with '\0'
-    DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
-              to_string(holeSize) + "] " + FormatPath(fileId));
-    bool fileOpen = file->IsOpen();
-    // TODO(jim): Move Resize To File
-    // file->Write(oldFileSize, holeSize, &hole[0], dirTree, this);
-  } else {
-    file->ResizeToSmallerSize(newFileSize);
-  }
-  AddSize(file->GetCachedSize() - oldFileCacheSize);
-
-  if (file->GetSize() == newFileSize) {
-    if (dirTree) {
-      shared_ptr<Node> node = dirTree->Find(fileId);
-      if (node) {
-        node->SetFileSize(newFileSize);
-      }
-    }
-  } else {
-    DebugWarning("Try to resize file from size " + to_string(oldFileSize) +
-                 " to " + to_string(newFileSize) + ". But now file size is " +
-                 to_string(file->GetSize()) + FormatPath(fileId));
-  }
-}
-
-// --------------------------------------------------------------------------
 void Cache::MakeFileMostRecentlyUsed(const string &filePath) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(filePath);
@@ -342,7 +296,7 @@ void Cache::AddSize(uint64_t delta) {
 }
 
 // --------------------------------------------------------------------------
-void Cache::Subtract(uint64_t delta) {
+void Cache::SubtractSize(uint64_t delta) {
   lock_guard<mutex> locker(m_sizeLock);
   m_size -= delta;
 }
@@ -369,7 +323,7 @@ CacheListIterator Cache::UnguardedErase(
     FileIdToCacheListIteratorMap::iterator pos) {
   CacheListIterator cachePos = pos->second;
   shared_ptr<File> &file = cachePos->second;
-  Subtract(file->GetCachedSize());
+  SubtractSize(file->GetCachedSize());
   file->Clear();
   CacheListIterator next = m_cache.erase(cachePos);
   m_map.erase(pos);

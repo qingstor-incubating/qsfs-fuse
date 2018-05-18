@@ -230,7 +230,7 @@ size_t File::GetNumPages() const {
 // --------------------------------------------------------------------------
 string File::ToString() const {
   return "[" + m_baseName + " size:" + to_string(GetSize()) +
-         ", cachedsize:" + to_string(m_cacheSize) +
+         ", cachedsize:" + to_string(GetCachedSize()) +
          ", useDisk:" + BoolToString(m_useDiskFile) +
          ", open:" + BoolToString(m_open) +
          ", pages:" + PageSetToString(m_pages) + "]";
@@ -622,42 +622,59 @@ void File::Load(off_t offset, size_t size,
 }
 
 // --------------------------------------------------------------------------
-void File::ResizeToSmallerSize(size_t smallerSize) {
-  size_t curSize = GetSize();
-  if (smallerSize == curSize) {
+void File::Resize(size_t newSize, const shared_ptr<DirectoryTree> &dirTree,
+                  const shared_ptr<Cache> &cache) {
+  lock_guard<recursive_mutex> lock(m_mutex);
+  size_t oldFileSize = GetSize();
+  if (newSize == GetSize()) {
     return;
   }
-  if (smallerSize > curSize) {
-    DebugWarning("File size: " + to_string(curSize) +
-                 ", target size: " + to_string(smallerSize) +
-                 ". Unable to resize File to a larger size. " +
-                 PrintFileName(m_baseName));
-    return;
-  }
-
-  {
-    lock_guard<recursive_mutex> lock(m_mutex);
-
-    while (!m_pages.empty() && smallerSize < GetSize()) {
+  if (newSize > GetSize()) {
+    // fill the hole
+    size_t holeSize = newSize - GetSize();
+    vector<char> hole(holeSize);  // value initialization with '\0'
+    DebugInfo("Fill hole [offset:len=" + to_string(GetSize()) + ":" +
+              to_string(holeSize) + "] " + FormatPath(GetFilePath()));
+    Write(GetSize(), holeSize, &hole[0], dirTree, cache);
+  } else {
+    // resize to smaller size
+    while (!m_pages.empty() && newSize < GetSize()) {
       PageSetConstIterator lastPage = --m_pages.end();
       size_t lastPageSize = (*lastPage)->Size();
-      if (smallerSize + lastPageSize <= GetSize()) {
+      if (newSize + lastPageSize <= GetSize()) {
         if (!(*lastPage)->UseDiskFile()) {
-          m_cacheSize -= lastPageSize;
+          SubtractCachedSize(lastPageSize);
         }
         SubtractSize(lastPageSize);
         m_pages.erase(lastPage);
-      } else {
-        size_t newSize = lastPageSize - (GetSize() - smallerSize);
-        // Do a lazy remove for last page.
-        (*lastPage)->ResizeToSmallerSize(newSize);
-        if (!(*lastPage)->UseDiskFile()) {
-          m_cacheSize -= lastPageSize - newSize;
+        if (cache) {
+          cache->SubtractSize(lastPageSize);
         }
-        SubtractSize(lastPageSize - newSize);
+      } else {
+        size_t delta = GetSize() - newSize;
+        // Do a lazy remove for last page.
+        (*lastPage)->ResizeToSmallerSize(lastPageSize - delta);
+        if (!(*lastPage)->UseDiskFile()) {
+          SubtractCachedSize(delta);
+        }
+        SubtractSize(delta);
+        // Lazy remove, no size change to cache
         break;
       }
     }
+
+    if (dirTree) {
+      shared_ptr<Node> node = dirTree->Find(GetFilePath());
+      if (node) {
+        node->SetFileSize(GetSize());
+      }
+    }
+  }
+  // check
+  if (GetSize() != newSize) {
+    DebugWarning("Resize from " + to_string(oldFileSize) + " to " +
+                 to_string(newSize) + "bytes, got file size " +
+                 to_string(GetSize()) + FormatPath(GetFilePath()));
   }
 }
 
@@ -681,7 +698,7 @@ void File::Clear() {
   lock_guard<mutex> lock(m_clearLock);
   m_pages.clear();
   SetSize(0);
-  m_cacheSize = 0;
+  SetCachedSize(0);
   RemoveDiskFileIfExists(true);
   m_useDiskFile = false;
 }
@@ -869,16 +886,14 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
   pair<PageSetConstIterator, bool> res;
   size_t addedSize = 0;
   size_t addedSizeInCache = 0;
-  // TODO(jim): prepare to add page
   if (UseDiskFile()) {
     res = m_pages.insert(
         make_shared<Page>(offset, len, buffer, AskDiskFilePath()));
-    // do not count size of data stored in disk file
   } else {
     res = m_pages.insert(shared_ptr<Page>(new Page(offset, len, buffer)));
     if (res.second) {
       addedSizeInCache = len;
-      m_cacheSize += len;  // count size of data stored in cache
+      AddCachedSize(len);
     }
   }
   if (res.second) {
@@ -898,7 +913,6 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
   pair<PageSetConstIterator, bool> res;
   size_t addedSize = 0;
   size_t addedSizeInCache = 0;
-  // TODO(jim): prepare to add page
   if (UseDiskFile()) {
     res = m_pages.insert(
         make_shared<Page>(offset, len, stream, AskDiskFilePath()));
@@ -906,7 +920,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
     res = m_pages.insert(shared_ptr<Page>(new Page(offset, len, stream)));
     if (res.second) {
       addedSizeInCache = len;
-      m_cacheSize += len;
+      AddCachedSize(len);
     }
   }
   if (res.second) {

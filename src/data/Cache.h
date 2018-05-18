@@ -149,13 +149,6 @@ class Cache : private boost::noncopyable {
   // @return : void
   void Rename(const std::string &oldFileId, const std::string &newFileId);
 
-  // Resize a file
-  //
-  // @param  : file id, new file size
-  // @return : void
-  void Resize(const std::string &fileId,
-              size_t newSize, const boost::shared_ptr<DirectoryTree> &dirTree);
-
   //  Move the file into the front of the cache
   void MakeFileMostRecentlyUsed(const std::string &fileId);
 
@@ -164,7 +157,7 @@ class Cache : private boost::noncopyable {
   void AddSize(uint64_t delta);
 
   // Subtract size
-  void Subtract(uint64_t delta);
+  void SubtractSize(uint64_t delta);
 
   // Create an empty File with fileId in cache, without checking input.
   // If success return reference to insert file, else return m_cache.end().

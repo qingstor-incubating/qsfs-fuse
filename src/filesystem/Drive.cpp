@@ -467,7 +467,7 @@ void Drive::OpenFile(const string &filePath, bool async) {
     file->SetOpen(true, m_directoryTree);
     file->Load(0, fileSize, m_transferManager, m_directoryTree, m_cache, async);
   } else {
-    Error("File not exists in cache");
+    Error("File not exists in cache " + FormatPath(filePath));
   }
 }
 
@@ -519,7 +519,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     }
     return outcome.first;
   } else {
-    Error("File not exists in cache.");
+    Error("File not exists in cache " + FormatPath(filePath));
     return 0;
   }
 }
@@ -677,12 +677,23 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
     return;
   }
 
+  shared_ptr<File> file;
+  if (m_cache->HasFile(filePath)) {
+    file = m_cache->FindFile(filePath);
+  } else {
+    // file not cached yet, maybe because it's empty
+    file = m_cache->MakeFile(filePath);
+  }
+
   uint64_t fileSize = GetTrueFileSize(node, filePath);
   if (newSize != fileSize) {
     Info("Truncate file [oldsize:newsize=" + to_string(fileSize) +
          ":" + to_string(newSize) + "]" + FormatPath(filePath));
-    // To gurantee the data consistency, file size has been set in Cache
-    m_cache->Resize(filePath, newSize, m_directoryTree);
+    if(file) {
+      file->Resize(newSize, m_directoryTree, m_cache);
+    } else {
+      Error("File not exists in cache " + FormatPath(filePath));
+    }
   }
 }
 
@@ -705,7 +716,7 @@ void Drive::FlushFile(const string &filePath, bool releaseFile, bool updateMeta,
     file->Flush(fileSize, m_transferManager, m_directoryTree, m_cache, m_client,
                 releaseFile, updateMeta, async);
   } else {
-    Error("File not exists in cache.");
+    Error("File not exists in cache " + FormatPath(filePath));
   }
 }
 
@@ -751,7 +762,7 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
         file->Write(offset, size, buf, m_directoryTree, m_cache);
     return boost::get<2>(res);
   } else {
-    Error("File not exists in cache.");
+    Error("File not exists in cache " + FormatPath(filePath));
     return 0;
   }
 }

@@ -198,8 +198,10 @@ class File : private boost::noncopyable {
             boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
             boost::shared_ptr<QS::Data::Cache> cache, bool async = false);
 
-  // Resize the total pages' size to a smaller size.
-  void ResizeToSmallerSize(size_t smallerSize);
+  // Resize
+  void Resize(size_t newSize,
+              const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
+              const boost::shared_ptr<QS::Data::Cache> &cache);
 
   // Remove disk file
   void RemoveDiskFileIfExists(bool logOn = true) const;
@@ -221,18 +223,33 @@ class File : private boost::noncopyable {
   // Set size
   void SetSize(size_t sz) {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
-    m_size += sz;
+    m_size = sz;
+  }
+  // Set cached size
+  void SetCachedSize(size_t sz) {
+    boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
+    m_cacheSize = sz;
   }
   // Add size
   void AddSize(size_t delta) {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
     m_size += delta;
   }
+  // Add cached size
+  void AddCachedSize(size_t delta) {
+    boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
+    m_cacheSize += delta;
+  }
 
   // Subtract size
   void SubtractSize(size_t delta) {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
     m_size -= delta;
+  }
+  // Substract cached size
+  void SubtractCachedSize(size_t delta) {
+    boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
+    m_cacheSize -= delta;
   }
 
   // Rename
@@ -291,6 +308,7 @@ class File : private boost::noncopyable {
 
   mutable boost::mutex m_sizeLock;
   size_t m_size;   // record sum of all pages' size
+                   // this will not include unload data size
 
   mutable boost::mutex m_cacheSizeLock;
   size_t m_cacheSize;  // record sum of all pages' size
