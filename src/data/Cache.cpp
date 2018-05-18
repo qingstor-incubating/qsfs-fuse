@@ -79,19 +79,6 @@ uint64_t Cache::GetSize() const {
 }
 
 // --------------------------------------------------------------------------
-uint64_t Cache::GetFileSize(const std::string &filePath) const {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  CacheMapConstIterator it = m_map.find(filePath);
-  if (it != m_map.end()) {
-    shared_ptr<File> &file = it->second->second;
-    return file->GetSize();
-  } else {
-    // file is not in cache, return 0
-    return 0;
-  }
-}
-
-// --------------------------------------------------------------------------
 shared_ptr<File> Cache::FindFile(const string &filePath) {
   lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator it = m_map.find(filePath);
@@ -159,7 +146,7 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
     if (fileId != fileUnfreeable && it->second && !it->second->IsOpen()) {
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
-      freedDiskSpace += it->second->GetSize() - fileCacheSz;
+      freedDiskSpace += it->second->GetDataSize() - fileCacheSz;
       SubtractSize(fileCacheSz);
       it->second->Clear();
       m_cache.erase((++it).base());
@@ -209,7 +196,7 @@ bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
     if (fileId != fileUnfreeable && it->second && !it->second->IsOpen()) {
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
-      freedDiskSpace += it->second->GetSize() - fileCacheSz;
+      freedDiskSpace += it->second->GetDataSize() - fileCacheSz;
       SubtractSize(fileCacheSz);
       it->second->Clear();
       m_cache.erase((++it).base());

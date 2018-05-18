@@ -454,8 +454,7 @@ void Drive::OpenFile(const string &filePath, bool async) {
     return;
   }
 
-  uint64_t fileSize = GetTrueFileSize(node, filePath);
-  Info("Open file [size=" + to_string(fileSize) + "] " + FormatPath(filePath));
+  Info("Open file " + FormatPath(filePath));
 
   shared_ptr<File> file;
   if (m_cache->HasFile(filePath)) {
@@ -465,7 +464,8 @@ void Drive::OpenFile(const string &filePath, bool async) {
   }
   if (file) {
     file->SetOpen(true, m_directoryTree);
-    file->Load(0, fileSize, m_transferManager, m_directoryTree, m_cache, async);
+    file->Load(0, node->GetFileSize(), m_transferManager, m_directoryTree,
+               m_cache, async);
   } else {
     Error("File not exists in cache " + FormatPath(filePath));
   }
@@ -487,14 +487,13 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
   // Ajust size or calculate remaining size
   uint64_t readSize = size;
   int64_t remainingSize = 0;
-  uint64_t fileSize = GetTrueFileSize(node, filePath);
-  if (offset + size > fileSize) {
-    readSize = fileSize - offset;
-    DebugInfo("Overflow [file size=" + to_string(fileSize) + "] " +
+  if (offset + size > node->GetFileSize()) {
+    readSize = node->GetFileSize() - offset;
+    DebugInfo("Overflow [file size=" + to_string(node->GetFileSize()) + "] " +
               " ajust read size to " + to_string(readSize) +
               FormatPath(filePath));
   } else {
-    remainingSize = fileSize - (offset + size);
+    remainingSize = node->GetFileSize() - (offset + size);
   }
 
   if (readSize == 0) {
@@ -514,8 +513,8 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
                    ContentRangeDequeToString(outcome.second));
     }
     if (remainingSize > 0) {  // prefecth
-      file->Load(0, fileSize, m_transferManager, m_directoryTree, m_cache,
-                 async);
+      file->Load(0, node->GetFileSize(), m_transferManager, m_directoryTree,
+                 m_cache, async);
     }
     return outcome.first;
   } else {
@@ -685,15 +684,12 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
     file = m_cache->MakeFile(filePath);
   }
 
-  uint64_t fileSize = GetTrueFileSize(node, filePath);
-  if (newSize != fileSize) {
-    Info("Truncate file [oldsize:newsize=" + to_string(fileSize) +
-         ":" + to_string(newSize) + "]" + FormatPath(filePath));
-    if(file) {
-      file->Resize(newSize, m_directoryTree, m_cache);
-    } else {
-      Error("File not exists in cache " + FormatPath(filePath));
-    }
+  Info("Truncate file [oldsize:newsize=" + to_string(node->GetFileSize()) +
+       ":" + to_string(newSize) + "]" + FormatPath(filePath));
+  if (file) {
+    file->Resize(newSize, m_directoryTree, m_cache);
+  } else {
+    Error("File not exists in cache " + FormatPath(filePath));
   }
 }
 
@@ -708,13 +704,11 @@ void Drive::FlushFile(const string &filePath, bool releaseFile, bool updateMeta,
     return;
   }
 
-  uint64_t fileSize = GetTrueFileSize(node, filePath);
-  Info("Start upload file [size=" + to_string(fileSize) + "]" +
-       FormatPath(filePath));
+  Info("Start upload file " + FormatPath(filePath));
   shared_ptr<File> file = m_cache->FindFile(filePath);
   if (file) {
-    file->Flush(fileSize, m_transferManager, m_directoryTree, m_cache, m_client,
-                releaseFile, updateMeta, async);
+    file->Flush(node->GetFileSize(), m_transferManager, m_directoryTree,
+                m_cache, m_client, releaseFile, updateMeta, async);
   } else {
     Error("File not exists in cache " + FormatPath(filePath));
   }
@@ -765,15 +759,6 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
     Error("File not exists in cache " + FormatPath(filePath));
     return 0;
   }
-}
-
-// --------------------------------------------------------------------------
-uint64_t Drive::GetTrueFileSize(const shared_ptr<Node> &node,
-                                const string &filePath) const {
-  assert(node && *node);
-  uint64_t szMeta = node && *node ? node->GetFileSize() : 0;
-  uint64_t szCache = m_cache->GetFileSize(filePath);
-  return m_cache->HasFile(filePath) ? szCache : szMeta;
 }
 
 }  // namespace FileSystem

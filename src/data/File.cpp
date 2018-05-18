@@ -109,7 +109,7 @@ string PrintFileName(const string &file) { return "[file=" + file + "]"; }
 File::File(const string &filePath, size_t size)
     : m_filePath(filePath),
       m_baseName(QS::Utils::GetBaseName(filePath)),
-      m_size(size),
+      m_dataSize(size),
       m_cacheSize(size),
       m_useDiskFile(false),
       m_open(false) {}
@@ -119,6 +119,16 @@ File::~File() {
   // As pages using disk file will reference to the same disk file, so File
   // should manage the life cycle of the disk file.
    RemoveDiskFileIfExists(false);  // log off
+}
+
+// --------------------------------------------------------------------------
+size_t File::GetSize() const {
+  lock_guard<recursive_mutex> lock(m_mutex);
+  if (m_pages.empty()) {
+    return 0;
+  }
+  reverse_iterator<PageSetConstIterator> riter = m_pages.rbegin();
+  return static_cast<size_t>((*riter)->Next());
 }
 
 // --------------------------------------------------------------------------
@@ -230,6 +240,7 @@ size_t File::GetNumPages() const {
 // --------------------------------------------------------------------------
 string File::ToString() const {
   return "[" + m_baseName + " size:" + to_string(GetSize()) +
+         ", datasize:" + to_string(GetDataSize()) +
          ", cachedsize:" + to_string(GetCachedSize()) +
          ", useDisk:" + BoolToString(m_useDiskFile) +
          ", open:" + BoolToString(m_open) +
@@ -626,26 +637,26 @@ void File::Resize(size_t newSize, const shared_ptr<DirectoryTree> &dirTree,
                   const shared_ptr<Cache> &cache) {
   lock_guard<recursive_mutex> lock(m_mutex);
   size_t oldFileSize = GetSize();
-  if (newSize == GetSize()) {
+  if (newSize == oldFileSize) {
     return;
   }
-  if (newSize > GetSize()) {
+  if (newSize > oldFileSize) {
     // fill the hole
-    size_t holeSize = newSize - GetSize();
+    size_t holeSize = newSize - oldFileSize;
     vector<char> hole(holeSize);  // value initialization with '\0'
-    DebugInfo("Fill hole [offset:len=" + to_string(GetSize()) + ":" +
+    DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
               to_string(holeSize) + "] " + FormatPath(GetFilePath()));
-    Write(GetSize(), holeSize, &hole[0], dirTree, cache);
+    Write(oldFileSize, holeSize, &hole[0], dirTree, cache);
   } else {
     // resize to smaller size
     while (!m_pages.empty() && newSize < GetSize()) {
       PageSetConstIterator lastPage = --m_pages.end();
       size_t lastPageSize = (*lastPage)->Size();
-      if (newSize + lastPageSize <= GetSize()) {
+      if (newSize <= (*lastPage)->Offset()) {
         if (!(*lastPage)->UseDiskFile()) {
           SubtractCachedSize(lastPageSize);
         }
-        SubtractSize(lastPageSize);
+        SubtractDataSize(lastPageSize);
         m_pages.erase(lastPage);
         if (cache) {
           cache->SubtractSize(lastPageSize);
@@ -657,10 +668,16 @@ void File::Resize(size_t newSize, const shared_ptr<DirectoryTree> &dirTree,
         if (!(*lastPage)->UseDiskFile()) {
           SubtractCachedSize(delta);
         }
-        SubtractSize(delta);
+        SubtractDataSize(delta);
         // Lazy remove, no size change to cache
         break;
       }
+    }
+
+    // If file has unloaded pages, add a dummy pages inorder to maintain file size
+    if(newSize > GetSize()) {
+      const char *dummy = "";
+      m_pages.insert(shared_ptr<Page>(new Page(newSize, 0, dummy)));
     }
 
     if (dirTree) {
@@ -697,7 +714,7 @@ void File::RemoveDiskFileIfExists(bool logOn) const {
 void File::Clear() {
   lock_guard<mutex> lock(m_clearLock);
   m_pages.clear();
-  SetSize(0);
+  SetDataSize(0);
   SetCachedSize(0);
   RemoveDiskFileIfExists(true);
   m_useDiskFile = false;
@@ -815,8 +832,13 @@ struct DownloadRangeCallback {
                       to_string(offset) + ":" + to_string(downloadSize) + "]");
         }
       } else {
-        Error("Fail to download [file:offset:len=" + filePath + ":" +
-              to_string(offset) + ":" + to_string(downloadSize) + "]");
+        string msg = "Fail to download [offset:len=" + to_string(offset) + ":" +
+                     to_string(downloadSize) + "]";
+        if (file) {
+          msg += "file:" + file->ToString();
+        }
+        msg += FormatPath(filePath);
+        Error(msg);
       }
     }
   }
@@ -898,7 +920,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
   }
   if (res.second) {
     addedSize = len;
-    AddSize(len);
+    AddDataSize(len);
   } else {
     DebugError("Fail to new a page from a buffer " +
                ToStringLine(offset, len, buffer) + PrintFileName(m_baseName));
@@ -925,7 +947,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
   }
   if (res.second) {
     addedSize = len;
-    AddSize(len);
+    AddDataSize(len);
   } else {
     DebugError("Fail to new a page from a stream " + ToStringLine(offset, len) +
                PrintFileName(m_baseName));

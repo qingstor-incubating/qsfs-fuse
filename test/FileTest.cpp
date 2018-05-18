@@ -84,6 +84,7 @@ class FileTest : public Test {
     off_t off1 = 0;
     file1.DoWrite(off1, len1, page1);
     EXPECT_EQ(file1.GetSize(), len1);
+    EXPECT_EQ(file1.GetDataSize(), len1);
     if (useDisk) {
       EXPECT_EQ(file1.GetCachedSize(), 0u);
     } else {
@@ -103,6 +104,7 @@ class FileTest : public Test {
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
     file1.DoWrite(off2, len2, page2);
     EXPECT_EQ(file1.GetSize(), len1 + len2);
+    EXPECT_EQ(file1.GetDataSize(), len1 + len2);
     if (useDisk) {
       EXPECT_EQ(file1.GetCachedSize(), 0u);
     } else {
@@ -160,7 +162,8 @@ class FileTest : public Test {
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
     file1.DoWrite(off3, len3, page3);
-    EXPECT_EQ(file1.GetSize(), len1 + len2 + len3);
+    EXPECT_EQ(file1.GetDataSize(), len1 + len2 + len3);
+    EXPECT_EQ(file1.GetSize(), len1 + len2 + holeLen + len3);
     if (useDisk) {
       EXPECT_EQ(file1.GetCachedSize(), 0u);
     } else {
@@ -364,11 +367,23 @@ class FileTest : public Test {
     off_t off3 = off2 + holeLen + len3;
     file->Write(off3, len3, page3, nullDirTree,cache);
 
-    EXPECT_EQ(file->GetSize(), len1 + len2 + len3);
+    EXPECT_EQ(file->GetSize(), len1 + len2 + holeLen + len3);
+    EXPECT_EQ(file->GetDataSize(), len1 + len2 + len3);
+
+    size_t newFileSz = len1 + len2 + holeLen + len3 + 1;
+    file->Resize(newFileSz, nullDirTree, cache);
+    EXPECT_EQ(file->GetDataSize(), len1 + len2 + len3 + 1);
+    EXPECT_EQ(file->GetSize(), newFileSz);
 
     size_t newFileSz1 = len1 + len2 + 1;
     file->Resize(newFileSz1, nullDirTree, cache);
+    EXPECT_EQ(file->GetDataSize(), len1 + len2);
     EXPECT_EQ(file->GetSize(), newFileSz1);
+
+    size_t newFileSz2 = len1 + 1;
+    file->Resize(newFileSz2, nullDirTree, cache);
+    EXPECT_EQ(file->GetDataSize(), newFileSz2);
+    EXPECT_EQ(file->GetSize(), newFileSz2);
   }
 };
 

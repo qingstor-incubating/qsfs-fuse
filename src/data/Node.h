@@ -27,6 +27,8 @@
 #include "boost/make_shared.hpp"
 #include "boost/noncopyable.hpp"
 #include "boost/shared_ptr.hpp"
+#include "boost/thread/locks.hpp"
+#include "boost/thread/mutex.hpp"
 #include "boost/unordered_map.hpp"
 #include "boost/weak_ptr.hpp"
 
@@ -41,7 +43,6 @@ class Drive;
 
 namespace Data {
 
-class Cache;
 class File;
 class DirectoryTree;
 class Node;
@@ -129,14 +130,20 @@ class Node : private boost::noncopyable {
     return m_entry ? m_entry.GetFilePath() : std::string();
   }
 
-  uint64_t GetFileSize() const { return m_entry ? m_entry.GetFileSize() : 0; }
+  uint64_t GetFileSize() const {
+    boost::lock_guard<boost::mutex> locker(m_fileSizeLock);
+    return m_entry ? m_entry.GetFileSize() : 0;
+  }
   int GetNumLink() const { return m_entry ? m_entry.GetNumLink() : 0; }
 
   mode_t GetFileMode() const { return m_entry ? m_entry.GetFileMode() : 0; }
   time_t GetMTime() const { return m_entry ? m_entry.GetMTime() : 0; }
   time_t GetCachedTime() const { return m_entry ? m_entry.GetCachedTime() : 0; }
   uid_t GetUID() const { return m_entry ? m_entry.GetUID() : -1; }
-  bool IsFileOpen() const { return m_entry ? m_entry.IsFileOpen() : false; }
+  bool IsFileOpen() const {
+    boost::lock_guard<boost::mutex> locker(m_fileOpenLock);
+    return m_entry ? m_entry.IsFileOpen() : false;
+  }
 
   std::string MyDirName() const {
     return m_entry ? m_entry.MyDirName() : std::string();
@@ -155,12 +162,14 @@ class Node : private boost::noncopyable {
   FilePathToNodeUnorderedMap &GetChildren();
 
   void SetFileOpen(bool fileOpen) {
+    boost::lock_guard<boost::mutex> locker(m_fileOpenLock);
     if (m_entry) {
       m_entry.SetFileOpen(fileOpen);
     }
   }
 
   void SetFileSize(size_t sz) {
+    boost::lock_guard<boost::mutex> locker(m_fileSizeLock);
     if (m_entry) {
       m_entry.SetFileSize(sz);
     }
@@ -179,6 +188,8 @@ class Node : private boost::noncopyable {
 
  private:
   Entry m_entry;
+  mutable boost::mutex m_fileSizeLock;
+  mutable boost::mutex m_fileOpenLock;
   boost::weak_ptr<Node> m_parent;
   std::string m_symbolicLink;
   bool m_hardLink;
@@ -186,7 +197,6 @@ class Node : private boost::noncopyable {
   // to its children, others should use weak_ptr instead
   FilePathToNodeUnorderedMap m_children;
 
-  friend class QS::Data::Cache;  // for GetEntry
   friend class QS::Data::File;
   friend class QS::Data::DirectoryTree;
   friend class QS::FileSystem::Drive;  // for SetSymbolicLink, IncreaseNumLink

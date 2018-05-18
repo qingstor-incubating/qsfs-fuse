@@ -62,15 +62,19 @@ class File : private boost::noncopyable {
   ~File();
 
  public:
+  // Return file size
+  // Should be last page->Next()
+  size_t GetSize() const;
+
   std::string GetFilePath() const { 
     boost::lock_guard<boost::mutex> locker(m_filePathLock);
     return m_filePath;
   }
   std::string GetBaseName() const { return m_baseName; }
 
-  size_t GetSize() const {
+  size_t GetDataSize() const {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
-    return m_size;
+    return m_dataSize;
   }
   size_t GetCachedSize() const {
     boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
@@ -221,9 +225,9 @@ class File : private boost::noncopyable {
   void SetOpen(bool open, boost::shared_ptr<QS::Data::DirectoryTree> dirTree);
 
   // Set size
-  void SetSize(size_t sz) {
+  void SetDataSize(size_t sz) {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
-    m_size = sz;
+    m_dataSize = sz;
   }
   // Set cached size
   void SetCachedSize(size_t sz) {
@@ -231,9 +235,9 @@ class File : private boost::noncopyable {
     m_cacheSize = sz;
   }
   // Add size
-  void AddSize(size_t delta) {
+  void AddDataSize(size_t delta) {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
-    m_size += delta;
+    m_dataSize += delta;
   }
   // Add cached size
   void AddCachedSize(size_t delta) {
@@ -242,9 +246,9 @@ class File : private boost::noncopyable {
   }
 
   // Subtract size
-  void SubtractSize(size_t delta) {
+  void SubtractDataSize(size_t delta) {
     boost::lock_guard<boost::mutex> locker(m_sizeLock);
-    m_size -= delta;
+    m_dataSize -= delta;
   }
   // Substract cached size
   void SubtractCachedSize(size_t delta) {
@@ -307,8 +311,8 @@ class File : private boost::noncopyable {
   std::string m_baseName;  // file base name
 
   mutable boost::mutex m_sizeLock;
-  size_t m_size;   // record sum of all pages' size
-                   // this will not include unload data size
+  size_t m_dataSize;   // record sum of all pages' size
+                       // this will not include unload data size
 
   mutable boost::mutex m_cacheSizeLock;
   size_t m_cacheSize;  // record sum of all pages' size
