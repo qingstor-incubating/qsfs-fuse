@@ -76,7 +76,7 @@ class FileTest : public Test {
     const char *page1 = "012";
     size_t len1 = 3;
     off_t off1 = 0;
-    file1.Write(off1, len1, page1);
+    file1.DoWrite(off1, len1, page1);
     EXPECT_EQ(file1.GetSize(), len1);
     EXPECT_EQ(file1.GetCachedSize(), len1);
     EXPECT_FALSE(file1.UseDiskFile());
@@ -91,7 +91,7 @@ class FileTest : public Test {
     size_t len2 = 3;
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    file1.Write(off2, len2, page2);
+    file1.DoWrite(off2, len2, page2);
     EXPECT_EQ(file1.GetSize(), len1 + len2);
     EXPECT_EQ(file1.GetCachedSize(), len1 + len2);
     EXPECT_TRUE(file1.HasData(0, len1 + len2 - 1));
@@ -145,7 +145,7 @@ class FileTest : public Test {
     size_t len3 = 3;
     size_t holeLen = 10;
     off_t off3 = off2 + holeLen + len3;
-    file1.Write(off3, len3, page3);
+    file1.DoWrite(off3, len3, page3);
     EXPECT_EQ(file1.GetSize(), len1 + len2 + len3);
     EXPECT_EQ(file1.GetCachedSize(), len1 + len2 + len3);
     EXPECT_TRUE(file1.HasData(off2, len2));
@@ -190,7 +190,7 @@ class FileTest : public Test {
     const char *page1 = "012";
     size_t len1 = 3;
     off_t off1 = 0;
-    file1.Write(off1, len1, page1);
+    file1.DoWrite(off1, len1, page1);
     EXPECT_EQ(file1.GetSize(), len1);
     EXPECT_EQ(file1.GetCachedSize(), 0u);
     EXPECT_TRUE(file1.UseDiskFile());
@@ -205,7 +205,7 @@ class FileTest : public Test {
     size_t len2 = 3;
     off_t off2 = off_t(len1);
     shared_ptr<stringstream> page2 = make_shared<stringstream>(data);
-    file1.Write(off2, len2, page2);
+    file1.DoWrite(off2, len2, page2);
     EXPECT_EQ(file1.GetSize(), len1 + len2);
     EXPECT_EQ(file1.GetCachedSize(), 0u);
     EXPECT_TRUE(file1.HasData(0, len1 + len2 - 1));
@@ -252,18 +252,18 @@ class FileTest : public Test {
     const char *page1 = "012";
     size_t len1 = 3;
     off_t off1 = 0;
-    file1.Write(off1, len1, page1);
+    file1.DoWrite(off1, len1, page1);
 
     const char *page2 = "abc";
     size_t len2 = 3;
     off_t off2 = off_t(len1);
-    file1.Write(off2, len2, page2);
+    file1.DoWrite(off2, len2, page2);
 
     const char *page3 = "ABC";
     size_t len3 = 3;
     size_t holeLen = 10;
     off_t off3 = off2 + len2 + holeLen;
-    file1.Write(off3, len3, page3);
+    file1.DoWrite(off3, len3, page3);
     // now file1 data should be
     // column: 01234567890123456789
     //
@@ -407,7 +407,7 @@ TEST_F(FileTest, Default) {
   EXPECT_EQ(file1.GetNumPages(), 0u);
 }
 
-TEST_F(FileTest, Write) { TestWrite(); }
+TEST_F(FileTest, DoWrite) { TestWrite(); }
 
 TEST_F(FileTest, WriteDiskFile) { TestWriteDiskFile(); }
 

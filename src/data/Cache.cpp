@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <list>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,19 +28,15 @@
 #include "boost/make_shared.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/thread/locks.hpp"
-#include "boost/tuple/tuple.hpp"
 
 #include "base/LogMacros.h"
 #include "base/StringUtils.h"
-#include "base/TimeUtils.h"
 #include "base/Utils.h"
 #include "base/UtilsWithLog.h"
 #include "configure/Options.h"
 #include "data/DirectoryTree.h"
 #include "data/File.h"
 #include "data/Node.h"
-#include "data/Page.h"
-#include "data/StreamUtils.h"
 
 namespace QS {
 
@@ -53,15 +48,8 @@ using boost::mutex;
 using boost::recursive_mutex;
 using boost::shared_ptr;
 using boost::to_string;
-using boost::tuple;
-using QS::Data::StreamUtils::GetStreamSize;
 using QS::StringUtils::FormatPath;
-using QS::StringUtils::PointerAddress;
-using QS::TimeUtils::SecondsToRFC822GMT;
-using QS::UtilsWithLog::CreateDirectoryIfNotExists;
 using QS::UtilsWithLog::IsSafeDiskSpace;
-using std::iostream;
-using std::list;
 using std::make_pair;
 using std::pair;
 using std::string;
@@ -142,160 +130,6 @@ boost::shared_ptr<File> Cache::MakeFile(const string &fileId) {
       return shared_ptr<File>();
     }
   }
-}
-
-// --------------------------------------------------------------------------
-bool Cache::Write(const string &fileId, off_t offset, size_t len,
-                  const char *buffer,
-                  const shared_ptr<DirectoryTree> &dirTree) {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  if (len == 0) {
-    CacheMapIterator it = m_map.find(fileId);
-    if (it != m_map.end()) {
-      UnguardedMakeFileMostRecentlyUsed(it->second);
-    } else {
-      UnguardedNewEmptyFile(fileId);
-    }
-    return true;  // do nothing
-  }
-
-  bool validInput =
-      !fileId.empty() && offset >= 0 && len >= 0 && buffer != NULL;
-  assert(validInput);
-  if (!validInput) {
-    DebugError("Try to write cache with invalid input " +
-               ToStringLine(fileId, offset, len, buffer));
-    return false;
-  }
-
-  DebugInfo("Write cache [offset:len=" + to_string(offset) + ":" +
-            to_string(len) + "] " + FormatPath(fileId));
-  pair<bool, shared_ptr<File> > res = PrepareWrite(fileId, len);
-  bool success = res.first;
-  if (success) {
-    shared_ptr<File> &file = res.second;
-    assert(file);
-    tuple<bool, size_t, size_t> res =
-        file->Write(offset, len, buffer);
-    success = boost::get<0>(res);
-    if (success) {
-      AddSize(boost::get<1>(res));
-    }
-  }
-
-  // update file size in meta data
-  if (success && dirTree) {
-    shared_ptr<Node> node = dirTree->Find(fileId);
-    if (node) {
-      uint64_t oldFileSize = node->GetFileSize();
-      if (offset + len > oldFileSize) {
-        node->SetFileSize(offset + len);
-      }
-    }
-  }
-
-  return success;
-}
-
-// --------------------------------------------------------------------------
-bool Cache::Write(const string &fileId, off_t offset, size_t len,
-                  const shared_ptr<iostream> &stream,
-                  const shared_ptr<DirectoryTree> &dirTree) {
-  lock_guard<recursive_mutex> locker(m_mutex);
-  if (len == 0) {
-    CacheMapIterator it = m_map.find(fileId);
-    if (it != m_map.end()) {
-      UnguardedMakeFileMostRecentlyUsed(it->second);
-    } else {
-      UnguardedNewEmptyFile(fileId);
-    }
-    return true;  // do nothing
-  }
-
-  bool isValidInput = !fileId.empty() && offset >= 0 && stream;
-  assert(isValidInput);
-  if (!isValidInput) {
-    DebugError("Invalid input [file:offset=" + fileId + ":" +
-               to_string(offset) + "]");
-    return false;
-  }
-
-  size_t streamsize = GetStreamSize(stream);
-  assert(len <= streamsize);
-  if (!(len <= streamsize)) {
-    DebugError(
-        "Invalid input, stream buffer size is less than input 'len' parameter. "
-        "[file:len=" +
-        fileId + ":" + to_string(len) + "]");
-    return false;
-  }
-
-  DebugInfo("Write cache [offset:len=" + to_string(offset) + ":" +
-            to_string(len) + "] " + FormatPath(fileId));
-  pair<bool, shared_ptr<File> > res = PrepareWrite(fileId, len);
-  bool success = res.first;
-  if (success) {
-    shared_ptr<File> &file = res.second;
-    assert(file);
-    tuple<bool, size_t, size_t> res =
-        file->Write(offset, len, stream);
-    success = boost::get<0>(res);
-    if (success) {
-      AddSize(boost::get<1>(res));
-    }
-  }
-
-  // update file size in meta data
-  if (success && dirTree) {
-    shared_ptr<Node> node = dirTree->Find(fileId);
-    if (node) {
-      uint64_t oldFileSize = node->GetFileSize();
-      if (offset + len > oldFileSize) {
-        node->SetFileSize(offset + len);
-      }
-    }
-  }
-
-  return success;
-}
-
-// --------------------------------------------------------------------------
-pair<bool, shared_ptr<File> > Cache::PrepareWrite(const string &fileId,
-                                                  size_t len) {
-  bool availableFreeSpace = true;
-  if (!HasFreeSpace(len)) {
-    availableFreeSpace = Free(len, fileId);
-
-    if (!availableFreeSpace) {
-      string diskfolder =
-          QS::Configure::Options::Instance().GetDiskCacheDirectory();
-      if (!CreateDirectoryIfNotExists(diskfolder)) {
-        Error("Unable to mkdir for folder " + FormatPath(diskfolder));
-        return make_pair(false, shared_ptr<File>());
-      }
-      if (!IsSafeDiskSpace(diskfolder, len)) {
-        if (!FreeDiskCacheFiles(diskfolder, len, fileId)) {
-          Error("No available free space (" + to_string(len) +
-                "bytes) for folder " + FormatPath(diskfolder));
-          return make_pair(false, shared_ptr<File>());
-        }
-      }  // check safe disk space
-    }
-  }
-
-  CacheListIterator pos = m_cache.begin();
-  CacheMapIterator it = m_map.find(fileId);
-  if (it != m_map.end()) {
-    pos = UnguardedMakeFileMostRecentlyUsed(it->second);
-  } else {
-    pos = UnguardedNewEmptyFile(fileId);
-    assert(pos != m_cache.end());
-  }
-
-  shared_ptr<File> &file = pos->second;
-  file->SetUseDiskFile(!availableFreeSpace);
-
-  return make_pair(true, file);
 }
 
 // --------------------------------------------------------------------------
@@ -471,7 +305,8 @@ void Cache::Resize(const string &fileId, size_t newFileSize,
     DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
               to_string(holeSize) + "] " + FormatPath(fileId));
     bool fileOpen = file->IsOpen();
-    Write(fileId, oldFileSize, holeSize, &hole[0], dirTree);
+    // TODO(jim): Move Resize To File
+    // file->Write(oldFileSize, holeSize, &hole[0], dirTree, this);
   } else {
     file->ResizeToSmallerSize(newFileSize);
   }
@@ -488,6 +323,15 @@ void Cache::Resize(const string &fileId, size_t newFileSize,
     DebugWarning("Try to resize file from size " + to_string(oldFileSize) +
                  " to " + to_string(newFileSize) + ". But now file size is " +
                  to_string(file->GetSize()) + FormatPath(fileId));
+  }
+}
+
+// --------------------------------------------------------------------------
+void Cache::MakeFileMostRecentlyUsed(const string &filePath) {
+  lock_guard<recursive_mutex> locker(m_mutex);
+  CacheMapIterator it = m_map.find(filePath);
+  if (it != m_map.end()) {
+    m_cache.splice(m_cache.begin(), m_cache, it->second);
   }
 }
 

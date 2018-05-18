@@ -35,8 +35,7 @@
 #include "boost/unordered_map.hpp"
 
 #include "base/HashUtils.h"
-#include "data/File.h"
-#include "data/Page.h"
+#include "data/File.h"  //TODO(jim): remove
 
 namespace QS {
 
@@ -52,8 +51,7 @@ struct RenameDirCallback;
 namespace Data {
 
 class DirectoryTree;
-struct DownloadRangeCallback;
-struct FlushCallback;
+class File;
 
 typedef std::pair<std::string, boost::shared_ptr<File> > FileIdToFilePair;
 typedef std::list<FileIdToFilePair> CacheList;
@@ -118,36 +116,6 @@ class Cache : private boost::noncopyable {
   boost::shared_ptr<File> MakeFile(const std::string &fileId);
 
  private:
-  // Write a block of bytes into file cache
-  //
-  // @param  : file path, file offset, len, buffer
-  // @return : bool
-  //
-  // If File of fileId doesn't exist, create one.
-  // From pointer of buffer, number of len bytes will be writen.
-  bool Write(const std::string &fileId, off_t offset, size_t len,
-             const char *buffer,
-             const boost::shared_ptr<DirectoryTree> &dirTree);
-
-  // Write stream into file cache
-  //
-  // @param  : file path, file offset, stream
-  // @return : bool
-  //
-  // If File of fileId doesn't exist, create one.
-  // Stream will be moved to cache.
-  bool Write(const std::string &fileId, off_t offset, size_t len,
-             const boost::shared_ptr<std::iostream> &stream,
-             const boost::shared_ptr<DirectoryTree> &dirTree);
-
-  // Prepare for Write
-  //
-  // @param  : file id, content data len
-  // @return : {falg of success, pointer to File}
-  //
-  // internal use only
-  std::pair<bool, boost::shared_ptr<File> > PrepareWrite(
-      const std::string &fileId, size_t len);
 
   // Free cache space
   //
@@ -188,6 +156,9 @@ class Cache : private boost::noncopyable {
   void Resize(const std::string &fileId,
               size_t newSize, const boost::shared_ptr<DirectoryTree> &dirTree);
 
+  //  Move the file into the front of the cache
+  void MakeFileMostRecentlyUsed(const std::string &fileId);
+
  private:
   // Add size
   void AddSize(uint64_t delta);
@@ -202,7 +173,7 @@ class Cache : private boost::noncopyable {
   // Erase the file denoted by pos, without checking input.
   CacheListIterator UnguardedErase(FileIdToCacheListIteratorMap::iterator pos);
 
-// Move the file denoted by pos into the front of the cache,
+  // Move the file denoted by pos into the front of the cache,
   // without checking input.
   CacheListIterator UnguardedMakeFileMostRecentlyUsed(CacheListIterator pos);
 
@@ -220,9 +191,8 @@ class Cache : private boost::noncopyable {
 
   FileIdToCacheListIteratorMap m_map;
 
+  friend class QS::Data::File;
   friend class QS::Client::QSClient;
-  friend struct QS::Data::DownloadRangeCallback;
-  friend struct QS::Data::FlushCallback;
   friend class QS::FileSystem::Drive;
   friend struct QS::FileSystem::RenameDirCallback;
   friend class CacheTest;

@@ -36,6 +36,7 @@
 #include "boost/shared_ptr.hpp"
 #include "boost/thread.hpp"
 #include "boost/thread/once.hpp"
+#include "boost/tuple/tuple.hpp"
 #include "boost/weak_ptr.hpp"
 
 #include "base/Exception.h"
@@ -744,10 +745,15 @@ int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
     return 0;
   }
 
-  bool success =
-      m_cache->Write(filePath, offset, size, buf, m_directoryTree);
-
-  return success ? size : 0;
+  shared_ptr<File> file = m_cache->FindFile(filePath);
+  if (file) {
+    boost::tuple<bool, size_t, size_t> res =
+        file->Write(offset, size, buf, m_directoryTree, m_cache);
+    return boost::get<2>(res);
+  } else {
+    Error("File not exists in cache.");
+    return 0;
+  }
 }
 
 // --------------------------------------------------------------------------

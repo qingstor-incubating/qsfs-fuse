@@ -50,6 +50,7 @@ class Drive;
 namespace Data {
 class Cache;
 class DirectoryTree;
+struct DownloadRangeCallback;
 
 // Range represented by a pair of {offset, size}
 typedef std::deque<std::pair<off_t, size_t> > ContentRangeDeque;
@@ -119,6 +120,9 @@ class File : private boost::noncopyable {
   // To string
   std::string ToString() const;
 
+  // Clear
+  void Clear();
+
  private:
   // Read from the cache (file pages)
   //
@@ -134,6 +138,7 @@ class File : private boost::noncopyable {
       boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
       boost::shared_ptr<QS::Data::Cache> cache);
 
+  // For internal use
   // Read from the cache with no load
   // Notes: buf at least has bytes of 'len' memory
   std::pair<size_t, ContentRangeDeque> ReadNoLoad(off_t offset, size_t len,
@@ -146,8 +151,10 @@ class File : private boost::noncopyable {
   //
   // From pointer of buffer, number of len bytes will be writen.
   // The owning file's offset is set with 'offset'.
-  boost::tuple<bool, size_t, size_t> Write(off_t offset, size_t len,
-                                           const char *buffer);
+  boost::tuple<bool, size_t, size_t> Write(
+      off_t offset, size_t len, const char *buffer,
+      const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
+      const boost::shared_ptr<QS::Data::Cache> &cache);
 
   // Write stream into pages
   //
@@ -157,6 +164,26 @@ class File : private boost::noncopyable {
   // The stream will be moved to the pages.
   // The owning file's offset is set with 'offset'.
   boost::tuple<bool, size_t, size_t> Write(
+      off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream,
+      const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
+      const boost::shared_ptr<QS::Data::Cache> &cache);
+
+  // Setup pre to write
+  // For internal use
+  bool PreWrite(size_t len, const boost::shared_ptr<QS::Data::Cache> &cache);
+
+  // Setup post to write
+  // For internal use
+  void PostWrite(off_t offset, size_t len, size_t addedCacheSize,
+                 const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
+                 const boost::shared_ptr<QS::Data::Cache> &cache);
+
+  // For internal use
+  boost::tuple<bool, size_t, size_t> DoWrite(off_t offset, size_t len,
+                                             const char *buffer);
+
+  // For internal use
+  boost::tuple<bool, size_t, size_t> DoWrite(
       off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream);
 
   void Flush(size_t fileSize,
@@ -175,9 +202,6 @@ class File : private boost::noncopyable {
 
   // Remove disk file
   void RemoveDiskFileIfExists(bool logOn = true) const;
-
-  // Clear pages and reset attributes.
-  void Clear();
 
   // Set flag to use disk file
   void SetUseDiskFile(bool useDiskFile) {
@@ -265,8 +289,9 @@ class File : private boost::noncopyable {
   mutable boost::recursive_mutex m_mutex;
   PageSet m_pages;              // a set of pages suppose to be successive
 
-  friend class Cache;
+  friend class Cache;  // TODO(jim): remove to avoid loop dependency
   friend class FileTest;
+  friend class QS::Data::DownloadRangeCallback;
   friend class QS::FileSystem::Drive;
   friend class QS::Client::QSTransferManager;
 };
