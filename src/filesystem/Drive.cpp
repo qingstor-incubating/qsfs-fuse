@@ -87,6 +87,7 @@ using QS::Data::Node;
 using QS::Exception::QSException;
 using QS::StringUtils::FormatPath;
 using QS::StringUtils::ContentRangeDequeToString;
+using QS::StringUtils::BoolToString;
 using QS::Utils::AppendPathDelim;
 using QS::Utils::DeleteFilesInDirectory;
 using QS::UtilsWithLog::IsDirectory;
@@ -364,6 +365,7 @@ struct PrintMsgForDeleteFile {
 // --------------------------------------------------------------------------
 // Remove a file or an empty directory
 void Drive::RemoveFile(const string &filePath, bool async) {
+  DebugInfo(FormatPath(filePath));
   PrintMsgForDeleteFile receivedHandler(filePath);
 
   if (async) {  // delete file asynchronously
@@ -380,6 +382,7 @@ void Drive::RemoveFile(const string &filePath, bool async) {
 
 // --------------------------------------------------------------------------
 void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
+  DebugInfo("[mode:" + QS::StringUtils::ModeToString(mode) +"]" + FormatPath(filePath));
   FileType::Value type = FileType::File;
   if (mode & S_IFREG) {
     type = FileType::File;
@@ -417,7 +420,7 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
 
 // --------------------------------------------------------------------------
 void Drive::MakeDir(const string &dirPath, mode_t mode) {
-  Info("Create directory " + FormatPath(dirPath));
+  DebugInfo(FormatPath(dirPath));
   ClientError<QSError::Value> err = GetClient()->MakeDirectory(dirPath);
   if (!IsGoodQSError(err)) {
     Error(GetMessageForQSError(err));
@@ -431,6 +434,7 @@ void Drive::MakeDir(const string &dirPath, mode_t mode) {
 
 // --------------------------------------------------------------------------
 void Drive::OpenFile(const string &filePath, bool async) {
+  DebugInfo(FormatPath(filePath));
   pair<shared_ptr<Node>, bool> res = GetNode(filePath, true, false, false);
   shared_ptr<Node> node = res.first;
 
@@ -438,8 +442,6 @@ void Drive::OpenFile(const string &filePath, bool async) {
     Warning("File not exist " + FormatPath(filePath));
     return;
   }
-
-  Info("Open file " + FormatPath(filePath));
 
   shared_ptr<File> file;
   if (m_cache->HasFile(filePath)) {
@@ -459,8 +461,8 @@ void Drive::OpenFile(const string &filePath, bool async) {
 // --------------------------------------------------------------------------
 size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
                        char *buf, bool async) {
-  DebugInfo("Start read [offset:size=" + to_string(offset) + ":" +
-            to_string(size) + FormatPath(filePath));
+  DebugInfo("Start read [offset:" + to_string(offset) + ", size:" +
+            to_string(size) + "] " + FormatPath(filePath));
   // read is only called if the file has been opend with the correct flags
   // no need to head it for latest meta
   shared_ptr<Node> node = GetNodeSimple(filePath);
@@ -474,7 +476,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
   int64_t remainingSize = 0;
   if (offset + size > node->GetFileSize()) {
     readSize = node->GetFileSize() - offset;
-    DebugInfo("Overflow [file size=" + to_string(node->GetFileSize()) + "] " +
+    DebugInfo("Overflow [file size:" + to_string(node->GetFileSize()) + "] " +
               " ajust read size to " + to_string(readSize) +
               FormatPath(filePath));
   } else {
@@ -490,7 +492,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     pair<size_t, ContentRangeDeque> outcome = file->Read(
         offset, readSize, buf, m_transferManager, m_directoryTree, m_cache);
     if (outcome.first == 0) {
-      DebugWarning("Read no bytes [offset:len=" + to_string(offset) + ":" +
+      DebugWarning("Read no bytes [offset:" + to_string(offset) + ", len:" +
                    to_string(size) + "] " + FormatPath(filePath));
     }
     if (!outcome.second.empty()) {
@@ -510,6 +512,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
 
 // --------------------------------------------------------------------------
 void Drive::ReadSymlink(const std::string &linkPath) {
+  DebugInfo(FormatPath(linkPath));
   shared_ptr<Node> node = GetNodeSimple(linkPath);
   shared_ptr<stringstream> buffer = make_shared<stringstream>();
   ClientError<QSError::Value> err = GetClient()->DownloadFile(linkPath, buffer);
@@ -522,6 +525,7 @@ void Drive::ReadSymlink(const std::string &linkPath) {
 
 // --------------------------------------------------------------------------
 void Drive::RenameFile(const string &filePath, const string &newFilePath) {
+  DebugInfo(FormatPath(filePath, newFilePath));
   // Do Renaming
   ClientError<QSError::Value> err =
       GetClient()->MoveFile(filePath, newFilePath, m_directoryTree, m_cache);
@@ -562,8 +566,8 @@ struct RenameDirCallback {
       deque<string> childTargetPaths;
       BOOST_FOREACH (const string &path, childPaths) {
         if (path.substr(0, len) != dirPath) {
-          Warning("Directory has an invalid child file [path=" + dirPath +
-                  " child=" + path + "]");
+          Warning("Directory has an invalid child file [path:" + dirPath +
+                  ", child:" + path + "]");
           childTargetPaths.push_back(path);  // put old path
           continue;
         }
@@ -591,6 +595,7 @@ struct RenameDirCallback {
 // --------------------------------------------------------------------------
 void Drive::RenameDir(const string &dirPath, const string &newDirPath,
                       bool async) {
+  DebugInfo(FormatPath(dirPath, newDirPath));
   // Do Renaming
   RenameDirCallback receivedHandler(dirPath, newDirPath, m_directoryTree,
                                     m_cache, this);
@@ -614,16 +619,15 @@ void Drive::RenameDir(const string &dirPath, const string &newDirPath,
 // in the form of an absolute path (in qsfs) or relative path and that affects
 // pathname resolution.
 void Drive::SymLink(const string &filePath, const string &linkPath) {
+  DebugInfo(FormatPath(filePath, linkPath));
   assert(!filePath.empty() && !linkPath.empty());
   ClientError<QSError::Value> err = GetClient()->SymLink(filePath, linkPath);
   if (!IsGoodQSError(err)) {
-    Error("Fail to create a symbolic link [path=" + filePath +
-          ", link=" + linkPath);
+    Error("Fail to create a symbolic link [path:" + filePath +
+          ", link:" + linkPath);
     Error(GetMessageForQSError(err));
     return;
   }
-
-  Info("Create symlink " + FormatPath(filePath, linkPath));
 
   // QSClient::Symlink doesn't update directory tree (refer it for details)
   // with the created symlink node, So we call Stat synchronizely.
@@ -646,6 +650,8 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
     Warning("File not exist " + FormatPath(filePath));
     return;
   }
+  DebugInfo("[oldsize:" + to_string(node->GetFileSize()) + ", newsize:" +
+            to_string(newSize) + "]" + FormatPath(filePath));
 
   shared_ptr<File> file;
   if (m_cache->HasFile(filePath)) {
@@ -655,8 +661,6 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
     file = m_cache->MakeFile(filePath);
   }
 
-  Info("Truncate file [oldsize:newsize=" + to_string(node->GetFileSize()) +
-       ":" + to_string(newSize) + "]" + FormatPath(filePath));
   if (file) {
     file->Resize(newSize, m_directoryTree, m_cache);
   } else {
@@ -667,6 +671,8 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
 // --------------------------------------------------------------------------
 void Drive::FlushFile(const string &filePath, bool releaseFile, bool updateMeta,
                       bool async) {
+  DebugInfo("[release:" + BoolToString(releaseFile) + ", updatemeta:" +
+            BoolToString(updateMeta) + "]" + FormatPath(filePath));
   // upload should just get file node from local
   shared_ptr<Node> node = GetNodeSimple(filePath);
 
@@ -675,7 +681,6 @@ void Drive::FlushFile(const string &filePath, bool releaseFile, bool updateMeta,
     return;
   }
 
-  Info("Start upload file " + FormatPath(filePath));
   shared_ptr<File> file = m_cache->FindFile(filePath);
   if (file) {
     file->Flush(node->GetFileSize(), m_transferManager, m_directoryTree,
@@ -687,7 +692,7 @@ void Drive::FlushFile(const string &filePath, bool releaseFile, bool updateMeta,
 
 // --------------------------------------------------------------------------
 void Drive::ReleaseFile(const string &filePath) {
-  Info("Close file " + FormatPath(filePath));
+  DebugInfo(FormatPath(filePath));
   shared_ptr<Node> node = GetNodeSimple(filePath);
 
   if (!(node && *node)) {
@@ -715,6 +720,8 @@ void Drive::Utimens(const string &path, time_t mtime) {
 // --------------------------------------------------------------------------
 int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
                      const char *buf) {
+  DebugInfo("[offset:" + to_string(offset) + "size:" + to_string(size) + "]" +
+            FormatPath(filePath));
   shared_ptr<Node> node = GetNodeSimple(filePath);
   if (!(node && *node)) {
     Warning("File not exist " + FormatPath(filePath));

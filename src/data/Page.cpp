@@ -417,20 +417,20 @@ size_t Page::UnguardedRead(off_t offset, size_t len, char *buffer) {
 
 // --------------------------------------------------------------------------
 string ToStringLine(off_t offset, size_t len, const char *buffer) {
-  return "[offset:size:buffer=" + to_string(offset) + ":" + to_string(len) +
-         ":" + PointerAddress(buffer) + "]";
+  return "[offset:" + to_string(offset) + ", len:" + to_string(len) +
+         ", buffer:" + PointerAddress(buffer) + "]";
 }
 
 // --------------------------------------------------------------------------
 string ToStringLine(off_t offset, size_t size) {
-  return "[offset:size=" + to_string(offset) + ":" + to_string(size) + "]";
+  return "[offset:" + to_string(offset) + ", len:" + to_string(size) + "]";
 }
 
 // --------------------------------------------------------------------------
 string ToStringLine(const string &fileId, off_t offset, size_t len,
                     const char *buffer) {
-  return "[fileId:offset:size:buffer=" + fileId + ":" + to_string(offset) +
-         ":" + to_string(len) + ":" + PointerAddress(buffer) + "]";
+  return "[fileId:" + fileId + ", offset:" + to_string(offset) +
+         ", len:" + to_string(len) + ", buffer:" + PointerAddress(buffer) + "]";
 }
 
 // --------------------------------------------------------------------------

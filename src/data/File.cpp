@@ -239,7 +239,7 @@ size_t File::GetNumPages() const {
 
 // --------------------------------------------------------------------------
 string File::ToString() const {
-  return "[" + m_baseName + " size:" + to_string(GetSize()) +
+  return "[file:" + m_baseName + ", size:" + to_string(GetSize()) +
          ", datasize:" + to_string(GetDataSize()) +
          ", cachedsize:" + to_string(GetCachedSize()) +
          ", useDisk:" + BoolToString(m_useDiskFile) +
@@ -253,6 +253,8 @@ pair<size_t, ContentRangeDeque> File::Read(
     shared_ptr<TransferManager> transferManager,
     shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache) {
   lock_guard<recursive_mutex> lock(m_mutex);
+  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
+            FormatPath(GetFilePath()));
   Load(offset, len, transferManager, dirTree, cache, false);
   return ReadNoLoad(offset, len, buf);
 }
@@ -260,7 +262,7 @@ pair<size_t, ContentRangeDeque> File::Read(
 // --------------------------------------------------------------------------
 pair<size_t, ContentRangeDeque> File::ReadNoLoad(off_t offset, size_t len,
                                                  char *buf) const {
-  DebugInfo("Read cache [offset:len=" + to_string(offset) + ":" +
+  DebugInfo("[offset:" + to_string(offset) + ", len:" +
             to_string(len) + "] " + FormatPath(GetFilePath()));
   if (buf != NULL) {
     memset(buf, 0, len);
@@ -336,6 +338,8 @@ pair<size_t, ContentRangeDeque> File::ReadNoLoad(off_t offset, size_t len,
 tuple<bool, size_t, size_t> File::Write(
     off_t offset, size_t len, const char *buffer,
     const shared_ptr<DirectoryTree> &dirTree, const shared_ptr<Cache> &cache) {
+  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
+            FormatPath(GetFilePath()));
   lock_guard<recursive_mutex> lock(m_mutex);
   if (PreWrite(len, cache)) {
     tuple<bool, size_t, size_t> res = DoWrite(offset, len, buffer);
@@ -353,6 +357,8 @@ tuple<bool, size_t, size_t> File::Write(
 tuple<bool, size_t, size_t> File::Write(
     off_t offset, size_t len, const shared_ptr<iostream> &stream,
     const shared_ptr<DirectoryTree> &dirTree, const shared_ptr<Cache> &cache) {
+  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
+            FormatPath(GetFilePath()));
   lock_guard<recursive_mutex> lock(m_mutex);
   if (PreWrite(len, cache)) {
     tuple<bool, size_t, size_t> res = DoWrite(offset, len, stream);
@@ -514,8 +520,8 @@ tuple<bool, size_t, size_t> File::DoWrite(off_t offset, size_t len,
   if (!(len <= streamsize)) {
     DebugError(
         "Invalid input, stream buffer size is less than input 'len' parameter. "
-        "[file:len=" +
-        GetFilePath() + ":" + to_string(len) + "]");
+        "[file:" +
+        GetFilePath() + ", len:" + to_string(len) + "]");
     return make_tuple(false, 0, 0);
   }
   lock_guard<recursive_mutex> lock(m_mutex);
@@ -570,7 +576,7 @@ struct FlushCallback {
     if (handle && client) {
       handle->WaitUntilFinished();
       if (handle->DoneTransfer() && !handle->HasFailedParts()) {
-        Info("Done Upload file [size=" + to_string(fileSize) + "] " +
+        Info("Done Upload file [size:" + to_string(fileSize) + "] " +
              FormatPath(filePath));
         // update meta
         if (updateMeta) {
@@ -594,6 +600,8 @@ void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
                  shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
                  shared_ptr<Client> client, bool releaseFile, bool updateMeta,
                  bool async) {
+  DebugInfo("[filesize:" + to_string(fileSize) + "]" +
+            FormatPath(GetFilePath()));
   // download unloaded pages for file
   // this is need as user could open a file and edit a part of it,
   // but you need the completed file in order to upload it.
@@ -622,11 +630,13 @@ void File::Load(off_t offset, size_t size,
                 shared_ptr<TransferManager> transferManager,
                 shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
                 bool async) {
+  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(size) + "] " +
+            FormatPath(GetFilePath()));
   lock_guard<recursive_mutex> lock(m_mutex);
   ContentRangeDeque ranges = GetUnloadedRanges(offset, size);
   if (!ranges.empty()) {
     DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
-              " file:" + ToString());
+              ", file:" + ToString());
 
     DownloadRanges(ranges, transferManager, dirTree, cache, async);
   }
@@ -644,7 +654,7 @@ void File::Resize(size_t newSize, const shared_ptr<DirectoryTree> &dirTree,
     // fill the hole
     size_t holeSize = newSize - oldFileSize;
     vector<char> hole(holeSize);  // value initialization with '\0'
-    DebugInfo("Fill hole [offset:len=" + to_string(oldFileSize) + ":" +
+    DebugInfo("Fill hole [offset:" + to_string(oldFileSize) + ", len:" +
               to_string(holeSize) + "] " + FormatPath(GetFilePath()));
     Write(oldFileSize, holeSize, &hole[0], dirTree, cache);
   } else {
@@ -829,14 +839,14 @@ struct DownloadRangeCallback {
           tuple<bool, size_t, size_t> res =
               file->Write(offset, downloadSize, stream, dirTree, cache);
           ErrorIf(!boost::get<0>(res),
-                  "Fail to write cache [file:offset:len=" + filePath + ":" +
-                      to_string(offset) + ":" + to_string(downloadSize) + "]");
+                  "Fail to write cache [file:" + filePath + ", offset:" +
+                      to_string(offset) + ", len:" + to_string(downloadSize) + "]");
         }
       } else {
-        string msg = "Fail to download [offset:len=" + to_string(offset) + ":" +
+        string msg = "Fail to download [offset:" + to_string(offset) + ", len:" +
                      to_string(downloadSize) + "]";
         if (file) {
-          msg += "file:" + file->ToString();
+          msg += file->ToString();
         }
         msg += FormatPath(filePath);
         Error(msg);

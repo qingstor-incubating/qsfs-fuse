@@ -564,10 +564,15 @@ void QSTransferManager::DoSinglePartUpload(
       file->ReadNoLoad(0, fileSize, &(*buf)[0]);
   size_t readSize = res.first;
   if (readSize != fileSize) {
-    DebugError("Fail to read file [file:offset:len:readsize=" + objKey +
-               ":0:" + to_string(fileSize) + ":" + to_string(readSize) +
-               " unloaded ranges:" + ContentRangeDequeToString(res.second) +
-               "], stop upload");
+    string msg =
+        "Fail to read, stop upload [offset:0, len:" + to_string(fileSize) +
+        ", readedsize:" + to_string(readSize) +
+        ", unloaded ranges:" + ContentRangeDequeToString(res.second) + "]";
+    if (file) {
+      msg += file->ToString();
+    }
+    msg += "[path=" + objKey + "]";
+    DebugError(msg);
     handle->ChangePartToFailed(part);
     handle->UpdateStatus(TransferStatus::Failed);
     handle->SetError(ClientError<QSError::Value>(
@@ -618,11 +623,17 @@ void QSTransferManager::DoMultiPartUpload(
                     &(*buffer)[0]);
     size_t readSize = res.first;
     if (readSize != part->GetSize()) {
-      DebugError("Fail to read file [file:offset:len:readsize=" + objKey +
-                 ":" + to_string(part->GetRangeBegin()) + ":" +
-                 to_string(part->GetSize()) + ":" + to_string(readSize) +
-                 " unloaded ranges:" + ContentRangeDequeToString(res.second) +
-                 "], stop upload");
+      string msg =
+          "Fail to read, stop upload [offset:" +
+          to_string(part->GetRangeBegin()) +
+          ", len:" + to_string(part->GetSize()) +
+          ", readedsize:" + to_string(readSize) +
+          ", unloaded ranges:" + ContentRangeDequeToString(res.second) + "]";
+      if (file) {
+        msg += file->ToString();
+      }
+      msg += "[path=" + objKey + "]";
+      DebugError(msg);
 
       handle->ChangePartToFailed(part);
       handle->UpdateStatus(TransferStatus::Failed);
