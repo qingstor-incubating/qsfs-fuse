@@ -47,20 +47,15 @@
 #include "base/Utils.h"
 #include "base/UtilsWithLog.h"
 #include "client/Client.h"
-#include "client/ClientConfiguration.h"
 #include "client/ClientFactory.h"
 #include "client/QSError.h"
-#include "client/TransferHandle.h"
 #include "client/TransferManager.h"
 #include "client/TransferManagerFactory.h"
-#include "configure/Default.h"
 #include "configure/Options.h"
 #include "data/Cache.h"
 #include "data/DirectoryTree.h"
 #include "data/File.h"
-#include "data/FileMetaData.h"
 #include "data/FileMetaDataManager.h"
-#include "data/IOStream.h"
 #include "data/Node.h"
 
 namespace QS {
@@ -78,7 +73,6 @@ using QS::Client::ClientFactory;
 using QS::Client::GetMessageForQSError;
 using QS::Client::IsGoodQSError;
 using QS::Client::QSError;
-using QS::Client::TransferHandle;
 using QS::Client::TransferManager;
 using QS::Client::TransferManagerConfigure;
 using QS::Client::TransferManagerFactory;
@@ -86,11 +80,9 @@ using QS::Data::Cache;
 using QS::Data::ContentRangeDeque;
 using QS::Data::DirectoryTree;
 using QS::Data::Entry;
-using QS::Data::FileMetaData;
 using QS::Data::File;
 using QS::Data::FileType;
 using QS::Data::FilePathToNodeUnorderedMap;
-using QS::Data::IOStream;
 using QS::Data::Node;
 using QS::Exception::QSException;
 using QS::StringUtils::FormatPath;
@@ -420,13 +412,6 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
     GetCache()->MakeFile(filePath);
   } else {
     Error("Not support to create a special file (block, char, FIFO, etc.)");
-    // This only make file of other types in local dir tree, nothing happens
-    // in server. And it will be removed when synchronize with server.
-    // TODO(jim): may consider to support them in server if sdk support this
-    // time_t mtime = time(NULL);
-    // m_directoryTree->Grow(make_shared<FileMetaData>(
-    //     filePath, 0, mtime, mtime, GetProcessEffectiveUserID(),
-    //     GetProcessEffectiveGroupID(), mode, type, "", "", false, dev));
   }
 }
 
@@ -594,22 +579,8 @@ struct RenameDirCallback {
         }
       }
 
-      // Remove old dir node from dir tree
       if (dirTree) {
-        dirTree->Remove(dirPath,
-                        QS::Data::RemoveNodeType::IncludeDescendant);
-      }
-
-      // Add new dir node to dir tree
-      if (drive) {
-        pair<shared_ptr<Node>, bool> res =
-            drive->GetNode(newDirPath, true, true, false);
-        node = res.first;
-        if (node && *node) {
-          Info("Rename directory " + FormatPath(dirPath, newDirPath));
-        } else {
-          Warning("Fail to rename directory " + FormatPath(dirPath));
-        }
+        dirTree->Rename(dirPath, newDirPath);
       }
     } else {
       Error(GetMessageForQSError(err));

@@ -695,6 +695,14 @@ void File::Resize(size_t newSize, const shared_ptr<DirectoryTree> &dirTree,
   }
 }
 
+
+// --------------------------------------------------------------------------
+void File::Rename(const std::string &newFilePath) {
+  lock_guard<mutex> locker(m_filePathLock);
+  m_filePath = newFilePath;
+  m_baseName = QS::Utils::GetBaseName(newFilePath);
+}
+
 // --------------------------------------------------------------------------
 void File::RemoveDiskFileIfExists(bool logOn) const {
   lock_guard<recursive_mutex> lock(m_mutex);
@@ -730,13 +738,6 @@ void File::SetOpen(bool open, shared_ptr<DirectoryTree> dirTree) {
       node->SetFileOpen(open);
     }
   }
-}
-
-// --------------------------------------------------------------------------
-void File::Rename(const std::string &newFilePath) {
-  lock_guard<mutex> locker(m_filePathLock);
-  m_filePath = newFilePath;
-  m_baseName = QS::Utils::GetBaseName(newFilePath);
 }
 
 // --------------------------------------------------------------------------

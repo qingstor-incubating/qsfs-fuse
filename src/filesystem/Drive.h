@@ -247,19 +247,6 @@ class Drive : public Singleton<Drive> {
                 const char *buf);
 
  private:
- // Download file contents
- //
- // @param  : file path, file content ranges, asynchronously or synchronizely
- // @return : void
- void DownloadFileContentRanges(const std::string &filePath,
-                                const QS::Data::ContentRangeDeque &ranges,
-                                bool fileOpen, bool async = false);
-
- void DownloadFileContentRange(const std::string &filePath,
-                               const std::pair<off_t, size_t> &range,
-                               bool fileOpen, bool async = false);
-
- private:
   boost::shared_ptr<QS::Client::Client> &GetClient() { return m_client; }
   boost::shared_ptr<QS::Client::TransferManager> &GetTransferManager() {
     return m_transferManager;

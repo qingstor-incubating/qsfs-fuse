@@ -207,6 +207,10 @@ class File : private boost::noncopyable {
               const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
               const boost::shared_ptr<QS::Data::Cache> &cache);
 
+
+  // Rename
+  void Rename(const std::string &newFilePath);
+
   // Remove disk file
   void RemoveDiskFileIfExists(bool logOn = true) const;
 
@@ -255,9 +259,6 @@ class File : private boost::noncopyable {
     boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
     m_cacheSize -= delta;
   }
-
-  // Rename
-  void Rename(const std::string &newFilePath);
 
   // Returns an iterator pointing to the first Page that is not ahead of offset.
   // If no such Page is found, a past-the-end iterator is returned.
@@ -329,7 +330,7 @@ class File : private boost::noncopyable {
   mutable boost::recursive_mutex m_mutex;
   PageSet m_pages;              // a set of pages suppose to be successive
 
-  friend class Cache;  // TODO(jim): remove to avoid loop dependency
+  friend class Cache;  // for Rename
   friend class FileTest;
   friend class QS::Data::DownloadRangeCallback;
   friend class QS::FileSystem::Drive;

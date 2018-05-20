@@ -35,7 +35,6 @@
 #include "boost/unordered_map.hpp"
 
 #include "base/HashUtils.h"
-#include "data/File.h"  //TODO(jim): remove
 
 namespace QS {
 
