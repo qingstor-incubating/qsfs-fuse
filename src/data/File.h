@@ -202,11 +202,13 @@ class File : private boost::noncopyable {
             boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
             boost::shared_ptr<QS::Data::Cache> cache, bool async = false);
 
-  // Resize
-  void Resize(size_t newSize,
-    const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
-    const boost::shared_ptr<QS::Data::Cache> &cache);
-
+  // Truncate
+  void Truncate(
+      size_t newSize,
+      const boost::shared_ptr<QS::Client::TransferManager> &transferManager,
+      const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
+      const boost::shared_ptr<QS::Data::Cache> &cache,
+      const boost::shared_ptr<QS::Client::Client> &client);
 
   // Rename
   void Rename(const std::string &newFilePath);

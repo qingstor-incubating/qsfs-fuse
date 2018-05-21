@@ -270,8 +270,8 @@ GetObjectOutcome QSClientImpl::GetObject(const string &objKey,
         size_t reqLen = ParseRequestContentRange(input->GetRange()).second;
         size_t rspLen = output.GetContentLength();
         DebugWarningIf(rspLen < reqLen,
-                       "[content range request:response=" + input->GetRange() +
-                           ":" + output.GetContentRange() + "]");
+                       "[content range request:" + input->GetRange() +
+                           ", response:" + output.GetContentRange() + "]");
       }
     }
     return GetObjectOutcome(output);

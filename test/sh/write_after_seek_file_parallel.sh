@@ -30,7 +30,7 @@ mk_test_dir ${WORK_DIR_NAME}
 # write after seek ahead
 FILE_NAME="${WORK_DIR_NAME}/write_after_seek_parallel.txt"
 FILE_TEST="$QSFS_TEST_RUN_DIR/$FILE_NAME"
-THREADS=10
+THREADS=3
 NUM=$(( $THREADS - 1 ))
 
 # touch file

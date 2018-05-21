@@ -645,8 +645,11 @@ void File::Load(off_t offset, size_t size,
 }
 
 // --------------------------------------------------------------------------
-void File::Resize(size_t newSize, const shared_ptr<DirectoryTree> &dirTree,
-                  const shared_ptr<Cache> &cache) {
+void File::Truncate(size_t newSize,
+                    const shared_ptr<TransferManager> &transferManager,
+                    const shared_ptr<DirectoryTree> &dirTree,
+                    const shared_ptr<Cache> &cache,
+                    const shared_ptr<Client> &client) {
   DebugInfo(to_string(newSize));
   lock_guard<recursive_mutex> lock(m_mutex);
   size_t oldFileSize = GetSize();
@@ -700,6 +703,8 @@ void File::Resize(size_t newSize, const shared_ptr<DirectoryTree> &dirTree,
       }
     }
   }
+
+  Flush(newSize, transferManager, dirTree, cache, client, false, false, false);
 
   // check
   if (GetSize() != newSize) {

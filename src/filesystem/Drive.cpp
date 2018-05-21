@@ -662,7 +662,7 @@ void Drive::TruncateFile(const string &filePath, size_t newSize) {
   }
 
   if (file) {
-    file->Resize(newSize, m_directoryTree, m_cache);
+    file->Truncate(newSize, m_transferManager, m_directoryTree, m_cache, m_client);
   } else {
     Error("File not exists in cache " + FormatPath(filePath));
   }
@@ -720,7 +720,7 @@ void Drive::Utimens(const string &path, time_t mtime) {
 // --------------------------------------------------------------------------
 int Drive::WriteFile(const string &filePath, off_t offset, size_t size,
                      const char *buf) {
-  DebugInfo("[offset:" + to_string(offset) + "size:" + to_string(size) + "]" +
+  DebugInfo("[offset:" + to_string(offset) + ", size:" + to_string(size) + "]" +
             FormatPath(filePath));
   shared_ptr<Node> node = GetNodeSimple(filePath);
   if (!(node && *node)) {

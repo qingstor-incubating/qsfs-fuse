@@ -30,6 +30,8 @@
 
 #include "base/Logging.h"
 #include "base/Utils.h"
+#include "client/Client.h"
+#include "client/TransferManager.h"
 #include "configure/Options.h"
 #include "data/Cache.h"
 #include "data/DirectoryTree.h"
@@ -63,6 +65,9 @@ uid_t uid_ = 1000U;
 gid_t gid_ = 1000U;
 mode_t fileMode_ = S_IRWXU | S_IRWXG | S_IROTH;
 shared_ptr<DirectoryTree> nullDirTree = shared_ptr<DirectoryTree>();
+shared_ptr<QS::Client::TransferManager> nullTransferManager =
+    shared_ptr<QS::Client::TransferManager>();
+shared_ptr<QS::Client::Client> nullClient = shared_ptr<QS::Client::Client>();
 
 class FileTest : public Test {
  protected:
@@ -371,17 +376,20 @@ class FileTest : public Test {
     EXPECT_EQ(file->GetDataSize(), len1 + len2 + len3);
 
     size_t newFileSz = len1 + len2 + holeLen + len3 + 1;
-    file->Resize(newFileSz, nullDirTree, cache);
+    file->Truncate(newFileSz, nullTransferManager, nullDirTree, cache,
+                 nullClient);
     EXPECT_EQ(file->GetDataSize(), len1 + len2 + len3 + 1);
     EXPECT_EQ(file->GetSize(), newFileSz);
 
     size_t newFileSz1 = len1 + len2 + 1;
-    file->Resize(newFileSz1, nullDirTree, cache);
+    file->Truncate(newFileSz1, nullTransferManager, nullDirTree, cache,
+                 nullClient);
     EXPECT_EQ(file->GetDataSize(), len1 + len2);
     EXPECT_EQ(file->GetSize(), newFileSz1);
 
     size_t newFileSz2 = len1 + 1;
-    file->Resize(newFileSz2, nullDirTree, cache);
+    file->Truncate(newFileSz2, nullTransferManager, nullDirTree, cache,
+                 nullClient);
     EXPECT_EQ(file->GetDataSize(), newFileSz2);
     EXPECT_EQ(file->GetSize(), newFileSz2);
   }
