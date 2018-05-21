@@ -67,25 +67,25 @@ class File : private boost::noncopyable {
   size_t GetSize() const;
 
   std::string GetFilePath() const { 
-    boost::lock_guard<boost::mutex> locker(m_filePathLock);
+    boost::lock_guard<boost::recursive_mutex> locker(m_mutex);
     return m_filePath;
   }
   std::string GetBaseName() const { return m_baseName; }
 
   size_t GetDataSize() const {
-    boost::lock_guard<boost::mutex> locker(m_sizeLock);
+    boost::lock_guard<boost::recursive_mutex> locker(m_mutex);
     return m_dataSize;
   }
   size_t GetCachedSize() const {
-    boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
+    boost::lock_guard<boost::recursive_mutex> locker(m_mutex);
     return m_cacheSize;
   }
   bool UseDiskFile() const {
-    boost::lock_guard<boost::mutex> locker(m_useDiskFileLock);
+    boost::lock_guard<boost::recursive_mutex> locker(m_mutex);
     return m_useDiskFile;
   }
   bool IsOpen() const {
-    boost::lock_guard<boost::mutex> locker(m_openLock);
+    boost::lock_guard<boost::recursive_mutex> locker(m_mutex);
     return m_open;
   }
 
@@ -204,8 +204,8 @@ class File : private boost::noncopyable {
 
   // Resize
   void Resize(size_t newSize,
-              const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
-              const boost::shared_ptr<QS::Data::Cache> &cache);
+    const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
+    const boost::shared_ptr<QS::Data::Cache> &cache);
 
 
   // Rename
@@ -216,49 +216,17 @@ class File : private boost::noncopyable {
 
   // Set flag to use disk file
   void SetUseDiskFile(bool useDiskFile) {
-    boost::lock_guard<boost::mutex> locker(m_useDiskFileLock);
+    boost::lock_guard<boost::recursive_mutex> locker(m_mutex);
     m_useDiskFile = useDiskFile;
   }
 
   // Set file open state
   void SetOpen(bool open) {
-    boost::lock_guard<boost::mutex> locker(m_openLock);
+    boost::lock_guard<boost::recursive_mutex> locker(m_mutex);
     m_open = open;
   }
 
   void SetOpen(bool open, boost::shared_ptr<QS::Data::DirectoryTree> dirTree);
-
-  // Set size
-  void SetDataSize(size_t sz) {
-    boost::lock_guard<boost::mutex> locker(m_sizeLock);
-    m_dataSize = sz;
-  }
-  // Set cached size
-  void SetCachedSize(size_t sz) {
-    boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
-    m_cacheSize = sz;
-  }
-  // Add size
-  void AddDataSize(size_t delta) {
-    boost::lock_guard<boost::mutex> locker(m_sizeLock);
-    m_dataSize += delta;
-  }
-  // Add cached size
-  void AddCachedSize(size_t delta) {
-    boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
-    m_cacheSize += delta;
-  }
-
-  // Subtract size
-  void SubtractDataSize(size_t delta) {
-    boost::lock_guard<boost::mutex> locker(m_sizeLock);
-    m_dataSize -= delta;
-  }
-  // Substract cached size
-  void SubtractCachedSize(size_t delta) {
-    boost::lock_guard<boost::mutex> locker(m_cacheSizeLock);
-    m_cacheSize -= delta;
-  }
 
   // Returns an iterator pointing to the first Page that is not ahead of offset.
   // If no such Page is found, a past-the-end iterator is returned.
@@ -307,25 +275,17 @@ class File : private boost::noncopyable {
       off_t offset, size_t len, const boost::shared_ptr<std::iostream> &stream);
 
  private:
-  mutable boost::mutex m_filePathLock;
   std::string m_filePath;
   std::string m_baseName;  // file base name
 
-  mutable boost::mutex m_sizeLock;
   size_t m_dataSize;   // record sum of all pages' size
                        // this will not include unload data size
-
-  mutable boost::mutex m_cacheSizeLock;
   size_t m_cacheSize;  // record sum of all pages' size
                        // stored in cache not including disk file
 
-  mutable boost::mutex m_useDiskFileLock;
   bool m_useDiskFile;  // use disk file when no free cache space
 
-  mutable boost::mutex m_openLock;
   bool m_open;         // file open/close state
-
-  boost::mutex m_clearLock;  // clear file
 
   mutable boost::recursive_mutex m_mutex;
   PageSet m_pages;              // a set of pages suppose to be successive

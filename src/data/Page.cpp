@@ -176,6 +176,7 @@ bool Page::UseDiskFileNoLock() {
 
 // --------------------------------------------------------------------------
 void Page::UnguardedPutToBody(off_t offset, size_t len, const char *buffer) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   if (!m_body) {
     DebugError("null body stream " + ToStringLine(offset, len, buffer));
     return;
@@ -206,7 +207,8 @@ void Page::UnguardedPutToBody(off_t offset, size_t len, const char *buffer) {
 // --------------------------------------------------------------------------
 void Page::UnguardedPutToBody(off_t offset, size_t len,
                               const shared_ptr<iostream> &instream) {
-  if(len == 0) {
+  lock_guard<recursive_mutex> lock(m_mutex);
+  if (len == 0) {
     return;
   }
   size_t instreamLen = GetStreamSize(instream);
@@ -307,6 +309,7 @@ bool Page::Refresh(off_t offset, size_t len, const char *buffer,
 // --------------------------------------------------------------------------
 bool Page::UnguardedRefresh(off_t offset, size_t len, const char *buffer,
                             const string &diskfile) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   size_t moreLen = offset + len - Next();
   size_t dataLen = moreLen > 0 ? m_size + moreLen : m_size;
   shared_ptr<IOStream> data = make_shared<IOStream>(dataLen);
@@ -387,6 +390,7 @@ size_t Page::Read(off_t offset, size_t len, char *buffer) {
 
 // --------------------------------------------------------------------------
 size_t Page::UnguardedRead(off_t offset, size_t len, char *buffer) {
+  lock_guard<recursive_mutex> lock(m_mutex);  
   if (!m_body) {
     DebugError("null body stream " + ToStringLine(offset, len, buffer));
     return 0;
