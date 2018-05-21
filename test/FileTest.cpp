@@ -186,6 +186,10 @@ class FileTest : public Test {
     d2.push_back(make_pair(len1 + len2, holeLen));
     d2.push_back(make_pair(off3 + len3, 1));
     EXPECT_EQ(file1.GetUnloadedRanges(0, off3 + len3 + 1), d2);
+    ContentRangeDeque d3;
+    d3.push_back(make_pair(len1 + len2, 1));
+    EXPECT_EQ(file1.GetUnloadedRanges(len1 + len2, 1), d3);
+    EXPECT_FALSE(file1.HasData(len1 + len2, 1));
 
     EXPECT_TRUE(file1.LowerBoundPage(len1 + len2 + len3) == --file1.EndPage());
     EXPECT_TRUE(file1.LowerBoundPage(off3) == --file1.EndPage());

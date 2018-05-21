@@ -193,6 +193,7 @@ ContentRangeDeque File::GetUnloadedRanges(off_t start, size_t size) const {
       IntesectingRange(start, stop);
 
   if (range.first == range.second) {
+    ranges.push_back(make_pair(start, size));
     return ranges;
   }
 
@@ -200,7 +201,7 @@ ContentRangeDeque File::GetUnloadedRanges(off_t start, size_t size) const {
   PageSetConstIterator next = range.first;
   while (++next != range.second) {
     if ((*cur)->Next() < (*next)->Offset()) {
-      if ((*next)->Offset() > static_cast<off_t>(size)) {
+      if ((*next)->Offset() > stop) {
         break;
       }
       off_t off = (*cur)->Next();
@@ -604,6 +605,10 @@ void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
                  bool async) {
   DebugInfo("[filesize:" + to_string(fileSize) + "]" +
             FormatPath(GetFilePath()));
+  if (!transferManager || !dirTree || !cache) {
+    DebugWarning("Invalid input");
+    return;
+  }
   lock_guard<recursive_mutex> lock(m_mutex);
   // download unloaded pages for file
   // this is need as user could open a file and edit a part of it,
