@@ -36,10 +36,19 @@ FILE_NEW="$QSFS_TEST_RUN_DIR/$FILE_NAME_NEW"
   mv ${FILE_} ${FILE_NEW}
 ) > ${FILE_}
 
-if ! cmp <(echo foo) ${FILE_NEW}; then
+# wait & verify
+TRY_COUNT=3
+while true; do
+  if cmp <(echo foo) ${FILE_NEW}; then
+    break;
+  fi
+  let TRY_COUNT--
+  if [ $TRY_COUNT -le 0 ]; then
     echo "Error: ${FILE_} rename before close failed"
     exit 1
-fi
+  fi
+  sleep 1
+done
 
 rm_test_file "${FILE_NAME_NEW}"
 rm -f ${FILE_}

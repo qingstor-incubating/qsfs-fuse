@@ -27,7 +27,7 @@ source "$current_path/utils.sh"
 WORK_DIR_NAME="make_remove_file_parallel"
 mk_test_dir ${WORK_DIR_NAME}
 
-THREADS=10
+THREADS=5
 TEST_PREFIX="${WORK_DIR_NAME}/file"
 
 mk_test_file_parallel ${THREADS} ${TEST_PREFIX}

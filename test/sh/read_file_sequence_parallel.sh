@@ -28,7 +28,7 @@ WORK_DIR_NAME="read_file_sequence_parallel"
 mk_test_dir ${WORK_DIR_NAME}
 
 FILE_NAME="${WORK_DIR_NAME}/sequence_read_file_parallel.txt"
-FILE_SIZE=15
+FILE_SIZE=10
 
 # create a file at first
 # append numbers (from 1 to file_size) to a file

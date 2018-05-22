@@ -28,8 +28,8 @@ WORK_DIR_NAME="read_file_random_parallel"
 mk_test_dir ${WORK_DIR_NAME}
 
 FILE_NAME="${WORK_DIR_NAME}/random_read_file_parallel.txt"
-MAX_NUM=20
-THREADS=6
+MAX_NUM=10
+THREADS=5
 
 # creat a file at first
 append_test_file $FILE_NAME $MAX_NUM

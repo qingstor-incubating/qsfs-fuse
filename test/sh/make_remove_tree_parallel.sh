@@ -31,7 +31,7 @@ if [ -d $DIR_TREE ]; then
 fi
 mkdir $DIR_TREE && cd $DIR_TREE
 
-BASE=5
+BASE=3
 # create tree in parallel
 (
   for i in $(seq 1 $BASE); do

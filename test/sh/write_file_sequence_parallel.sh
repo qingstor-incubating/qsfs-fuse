@@ -28,7 +28,7 @@ cd $QSFS_TEST_RUN_DIR
 WORK_DIR_NAME="write_file_sequence_parallel"
 mk_test_dir ${WORK_DIR_NAME}
 
-THREADS=50
+THREADS=20
 FILENAME_TXT="${WORK_DIR_NAME}/write-sequence-parallel.txt"
 
 append_test_file_parallel $FILENAME_TXT $THREADS
