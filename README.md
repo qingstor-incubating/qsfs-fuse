@@ -107,7 +107,7 @@ Supported general options are listed as following,
 | -R | --reqtimeout  | integer | N | Specify time (seconds) to wait before giving up connection, default value is `300 seconds`
 | -Z | --maxcache    | integer | N | Specify max in-memory cache size (MB) for files, default value is `200 MB`
 | -k | --diskdir     | string  | N | Specify the directory to store file data when in-memory cache is not availabe, default path is `/tmp/qsfs_cache/`
-| -t | --maxstat     | integer | N | Specify max count (K) of cached stat entrys, default value is `20 K`
+| -t | --maxstat     | integer | N | Specify max count (K) of cached stat entrys, default value is `2 K`
 | -e | --statexpire  | integer | N | Specify expire time (minutes) for stat entries, negative value will disable stat expire, default is no expire
 | -i | --maxlist     | integer | N | Specify max count of files of ls operation. A value of zero will list all files, default is to list all files
 | -n | --numtransfer | integer | N | Specify max number file tranfers to run in parallel, you can increase the value when transfer large files, default value is `5`

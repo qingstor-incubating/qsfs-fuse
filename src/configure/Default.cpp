@@ -103,7 +103,7 @@ uint64_t GetMaxCacheSize() {
 }
 
 size_t GetMaxStatCount() {
-  return QS::Size::K20;  // default value
+  return QS::Size::K2;  // default value
 }
 
 uint16_t GetMaxListObjectsCount() {
