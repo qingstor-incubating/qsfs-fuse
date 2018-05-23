@@ -14,6 +14,7 @@ option (REGISTER_BUILD_DIR "Request entry of build directory in CMake's package 
 option (UPDATE_CONNECT     "Update automatically from the remote repository." OFF)
 set (MOUNT_POINT "" CACHE STRING "Mount point (full path) to run integration test.")
 set (BUCKET_NAME "" CACHE STRING "Bucket name to run integration test.")
+set (ZONE "" CACHE STRING "Zone name to run integration test.")
 if (BUILD_INTEGRATION_TESTING)
   # check if directory of mount point exist
   # notes it should be a full path
@@ -22,7 +23,10 @@ if (BUILD_INTEGRATION_TESTING)
   endif()
 
   if ("${BUCKET_NAME}" STREQUAL "")
-    message (FATAL_ERROR "Bucket name for integration test is empty, please given an existing bucket name (in pek3a).")
+    message (FATAL_ERROR "Bucket name for integration test is empty, please given an existing bucket name.")
+  endif()
+  if ("${ZONE}" STREQUAL "")
+    message (FATAL_ERROR "Zone name for integration test is empty, please given an existing zone name, such as sh1a, pek3a, etc.")
   endif()
 endif (BUILD_INTEGRATION_TESTING)
 

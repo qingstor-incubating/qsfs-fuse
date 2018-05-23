@@ -36,7 +36,7 @@ echo "mount to ${MOUNT_POINT}"
 
 set -x
 qsfs ${QSFS_TEST_BUCKET} ${MOUNT_POINT} \
-  -z=pek3a \
+  -z=${QSFS_TEST_ZONE} \
   -l=/tmp/qsfs_integration_test_log \
   -L=INFO \
   -C \
