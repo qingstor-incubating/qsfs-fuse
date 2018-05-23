@@ -96,6 +96,7 @@ class FileOpener : private boost::noncopyable {
 // --------------------------------------------------------------------------
 Page::Page(off_t offset, size_t len, const char *buffer)
     : m_offset(offset), m_size(len), m_body(make_shared<IOStream>(len)) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   bool isValidInput = offset >= 0 && len >= 0 && buffer != NULL;
   assert(isValidInput);
   if (!isValidInput) {
@@ -104,13 +105,13 @@ Page::Page(off_t offset, size_t len, const char *buffer)
     return;
   }
 
-  lock_guard<recursive_mutex> lock(m_mutex);
   UnguardedPutToBody(offset, len, buffer);
 }
 
 // --------------------------------------------------------------------------
 Page::Page(off_t offset, size_t len, const char *buffer, const string &diskfile)
     : m_offset(offset), m_size(len), m_diskFile(diskfile) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   bool isValidInput = offset >= 0 && len >= 0 && buffer != NULL;
   assert(isValidInput);
   if (!isValidInput) {
@@ -119,7 +120,6 @@ Page::Page(off_t offset, size_t len, const char *buffer, const string &diskfile)
     return;
   }
 
-  lock_guard<recursive_mutex> lock(m_mutex);
   if (SetupDiskFile()) {
     UnguardedPutToBody(offset, len, buffer);
   }
@@ -128,6 +128,7 @@ Page::Page(off_t offset, size_t len, const char *buffer, const string &diskfile)
 // --------------------------------------------------------------------------
 Page::Page(off_t offset, size_t len, const shared_ptr<iostream> &instream)
     : m_offset(offset), m_size(len), m_body(make_shared<IOStream>(len)) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   bool isValidInput = offset >= 0 && len >= 0 && instream;
   assert(isValidInput);
   if (!isValidInput) {
@@ -136,7 +137,6 @@ Page::Page(off_t offset, size_t len, const shared_ptr<iostream> &instream)
     return;
   }
 
-  lock_guard<recursive_mutex> lock(m_mutex);
   UnguardedPutToBody(offset, len, instream);
 }
 
@@ -144,6 +144,7 @@ Page::Page(off_t offset, size_t len, const shared_ptr<iostream> &instream)
 Page::Page(off_t offset, size_t len, const shared_ptr<iostream> &instream,
            const string &diskfile)
     : m_offset(offset), m_size(len), m_diskFile(diskfile) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   bool isValidInput = offset >= 0 && len > 0 && instream;
   assert(isValidInput);
   if (!isValidInput) {
@@ -152,7 +153,6 @@ Page::Page(off_t offset, size_t len, const shared_ptr<iostream> &instream,
     return;
   }
 
-  lock_guard<recursive_mutex> lock(m_mutex);
   if (SetupDiskFile()) {
     UnguardedPutToBody(offset, len, instream);
   }
@@ -290,6 +290,7 @@ void Page::ResizeToSmallerSize(size_t smallerSize) {
 // --------------------------------------------------------------------------
 bool Page::Refresh(off_t offset, size_t len, const char *buffer,
                    const string &diskfile) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   if (len == 0) {
     return true;  // do nothing
   }
@@ -302,7 +303,6 @@ bool Page::Refresh(off_t offset, size_t len, const char *buffer,
     return false;
   }
 
-  lock_guard<recursive_mutex> lock(m_mutex);
   return UnguardedRefresh(offset, len, buffer, diskfile);
 }
 
@@ -372,6 +372,7 @@ bool Page::UnguardedRefresh(off_t offset, size_t len, const char *buffer,
 
 // --------------------------------------------------------------------------
 size_t Page::Read(off_t offset, size_t len, char *buffer) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   if (len == 0) {
     return 0;  // do nothing
   }
@@ -384,7 +385,6 @@ size_t Page::Read(off_t offset, size_t len, char *buffer) {
                "Try to read page (" + ToStringLine(m_offset, m_size) +
                ") with invalid input " + ToStringLine(offset, len, buffer));
 
-  lock_guard<recursive_mutex> lock(m_mutex);
   return UnguardedRead(offset, len, buffer);
 }
 

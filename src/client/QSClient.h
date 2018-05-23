@@ -37,6 +37,7 @@ namespace QS {
 namespace Data {
 class Cache;
 class DirectoryTree;
+class FileMetaData;
 }  // namespace Data
 
 namespace Client {
@@ -202,6 +203,8 @@ class QSClient : public Client {
       const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
       time_t modifiedSince = 0, bool *modified = NULL);
 
+  boost::shared_ptr<QS::Data::FileMetaData> GetObjectMeta(
+      const std::string &path);
   // Get information about mounted bucket
   //
   // @param  : *stvfs(output)

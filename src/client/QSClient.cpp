@@ -750,6 +750,19 @@ ClientError<QSError::Value> QSClient::Stat(
 }
 
 // --------------------------------------------------------------------------
+shared_ptr<FileMetaData> QSClient::GetObjectMeta(const std::string &path) {
+  HeadObjectInput input;
+
+  HeadObjectOutcome outcome = GetQSClientImpl()->HeadObject(path, &input);
+  if (outcome.IsSuccess()) {
+    HeadObjectOutput &res = outcome.GetResult();
+    return QSClientConverter::HeadObjectOutputToFileMetaData(path, res);
+  } else {
+    return shared_ptr<FileMetaData>();
+  }
+}
+
+// --------------------------------------------------------------------------
 ClientError<QSError::Value> QSClient::Statvfs(struct statvfs *stvfs) {
   assert(stvfs != NULL);
   if (stvfs == NULL) {
@@ -772,87 +785,87 @@ ClientError<QSError::Value> QSClient::Statvfs(struct statvfs *stvfs) {
 const shared_ptr<QsConfig> &QSClient::GetQingStorConfig() {
   StartQSService();
   return m_qingStorConfig;
-}
-
-// --------------------------------------------------------------------------
-const shared_ptr<QSClientImpl> &QSClient::GetQSClientImpl() const {
-  return const_cast<QSClient *>(this)->GetQSClientImpl();
-}
-
-// --------------------------------------------------------------------------
-shared_ptr<QSClientImpl> &QSClient::GetQSClientImpl() {
-  call_once(onceFlagGetClientImpl,
-            bind(boost::type<void>(), &QSClient::DoGetQSClientImpl, this));
-  return m_qsClientImpl;
-}
-
-// --------------------------------------------------------------------------
-void QSClient::DoGetQSClientImpl() {
-  shared_ptr<ClientImpl> r = GetClientImpl();
-  assert(r);
-  FatalIf(!r, "QSClient is initialized with null QSClientImpl");
-  QSClientImpl *p = dynamic_cast<QSClientImpl *>(r.get());
-  m_qsClientImpl = shared_ptr<QSClientImpl>(r, p);
-}
-
-// --------------------------------------------------------------------------
-void QSClient::StartQSService() {
-  call_once(onceFlagStartService, QSClient::DoStartQSService);
-}
-
-// --------------------------------------------------------------------------
-void QSClient::DoStartQSService() {
-  const ClientConfiguration &clientConfig = ClientConfiguration::Instance();
-  // sdk log level
-  LogLevel sdkLogLevel;
-  if (clientConfig.GetClientLogLevel() == ClientLogLevel::Verbose) {
-    sdkLogLevel = Verbose;
-  } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Debug) {
-    sdkLogLevel = Debug;
-  } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Info) {
-    sdkLogLevel = Info;
-  } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Warn) {
-    sdkLogLevel = Warning;
-  } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Error) {
-    sdkLogLevel = Error;
-  } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Fatal) {
-    sdkLogLevel = Fatal;
-  } else {
-    sdkLogLevel = Warning;  // default
   }
-  m_sdkOptions.logLevel = sdkLogLevel;
-  m_sdkOptions.logPath = GetSDKLogDir();
-  InitializeSDK(m_sdkOptions);
 
-  // sdk config
-  m_qingStorConfig = shared_ptr<QsConfig>(
-      new QsConfig(clientConfig.GetAccessKeyId(), clientConfig.GetSecretKey()));
+  // --------------------------------------------------------------------------
+  const shared_ptr<QSClientImpl> &QSClient::GetQSClientImpl() const {
+    return const_cast<QSClient *>(this)->GetQSClientImpl();
+  }
 
-  m_qingStorConfig->additionalUserAgent = clientConfig.GetAdditionalAgent();
-  m_qingStorConfig->host = clientConfig.GetHost();
-  m_qingStorConfig->protocol =
-      Http::ProtocolToString(clientConfig.GetProtocol());
-  m_qingStorConfig->port = clientConfig.GetPort();
-  m_qingStorConfig->connectionRetries = clientConfig.GetTransactionRetries();
-  // timeoutPeriod is for one connection duration
-  m_qingStorConfig->timeOutPeriod = clientConfig.GetConnectTimeOut();
-  // QSClient has not count on the retry strategy, instead QSClient count on
-  // qingstor sdk retry policy
-}
+  // --------------------------------------------------------------------------
+  shared_ptr<QSClientImpl> &QSClient::GetQSClientImpl() {
+    call_once(onceFlagGetClientImpl,
+              bind(boost::type<void>(), &QSClient::DoGetQSClientImpl, this));
+    return m_qsClientImpl;
+  }
 
-// --------------------------------------------------------------------------
-void QSClient::CloseQSService() { ShutdownSDK(m_sdkOptions); }
+  // --------------------------------------------------------------------------
+  void QSClient::DoGetQSClientImpl() {
+    shared_ptr<ClientImpl> r = GetClientImpl();
+    assert(r);
+    FatalIf(!r, "QSClient is initialized with null QSClientImpl");
+    QSClientImpl *p = dynamic_cast<QSClientImpl *>(r.get());
+    m_qsClientImpl = shared_ptr<QSClientImpl>(r, p);
+  }
 
-// --------------------------------------------------------------------------
-void QSClient::InitializeClientImpl() {
-  const ClientConfiguration &clientConfig = ClientConfiguration::Instance();
-  if (GetQSClientImpl()->GetBucket()) return;
-  GetQSClientImpl()->SetBucket(shared_ptr<Bucket>(new Bucket(
-      *m_qingStorConfig, clientConfig.GetBucket(), clientConfig.GetZone())));
-}
+  // --------------------------------------------------------------------------
+  void QSClient::StartQSService() {
+    call_once(onceFlagStartService, QSClient::DoStartQSService);
+  }
 
-shared_ptr<QingStor::QsConfig> QSClient::m_qingStorConfig;
-QingStor::SDKOptions QSClient::m_sdkOptions;
+  // --------------------------------------------------------------------------
+  void QSClient::DoStartQSService() {
+    const ClientConfiguration &clientConfig = ClientConfiguration::Instance();
+    // sdk log level
+    LogLevel sdkLogLevel;
+    if (clientConfig.GetClientLogLevel() == ClientLogLevel::Verbose) {
+      sdkLogLevel = Verbose;
+    } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Debug) {
+      sdkLogLevel = Debug;
+    } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Info) {
+      sdkLogLevel = Info;
+    } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Warn) {
+      sdkLogLevel = Warning;
+    } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Error) {
+      sdkLogLevel = Error;
+    } else if (clientConfig.GetClientLogLevel() == ClientLogLevel::Fatal) {
+      sdkLogLevel = Fatal;
+    } else {
+      sdkLogLevel = Warning;  // default
+    }
+    m_sdkOptions.logLevel = sdkLogLevel;
+    m_sdkOptions.logPath = GetSDKLogDir();
+    InitializeSDK(m_sdkOptions);
+
+    // sdk config
+    m_qingStorConfig = shared_ptr<QsConfig>(new QsConfig(
+        clientConfig.GetAccessKeyId(), clientConfig.GetSecretKey()));
+
+    m_qingStorConfig->additionalUserAgent = clientConfig.GetAdditionalAgent();
+    m_qingStorConfig->host = clientConfig.GetHost();
+    m_qingStorConfig->protocol =
+        Http::ProtocolToString(clientConfig.GetProtocol());
+    m_qingStorConfig->port = clientConfig.GetPort();
+    m_qingStorConfig->connectionRetries = clientConfig.GetTransactionRetries();
+    // timeoutPeriod is for one connection duration
+    m_qingStorConfig->timeOutPeriod = clientConfig.GetConnectTimeOut();
+    // QSClient has not count on the retry strategy, instead QSClient count on
+    // qingstor sdk retry policy
+  }
+
+  // --------------------------------------------------------------------------
+  void QSClient::CloseQSService() { ShutdownSDK(m_sdkOptions); }
+
+  // --------------------------------------------------------------------------
+  void QSClient::InitializeClientImpl() {
+    const ClientConfiguration &clientConfig = ClientConfiguration::Instance();
+    if (GetQSClientImpl()->GetBucket()) return;
+    GetQSClientImpl()->SetBucket(shared_ptr<Bucket>(new Bucket(
+        *m_qingStorConfig, clientConfig.GetBucket(), clientConfig.GetZone())));
+  }
+
+  shared_ptr<QingStor::QsConfig> QSClient::m_qingStorConfig;
+  QingStor::SDKOptions QSClient::m_sdkOptions;
 
 }  // namespace Client
 }  // namespace QS

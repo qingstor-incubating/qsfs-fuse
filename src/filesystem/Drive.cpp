@@ -452,7 +452,7 @@ void Drive::OpenFile(const string &filePath, bool async) {
   if (file) {
     file->SetOpen(true, m_directoryTree);
     file->Load(0, node->GetFileSize(), m_transferManager, m_directoryTree,
-               m_cache, async);
+               m_cache, m_client, async);
   } else {
     Error("File not exists in cache " + FormatPath(filePath));
   }
@@ -490,7 +490,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
   shared_ptr<File> file = m_cache->FindFile(filePath);
   if (file) {
     pair<size_t, ContentRangeDeque> outcome = file->Read(
-        offset, readSize, buf, m_transferManager, m_directoryTree, m_cache);
+        offset, readSize, buf, m_transferManager, m_directoryTree, m_cache, m_client);
     if (outcome.first == 0) {
       DebugWarning("Read no bytes [offset:" + to_string(offset) + ", len:" +
                    to_string(size) + "] " + FormatPath(filePath));
@@ -501,7 +501,7 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     }
     if (remainingSize > 0) {  // prefecth
       file->Load(0, node->GetFileSize(), m_transferManager, m_directoryTree,
-                 m_cache, async);
+                 m_cache, m_client, async);
     }
     return outcome.first;
   } else {

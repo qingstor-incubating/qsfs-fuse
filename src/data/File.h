@@ -141,7 +141,8 @@ class File : private boost::noncopyable {
       off_t offset, size_t len, char *buf,
       boost::shared_ptr<QS::Client::TransferManager> transferManager,
       boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
-      boost::shared_ptr<QS::Data::Cache> cache);
+      boost::shared_ptr<QS::Data::Cache> cache,
+      boost::shared_ptr<QS::Client::Client> client);
 
   // For internal use
   // Read from the cache with no load
@@ -200,7 +201,8 @@ class File : private boost::noncopyable {
   void Load(off_t offset, size_t size,
             boost::shared_ptr<QS::Client::TransferManager> transferManager,
             boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
-            boost::shared_ptr<QS::Data::Cache> cache, bool async = false);
+            boost::shared_ptr<QS::Data::Cache> cache,
+            boost::shared_ptr<QS::Client::Client> client, bool async = false);
 
   // Truncate
   void Truncate(

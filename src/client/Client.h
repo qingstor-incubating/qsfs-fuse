@@ -41,6 +41,7 @@ namespace QS {
 namespace Data {
 class Cache;
 class DirectoryTree;
+class FileMetaData;
 }  // namespace Data
 
 namespace FileSystem {
@@ -209,6 +210,9 @@ class Client : private boost::noncopyable {
       const std::string &path,
       const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
       time_t modifiedSince = 0, bool *modified = NULL) = 0;
+
+  virtual boost::shared_ptr<QS::Data::FileMetaData> GetObjectMeta(
+      const std::string &path) = 0;
 
   // Get information about mounted bucket
   //

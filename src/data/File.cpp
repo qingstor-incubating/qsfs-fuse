@@ -118,7 +118,7 @@ File::File(const string &filePath, size_t size)
 File::~File() {
   // As pages using disk file will reference to the same disk file, so File
   // should manage the life cycle of the disk file.
-   RemoveDiskFileIfExists(false);  // log off
+  RemoveDiskFileIfExists(false);  // log off
 }
 
 // --------------------------------------------------------------------------
@@ -252,19 +252,21 @@ string File::ToString() const {
 pair<size_t, ContentRangeDeque> File::Read(
     off_t offset, size_t len, char *buf,
     shared_ptr<TransferManager> transferManager,
-    shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache) {
+    shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
+    shared_ptr<Client> client) {
   lock_guard<recursive_mutex> lock(m_mutex);
   DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
             FormatPath(GetFilePath()));
-  Load(offset, len, transferManager, dirTree, cache, false);
+  Load(offset, len, transferManager, dirTree, cache, client, false);
   return ReadNoLoad(offset, len, buf);
 }
 
 // --------------------------------------------------------------------------
 pair<size_t, ContentRangeDeque> File::ReadNoLoad(off_t offset, size_t len,
                                                  char *buf) const {
-  DebugInfo("[offset:" + to_string(offset) + ", len:" +
-            to_string(len) + "] " + FormatPath(GetFilePath()));
+  lock_guard<recursive_mutex> lock(m_mutex);
+  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
+            FormatPath(GetFilePath()));
   if (buf != NULL) {
     memset(buf, 0, len);
   }
@@ -282,55 +284,51 @@ pair<size_t, ContentRangeDeque> File::ReadNoLoad(off_t offset, size_t len,
     return make_pair(readSize, unloadedRanges);
   }
 
-  {
-    lock_guard<recursive_mutex> lock(m_mutex);
+  // If pages is empty.
+  if (m_pages.empty()) {
+    unloadedRanges.push_back(make_pair(offset, len));
+    return make_pair(readSize, unloadedRanges);
+  }
 
-    // If pages is empty.
-    if (m_pages.empty()) {
-      unloadedRanges.push_back(make_pair(offset, len));
-      return make_pair(readSize, unloadedRanges);
-    }
-
-    pair<PageSetConstIterator, PageSetConstIterator> range =
-        IntesectingRange(offset, offset + len);
-    PageSetConstIterator it1 = range.first;
-    PageSetConstIterator it2 = range.second;
-    off_t offset_ = offset;
-    size_t len_ = len;
-    // For pages which are not completely ahead of 'offset'
-    // but ahead of 'offset + len'.
-    while (it1 != it2) {
-      if (len_ <= 0) break;
-      const shared_ptr<Page> &page = *it1;
-      if (offset_ < page->m_offset) {
-        // Add unloaded page for bytes not present
-        size_t lenNewPage = static_cast<size_t>(page->m_offset - offset_);
-        unloadedRanges.push_back(make_pair(offset_, lenNewPage));
-        offset_ = page->m_offset;
-        len_ -= lenNewPage;
-      } else {  // Collect existing pages.
-        if (len_ <= static_cast<size_t>(page->Next() - offset_)) {
-          if (buf != NULL) {
-            page->Read(offset_, len_, buf + offset_ - offset);
-          }
-          readSize += len_;
-          return make_pair(readSize, unloadedRanges);
-        } else {
-          if (buf != NULL) {
-            page->Read(offset_, buf + offset_ - offset);
-          }
-          readSize += page->Next() - offset_;
-          len_ -= page->Next() - offset_;
-          offset_ = page->Next();
-          ++it1;
+  pair<PageSetConstIterator, PageSetConstIterator> range =
+      IntesectingRange(offset, offset + len);
+  PageSetConstIterator it1 = range.first;
+  PageSetConstIterator it2 = range.second;
+  off_t offset_ = offset;
+  size_t len_ = len;
+  // For pages which are not completely ahead of 'offset'
+  // but ahead of 'offset + len'.
+  while (it1 != it2) {
+    if (len_ <= 0) break;
+    const shared_ptr<Page> &page = *it1;
+    if (offset_ < page->m_offset) {
+      // Add unloaded page for bytes not present
+      size_t lenNewPage = static_cast<size_t>(page->m_offset - offset_);
+      unloadedRanges.push_back(make_pair(offset_, lenNewPage));
+      offset_ = page->m_offset;
+      len_ -= lenNewPage;
+    } else {  // Collect existing pages.
+      if (len_ <= static_cast<size_t>(page->Next() - offset_)) {
+        if (buf != NULL) {
+          page->Read(offset_, len_, buf + offset_ - offset);
         }
+        readSize += len_;
+        return make_pair(readSize, unloadedRanges);
+      } else {
+        if (buf != NULL) {
+          page->Read(offset_, buf + offset_ - offset);
+        }
+        readSize += page->Next() - offset_;
+        len_ -= page->Next() - offset_;
+        offset_ = page->Next();
+        ++it1;
       }
-    }  // end of while
-    // Add unloaded range for bytes not present.
-    if (len_ > 0) {
-      unloadedRanges.push_back(make_pair(offset_, len_));
     }
-  }  // end of lock_guard
+  }  // end of while
+  // Add unloaded range for bytes not present.
+  if (len_ > 0) {
+    unloadedRanges.push_back(make_pair(offset_, len_));
+  }
 
   return make_pair(readSize, unloadedRanges);
 }
@@ -339,9 +337,9 @@ pair<size_t, ContentRangeDeque> File::ReadNoLoad(off_t offset, size_t len,
 tuple<bool, size_t, size_t> File::Write(
     off_t offset, size_t len, const char *buffer,
     const shared_ptr<DirectoryTree> &dirTree, const shared_ptr<Cache> &cache) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
             FormatPath(GetFilePath()));
-  lock_guard<recursive_mutex> lock(m_mutex);
   if (PreWrite(len, cache)) {
     tuple<bool, size_t, size_t> res = DoWrite(offset, len, buffer);
     bool success = boost::get<0>(res);
@@ -358,9 +356,9 @@ tuple<bool, size_t, size_t> File::Write(
 tuple<bool, size_t, size_t> File::Write(
     off_t offset, size_t len, const shared_ptr<iostream> &stream,
     const shared_ptr<DirectoryTree> &dirTree, const shared_ptr<Cache> &cache) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
             FormatPath(GetFilePath()));
-  lock_guard<recursive_mutex> lock(m_mutex);
   if (PreWrite(len, cache)) {
     tuple<bool, size_t, size_t> res = DoWrite(offset, len, stream);
     bool success = boost::get<0>(res);
@@ -423,6 +421,7 @@ void File::PostWrite(off_t offset, size_t len, size_t addedCacheSize,
 // --------------------------------------------------------------------------
 tuple<bool, size_t, size_t> File::DoWrite(off_t offset, size_t len,
                                           const char *buffer) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   bool isValidInput = offset >= 0 && len >= 0 && buffer != NULL;
   assert(isValidInput);
   if (!isValidInput) {
@@ -433,8 +432,6 @@ tuple<bool, size_t, size_t> File::DoWrite(off_t offset, size_t len,
   if (len == 0) {
     return make_tuple(true, 0, 0);
   }
-
-  lock_guard<recursive_mutex> lock(m_mutex);
 
   size_t addedSizeInCache = 0;
   size_t addedSize = 0;
@@ -518,6 +515,7 @@ tuple<bool, size_t, size_t> File::DoWrite(off_t offset, size_t len,
 // --------------------------------------------------------------------------
 tuple<bool, size_t, size_t> File::DoWrite(off_t offset, size_t len,
                                           const shared_ptr<iostream> &stream) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   size_t streamsize = GetStreamSize(stream);
   assert(len <= streamsize);
   if (!(len <= streamsize)) {
@@ -527,7 +525,6 @@ tuple<bool, size_t, size_t> File::DoWrite(off_t offset, size_t len,
         GetFilePath() + ", len:" + to_string(len) + "]");
     return make_tuple(false, 0, 0);
   }
-  lock_guard<recursive_mutex> lock(m_mutex);
   if (m_pages.empty()) {
     tuple<PageSetConstIterator, bool, size_t, size_t> res =
         UnguardedAddPage(offset, len, stream);
@@ -603,17 +600,17 @@ void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
                  shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
                  shared_ptr<Client> client, bool releaseFile, bool updateMeta,
                  bool async) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   DebugInfo("[filesize:" + to_string(fileSize) + "]" +
             FormatPath(GetFilePath()));
   if (!transferManager || !dirTree || !cache) {
     DebugWarning("Invalid input");
     return;
   }
-  lock_guard<recursive_mutex> lock(m_mutex);
   // download unloaded pages for file
   // this is need as user could open a file and edit a part of it,
   // but you need the completed file in order to upload it.
-  Load(0, fileSize, transferManager, dirTree, cache, async);
+  Load(0, fileSize, transferManager, dirTree, cache, client, async);
 
   if (releaseFile) {
     SetOpen(false, dirTree);
@@ -636,16 +633,44 @@ void File::Flush(size_t fileSize, shared_ptr<TransferManager> transferManager,
 void File::Load(off_t offset, size_t size,
                 shared_ptr<TransferManager> transferManager,
                 shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
-                bool async) {
+                shared_ptr<Client> client, bool async) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(size) + "] " +
             FormatPath(GetFilePath()));
-  lock_guard<recursive_mutex> lock(m_mutex);
-  ContentRangeDeque ranges = GetUnloadedRanges(offset, size);
+  if (size == 0) {
+    return;
+  }
+
+  // head real size
+  uint64_t relSize;
+  shared_ptr<FileMetaData> fileMeta = client->GetObjectMeta(GetFilePath());
+  if (fileMeta) {
+    relSize = fileMeta->m_fileSize;
+  }
+
+  // download unloaded ranges
+  size_t sizeT = relSize > size ? size : relSize;
+  ContentRangeDeque ranges = GetUnloadedRanges(offset, sizeT);
   if (!ranges.empty()) {
     DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
               ", file:" + ToString());
-
     DownloadRanges(ranges, transferManager, dirTree, cache, async);
+  }
+
+  // if size surpass real size, fill it
+  if (size > relSize) {
+    ContentRangeDeque ranges = GetUnloadedRanges(sizeT, size - sizeT);
+    if (!ranges.empty()) {
+      BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
+        off_t offset = range.first;
+        size_t len = range.second;
+        // fill hole
+        vector<char> hole(len);  // value initialization with '\0'
+        DebugInfo("Fill hole [offset:" + to_string(offset) +
+                  ", len:" + to_string(len) + "] " + FormatPath(GetFilePath()));
+        Write(offset, len, &hole[0], dirTree, cache);
+      }
+    }
   }
 }
 
@@ -655,8 +680,8 @@ void File::Truncate(size_t newSize,
                     const shared_ptr<DirectoryTree> &dirTree,
                     const shared_ptr<Cache> &cache,
                     const shared_ptr<Client> &client) {
-  DebugInfo(to_string(newSize));
   lock_guard<recursive_mutex> lock(m_mutex);
+  DebugInfo(to_string(newSize));
   size_t oldFileSize = GetSize();
   if (newSize == oldFileSize) {
     return;
@@ -675,7 +700,7 @@ void File::Truncate(size_t newSize,
       size_t lastPageSize = (*lastPage)->Size();
       if (newSize <= (*lastPage)->Offset()) {
         if (!(*lastPage)->UseDiskFile()) {
-          m_cacheSize -=lastPageSize;
+          m_cacheSize -= lastPageSize;
         }
         m_dataSize -= lastPageSize;
         m_pages.erase(lastPage);
@@ -687,7 +712,7 @@ void File::Truncate(size_t newSize,
         // Do a lazy remove for last page.
         (*lastPage)->ResizeToSmallerSize(lastPageSize - delta);
         if (!(*lastPage)->UseDiskFile()) {
-          m_cacheSize -=delta;
+          m_cacheSize -= delta;
         }
         m_dataSize -= delta;
         // Lazy remove, no size change to cache
@@ -695,8 +720,9 @@ void File::Truncate(size_t newSize,
       }
     }
 
-    // If file has unloaded pages, add a dummy pages inorder to maintain file size
-    if(newSize > GetSize()) {
+    // If file has unloaded pages, add a dummy pages inorder to maintain file
+    // size
+    if (newSize > GetSize()) {
       const char *dummy = "";
       m_pages.insert(shared_ptr<Page>(new Page(newSize, 0, dummy)));
     }
@@ -718,7 +744,6 @@ void File::Truncate(size_t newSize,
                  to_string(GetSize()) + FormatPath(GetFilePath()));
   }
 }
-
 
 // --------------------------------------------------------------------------
 void File::Rename(const std::string &newFilePath) {
@@ -835,8 +860,7 @@ struct DownloadRangeCallback {
                         size_t downloadSize_,
                         const shared_ptr<IOStream> &stream_,
                         const shared_ptr<Cache> &cache_,
-                        const shared_ptr<DirectoryTree> &dirTree_,
-                        File *file_)
+                        const shared_ptr<DirectoryTree> &dirTree_, File *file_)
       : filePath(filePath_),
         offset(offset_),
         downloadSize(downloadSize_),
@@ -853,12 +877,13 @@ struct DownloadRangeCallback {
           tuple<bool, size_t, size_t> res =
               file->Write(offset, downloadSize, stream, dirTree, cache);
           ErrorIf(!boost::get<0>(res),
-                  "Fail to write cache [file:" + filePath + ", offset:" +
-                      to_string(offset) + ", len:" + to_string(downloadSize) + "]");
+                  "Fail to write cache [file:" + filePath +
+                      ", offset:" + to_string(offset) +
+                      ", len:" + to_string(downloadSize) + "]");
         }
       } else {
-        string msg = "Fail to download [offset:" + to_string(offset) + ", len:" +
-                     to_string(downloadSize) + "]";
+        string msg = "Fail to download [offset:" + to_string(offset) +
+                     ", len:" + to_string(downloadSize) + "]";
         if (file) {
           msg += file->ToString();
         }
@@ -887,6 +912,7 @@ void File::DownloadRange(off_t offset, size_t size,
                          shared_ptr<TransferManager> transferManager,
                          shared_ptr<DirectoryTree> dirTree,
                          shared_ptr<Cache> cache, bool async) {
+  lock_guard<recursive_mutex> lock(m_mutex);
   bool fileContentExist = HasData(offset, size);
   if (fileContentExist) {
     return;
@@ -894,7 +920,6 @@ void File::DownloadRange(off_t offset, size_t size,
   if (!transferManager) {
     return;
   }
-  lock_guard<recursive_mutex> lock(m_mutex);
   uint64_t bufSize =
       QS::Client::ClientConfiguration::Instance().GetTransferBufferSizeInMB() *
       QS::Size::MB1;
@@ -961,7 +986,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
 
 // --------------------------------------------------------------------------
 tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
-    off_t offset, size_t len, const shared_ptr<iostream> &stream) { 
+    off_t offset, size_t len, const shared_ptr<iostream> &stream) {
   lock_guard<recursive_mutex> lock(m_mutex);
   pair<PageSetConstIterator, bool> res;
   size_t addedSize = 0;

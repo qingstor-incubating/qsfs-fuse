@@ -23,6 +23,7 @@
 #include "client/QSError.h"
 #include "data/Cache.h"
 #include "data/DirectoryTree.h"
+#include "data/FileMetaData.h"
 
 namespace QS {
 
@@ -116,6 +117,11 @@ ClientError<QSError::Value> NullClient::Stat(
     const string &path, const shared_ptr<QS::Data::DirectoryTree> &dirTree,
     time_t modifiedSince, bool *modified) {
   return GoodState();
+}
+
+boost::shared_ptr<QS::Data::FileMetaData> NullClient::GetObjectMeta(
+    const std::string &path) {
+  return boost::shared_ptr<QS::Data::FileMetaData>();
 }
 
 ClientError<QSError::Value> NullClient::Statvfs(struct statvfs *stvfs) {

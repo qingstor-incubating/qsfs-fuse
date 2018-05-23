@@ -33,6 +33,7 @@ namespace QS {
 namespace Data {
 
 class Entry;
+class File;
 class FileMetaData;
 class FileMetaDataManager;
 
@@ -100,6 +101,7 @@ class FileMetaData {
 
   friend class Entry;
   friend class FileMetaDataManager;
+  friend class File;
 };
 
 }  // namespace Data
