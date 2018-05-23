@@ -392,7 +392,35 @@ void Drive::RemoveFile(const string &filePath, bool async) {
 }
 
 // --------------------------------------------------------------------------
-void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
+struct MakeFileCallback {
+  string path;
+  shared_ptr<DirectoryTree> dirTree;
+  shared_ptr<Cache> cache;
+  shared_ptr<Client> client;
+
+  MakeFileCallback(const string &path_,
+                   const shared_ptr<DirectoryTree> &dirTree_,
+                   const shared_ptr<Cache> &cache_,
+                   const shared_ptr<Client> &client_)
+      : path(path_), dirTree(dirTree_), cache(cache_), client(client_) {}
+  
+  void operator() (const ClientError<QSError::Value> &err) {
+    if(IsGoodQSError(err)) {
+      DebugInfo("Created file" + FormatPath(path));
+      if (dirTree && client) {
+        dirTree->Grow(client->GetObjectMeta(path));
+      }
+      if (cache) {
+        cache->MakeFile(path);
+      }
+    } else {
+      Error(GetMessageForQSError(err));
+    }
+  }
+};
+
+// --------------------------------------------------------------------------
+void Drive::MakeFile(const string &filePath, mode_t mode, bool async) {
   DebugInfo("[mode:" + QS::StringUtils::ModeToString(mode) +"]" + FormatPath(filePath));
   FileType::Value type = FileType::File;
   if (mode & S_IFREG) {
@@ -413,34 +441,58 @@ void Drive::MakeFile(const string &filePath, mode_t mode, dev_t dev) {
   }
 
   if (type == FileType::File) {
-    Info("Create file " + FormatPath(filePath));
-    ClientError<QSError::Value> err = GetClient()->MakeFile(filePath);
-    if (!IsGoodQSError(err)) {
-      Error(GetMessageForQSError(err));
-      return;
+    DebugInfo(FormatPath(filePath));
+    MakeFileCallback receivedHandler(filePath, m_directoryTree, m_cache, m_client);
+    if (async) {
+      GetClient()->GetExecutor()->SubmitAsyncPrioritized(
+          bind(boost::type<void>(), receivedHandler, _1),
+          bind(boost::type<ClientError<QSError::Value> >(),
+               &QS::Client::Client::MakeFile, m_client.get(), _1),
+          filePath);
+    } else {
+      receivedHandler(GetClient()->MakeFile(filePath));
     }
-    // QSClient::MakeFile doesn't update directory tree (refer it for details)
-    // with the created file node, So we call Stat synchronizely.
-    err = GetClient()->Stat(filePath, m_directoryTree);
-    ErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
-    GetCache()->MakeFile(filePath);
   } else {
     Error("Not support to create a special file (block, char, FIFO, etc.)");
   }
 }
 
 // --------------------------------------------------------------------------
-void Drive::MakeDir(const string &dirPath, mode_t mode) {
-  DebugInfo(FormatPath(dirPath));
-  ClientError<QSError::Value> err = GetClient()->MakeDirectory(dirPath);
-  if (!IsGoodQSError(err)) {
-    Error(GetMessageForQSError(err));
-    return;
+struct MakeDirCallback {
+  string path;
+  shared_ptr<DirectoryTree> dirTree;
+  shared_ptr<Client> client;
+
+  MakeDirCallback(const string &path_,
+                  const shared_ptr<DirectoryTree> &dirTree_,
+                  const shared_ptr<Client> &client_)
+      : path(path_), dirTree(dirTree_), client(client_) {}
+
+  void operator()(const ClientError<QSError::Value> &err) {
+    if (IsGoodQSError(err)) {
+      DebugInfo("Created folder " + FormatPath(path));
+      if (dirTree && client) {
+        dirTree->Grow(client->GetObjectMeta(path));
+      }
+    } else {
+      Error(GetMessageForQSError(err));
+    }
   }
-  // QSClient::MakeDirectory doesn't grow directory tree with the created dir
-  // node, So we call Stat synchronizely.
-  err = GetClient()->Stat(dirPath, m_directoryTree);
-  ErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
+};
+
+// --------------------------------------------------------------------------
+void Drive::MakeDir(const string &dirPath, mode_t mode, bool async) {
+  DebugInfo(FormatPath(dirPath));
+  MakeDirCallback receivedHandler(dirPath, m_directoryTree, m_client);
+  if (async) {
+    GetClient()->GetExecutor()->SubmitAsyncPrioritized(
+        bind(boost::type<void>(), receivedHandler, _1),
+        bind(boost::type<ClientError<QSError::Value> >(),
+             &QS::Client::Client::MakeDirectory, m_client.get(), _1),
+        dirPath);
+  } else {
+    receivedHandler(GetClient()->MakeDirectory(dirPath));
+  }
 }
 
 // --------------------------------------------------------------------------

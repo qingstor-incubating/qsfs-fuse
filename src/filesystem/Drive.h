@@ -159,17 +159,17 @@ class Drive : public Singleton<Drive> {
 
   // Create a file
   //
-  // @param  : file path, file mode, dev
+  // @param  : file path, file mode
   // @return : void
   //
   // MakeFile is called for creation of non-directory, non-symlink nodes.
-  void MakeFile(const std::string &filePath, mode_t mode, dev_t dev = 0);
+  void MakeFile(const std::string &filePath, mode_t mode, bool async = false);
 
   // Create a Directory
   //
   // @param  : dir path, file mode
   // @return : void
-  void MakeDir(const std::string &dirPath, mode_t mode);
+  void MakeDir(const std::string &dirPath, mode_t mode, bool async = false);
 
   // Open a file
   //

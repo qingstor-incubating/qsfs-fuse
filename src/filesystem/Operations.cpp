@@ -464,8 +464,8 @@ int qsfs_mknod(const char* path, mode_t mode, dev_t dev) {
     }
 
     // Create the new node
-    drive.MakeFile(
-        path, mode | QS::Configure::Options::Instance().GetFileMode(), dev);
+    drive.MakeFile(path,
+                   mode | QS::Configure::Options::Instance().GetFileMode());
   } catch (const QSException& err) {
     Error(err.get());
     if (ret == 0) {

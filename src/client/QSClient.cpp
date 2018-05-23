@@ -183,16 +183,6 @@ ClientError<QSError::Value> QSClient::MakeFile(const string &filePath) {
   PutObjectOutcome outcome = GetQSClientImpl()->PutObject(filePath, &input);
 
   if (outcome.IsSuccess()) {
-    // As sdk doesn't return the created file meta data in PutObjectOutput,
-    // So we cannot grow the directory tree here, instead we need to call
-    // Stat to head the object again in Drive::MakeFile;
-    //
-    // auto &drive = Drive::Instance();
-    // auto &dirTree = Drive::Instance().GetDirectoryTree();
-    // if (dirTree) {
-    //   dirTree->Grow(PutObjectOutputToFileMeta());  // no implementation
-    // }
-    DebugInfo("Created file " + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
@@ -209,16 +199,6 @@ ClientError<QSError::Value> QSClient::MakeDirectory(const string &dirPath) {
   PutObjectOutcome outcome = GetQSClientImpl()->PutObject(dir, &input);
 
   if (outcome.IsSuccess()) {
-    // As sdk doesn't return the created file meta data in PutObjectOutput,
-    // So we cannot grow the directory tree here, instead we need to call
-    // Stat to head the object again in Drive::MakeDir;
-    //
-    // auto &drive = Drive::Instance();
-    // auto &dirTree = Drive::Instance().GetDirectoryTree();
-    // if (dirTree) {
-    //   dirTree->Grow(PutObjectOutputToFileMeta());  // no implementation
-    // }
-    DebugInfo("Created dir " + FormatPath(dirPath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();
