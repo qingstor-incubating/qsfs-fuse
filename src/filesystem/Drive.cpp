@@ -350,23 +350,30 @@ void Drive::Chown(const std::string &filePath, uid_t uid, gid_t gid) {
 }
 
 // --------------------------------------------------------------------------
-struct PrintMsgForDeleteFile {
+struct RemoveFileCallback {
   string filePath;
-  explicit PrintMsgForDeleteFile(const string &path) : filePath(path) {}
+  shared_ptr<Cache> cache;
 
-  void operator()(const ClientError<QSError::Value> &err) {
+  RemoveFileCallback(const string &path, const shared_ptr<Cache> &cache_)
+      : filePath(path), cache(cache_) {}
+
+  void operator() (const ClientError<QSError::Value> &err) {
     if (IsGoodQSError(err)) {
       Info("Delete file " + FormatPath(filePath));
+      if (cache) {
+        cache->Erase(filePath);
+      }
     } else {
       Error(GetMessageForQSError(err));
     }
   }
 };
+
 // --------------------------------------------------------------------------
 // Remove a file or an empty directory
 void Drive::RemoveFile(const string &filePath, bool async) {
   DebugInfo(FormatPath(filePath));
-  PrintMsgForDeleteFile receivedHandler(filePath);
+  RemoveFileCallback receivedHandler(filePath, m_cache);
 
   if (async) {  // delete file asynchronously
     GetClient()->GetExecutor()->SubmitAsyncPrioritized(
@@ -451,8 +458,6 @@ void Drive::OpenFile(const string &filePath, bool async) {
   }
   if (file) {
     file->SetOpen(true, m_directoryTree);
-    file->Load(0, node->GetFileSize(), m_transferManager, m_directoryTree,
-               m_cache, m_client, async);
   } else {
     Error("File not exists in cache " + FormatPath(filePath));
   }
@@ -500,8 +505,14 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
                    ContentRangeDequeToString(outcome.second));
     }
     if (remainingSize > 0) {  // prefecth
-      file->Load(0, node->GetFileSize(), m_transferManager, m_directoryTree,
-                 m_cache, m_client, async);
+      off_t off = offset + size;
+      size_t transferBufSz =
+          QS::Configure::Options::Instance().GetTransferBufferSizeInMB() *
+          QS::Size::MB1;
+      size_t len =
+          remainingSize > transferBufSz ? transferBufSz : remainingSize;
+      file->Load(off, len, m_transferManager, m_directoryTree, m_cache, m_client,
+                 async);
     }
     return outcome.first;
   } else {
