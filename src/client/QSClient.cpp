@@ -164,26 +164,9 @@ ClientError<QSError::Value> QSClient::HeadBucket() {
 
 // --------------------------------------------------------------------------
 // DeleteFile is used to delete a file or an empty directory.
-ClientError<QSError::Value> QSClient::DeleteFile(
-    const string &filePath, const shared_ptr<DirectoryTree> &dirTree,
-    const shared_ptr<Cache> &cache) {
-  assert(dirTree && cache);
-  shared_ptr<Node> node = dirTree->Find(filePath);
-  if (node && *node) {
-    if (!node->IsDirectory() && node->GetNumLink() >= 2) {
-      dirTree->Remove(filePath, QS::Data::RemoveNodeType::SelfOnly);
-      return ClientError<QSError::Value>(QSError::GOOD, false);
-    }
-  }
-
+ClientError<QSError::Value> QSClient::DeleteFile(const string &filePath) {
   DeleteObjectOutcome outcome = GetQSClientImpl()->DeleteObject(filePath);
   if (outcome.IsSuccess()) {
-    dirTree->Remove(filePath, QS::Data::RemoveNodeType::SelfOnly);
-
-    if (cache && cache->HasFile(filePath)) {
-      cache->Erase(filePath);
-    }
-    DebugInfo("Deleted file " + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
     return outcome.GetError();

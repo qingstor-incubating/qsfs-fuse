@@ -42,10 +42,7 @@ ClientError<QSError::Value> NullClient::HeadBucket() {
   return GoodState();
 }
 
-ClientError<QSError::Value> NullClient::DeleteFile(
-    const string &filePathconst,
-    const shared_ptr<QS::Data::DirectoryTree> &dirTree,
-    const shared_ptr<QS::Data::Cache> &cache) {
+ClientError<QSError::Value> NullClient::DeleteFile(const string &filePath) {
   return GoodState();
 }
 

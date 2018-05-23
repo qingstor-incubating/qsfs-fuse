@@ -74,7 +74,7 @@ class Client : private boost::noncopyable {
 
   // Delete a file
   //
-  // @param  : file path, dir tree, cache
+  // @param  : file path
   // @return : ClientError
   //
   // DeleteFile is used to delete a file or an empty directory.
@@ -83,9 +83,7 @@ class Client : private boost::noncopyable {
   // a nonempty directory, DeleteFile will not delete its contents (including
   // files or subdirectories belongs to it).
   virtual ClientError<QSError::Value> DeleteFile(
-      const std::string &filePath,
-      const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
-      const boost::shared_ptr<QS::Data::Cache> &cache) = 0;
+      const std::string &filePath) = 0;
 
   // Create an empty file
   //

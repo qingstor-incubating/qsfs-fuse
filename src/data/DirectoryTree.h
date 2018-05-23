@@ -43,6 +43,7 @@ class QSClient;
 namespace FileSystem {
 class Drive;
 struct RenameDirCallback;
+struct RemoveFileCallback;
 }  // namespace FileSystem
 
 namespace Data {
@@ -179,6 +180,7 @@ class DirectoryTree : private boost::noncopyable {
   friend class QS::Data::FileMetaDataManager;
   friend class QS::FileSystem::Drive;
   friend struct QS::FileSystem::RenameDirCallback;
+  friend struct QS::FileSystem::RemoveFileCallback;
   friend class DirectoryTreeTest;
 };
 

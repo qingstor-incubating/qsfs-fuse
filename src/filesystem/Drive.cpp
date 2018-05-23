@@ -352,14 +352,19 @@ void Drive::Chown(const std::string &filePath, uid_t uid, gid_t gid) {
 // --------------------------------------------------------------------------
 struct RemoveFileCallback {
   string filePath;
+  shared_ptr<DirectoryTree> dirTree;
   shared_ptr<Cache> cache;
-
-  RemoveFileCallback(const string &path, const shared_ptr<Cache> &cache_)
-      : filePath(path), cache(cache_) {}
+  RemoveFileCallback(const string &path,
+                     const shared_ptr<DirectoryTree> &dirTree_,
+                     const shared_ptr<Cache> &cache_)
+      : filePath(path), dirTree(dirTree_), cache(cache_) {}
 
   void operator() (const ClientError<QSError::Value> &err) {
     if (IsGoodQSError(err)) {
-      Info("Delete file " + FormatPath(filePath));
+      DebugInfo("Deleted file " + FormatPath(filePath));
+      if (dirTree) {
+        dirTree->Remove(filePath, QS::Data::RemoveNodeType::SelfOnly);
+      }
       if (cache) {
         cache->Erase(filePath);
       }
@@ -373,17 +378,16 @@ struct RemoveFileCallback {
 // Remove a file or an empty directory
 void Drive::RemoveFile(const string &filePath, bool async) {
   DebugInfo(FormatPath(filePath));
-  RemoveFileCallback receivedHandler(filePath, m_cache);
+  RemoveFileCallback receivedHandler(filePath, m_directoryTree, m_cache);
 
   if (async) {  // delete file asynchronously
     GetClient()->GetExecutor()->SubmitAsyncPrioritized(
         bind(boost::type<void>(), receivedHandler, _1),
         bind(boost::type<ClientError<QSError::Value> >(),
-             &QS::Client::Client::DeleteFile, m_client.get(), _1, _2, _3),
-        filePath, m_directoryTree, m_cache);
+             &QS::Client::Client::DeleteFile, m_client.get(), _1),
+        filePath);
   } else {
-    receivedHandler(
-        GetClient()->DeleteFile(filePath, m_directoryTree, m_cache));
+    receivedHandler(GetClient()->DeleteFile(filePath));
   }
 }
 

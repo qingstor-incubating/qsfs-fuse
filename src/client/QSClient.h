@@ -58,7 +58,7 @@ class QSClient : public Client {
 
   // Delete a file
   //
-  // @param  : file path, diretory tree, cache
+  // @param  : file path
   // @return : ClientError
   //
   // DeleteFile is used to delete a file or an empty directory.
@@ -66,10 +66,7 @@ class QSClient : public Client {
   // you can call DeleteFile to delete any object. But if the object is
   // a nonempty directory, DeleteFile will not delete its contents (including
   // files or subdirectories belongs to it).
-  ClientError<QSError::Value> DeleteFile(
-      const std::string &filePath,
-      const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
-      const boost::shared_ptr<QS::Data::Cache> &cache);
+  ClientError<QSError::Value> DeleteFile(const std::string &filePath);
 
   // Create an empty file
   //
