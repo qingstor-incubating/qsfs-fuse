@@ -73,6 +73,68 @@ class FileTest : public Test {
  protected:
   static void SetUpTestCase() { InitLog(); }
 
+  void TestUnloadedPages() {
+    string filename = "File_TestUnloadedPages";
+    string filepath =
+        AppendPathDelim(
+            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
+        filename;
+    File file1(filepath);  // empty file
+
+    ContentRangeDeque d0;
+    d0.push_back(make_pair(0, 2u));
+    EXPECT_EQ(file1.GetUnloadedRanges(0, 2u), d0);
+
+    const char *page1 = "01";
+    off_t off1 = 2;
+    size_t len1 = strlen(page1);
+    file1.DoWrite(off1, len1, page1);
+    // file1 content
+    // col :0123456789
+    //
+    // data:  01
+    EXPECT_EQ(file1.GetSize(), off1 + len1);
+    EXPECT_FALSE(file1.GetUnloadedRanges(0, off1 + len1).empty());
+    ContentRangeDeque d1;
+    d1.push_back(make_pair(0, size_t(off1)));
+    EXPECT_EQ(file1.GetUnloadedRanges(0, off1 + len1), d1);
+
+    const char *page2 = "34";
+    off_t off2 = 6;
+    size_t len2 = strlen(page2);
+    file1.DoWrite(off2, len2, page2);
+    // file1 content
+    // col :0123456789
+    //
+    // data:  01  34
+    EXPECT_EQ(file1.GetSize(), off2 + len2);
+    ContentRangeDeque d2;
+    d2.push_back(make_pair(0, size_t(off1)));
+    d2.push_back(make_pair(off1 + len1, size_t(off2 - off1 - len1)));
+    EXPECT_EQ(file1.GetUnloadedRanges(0, off2 + len2), d2);
+  }
+
+  void TestUnguardedAddPages() {
+    string filename = "File_TestUnloadedPages";
+    string filepath =
+        AppendPathDelim(
+            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
+        filename;
+    File file1(filepath);  // empty file
+
+    const char *dummy = "";
+    file1.UnguardedAddPage(2, 0, dummy);
+    EXPECT_EQ(file1.GetSize(), 2u);
+
+    const char *page = "12";
+    size_t len = strlen(page);
+    file1.UnguardedAddPage(2, len, page);
+    EXPECT_EQ(file1.GetSize(), 4u);
+    ContentRangeDeque d0;
+    d0.push_back(make_pair(0, 2u));
+    EXPECT_EQ(file1.GetUnloadedRanges(0, 4u), d0);
+  }
+
   void TestWrite(bool useDisk) {
     string filename = "File_TestWrite";
     string filepath =
@@ -414,7 +476,7 @@ TEST_F(FileTest, Default) {
   EXPECT_TRUE(file1.HasData(0, 0));
   EXPECT_FALSE(file1.HasData(0, 1));
   EXPECT_TRUE(file1.GetUnloadedRanges(0, 0).empty());
-  EXPECT_TRUE(file1.GetUnloadedRanges(0, 1).empty());
+  EXPECT_FALSE(file1.GetUnloadedRanges(0, 1).empty());
   pair<PageSetConstIterator, PageSetConstIterator> consecutivePagesAtFront =
       file1.ConsecutivePageRangeAtFront();
   EXPECT_TRUE(consecutivePagesAtFront.first == file1.BeginPage());
@@ -434,6 +496,10 @@ TEST_F(FileTest, ReadDiskFile) { TestRead(true); }
 TEST_F(FileTest, Resize) { TestResize(false); }
 
 TEST_F(FileTest, ResizeDiskFile) { TestResize(true); }
+
+TEST_F(FileTest, UnloadedPages) { TestUnloadedPages(); }
+
+TEST_F(FileTest, UnguardedAddPages) { TestUnguardedAddPages();}
 
 }  // namespace Data
 }  // namespace QS

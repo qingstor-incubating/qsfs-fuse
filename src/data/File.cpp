@@ -184,7 +184,12 @@ bool File::HasData(off_t start, size_t size) const {
 ContentRangeDeque File::GetUnloadedRanges(off_t start, size_t size) const {
   lock_guard<recursive_mutex> lock(m_mutex);
   ContentRangeDeque ranges;
-  if (size == 0 || GetSize() == 0 || m_pages.empty()) {
+  if (size == 0) {
+    return ranges;
+  }
+
+  if (GetSize() == 0 || m_pages.empty()) {
+    ranges.push_back(make_pair(start, size));
     return ranges;
   }
 
@@ -199,6 +204,13 @@ ContentRangeDeque File::GetUnloadedRanges(off_t start, size_t size) const {
 
   PageSetConstIterator cur = range.first;
   PageSetConstIterator next = range.first;
+  // the beginning
+  if (start < (*cur)->Offset()) {
+    off_t off = start;
+    size_t sz = static_cast<size_t>((*cur)->Offset() - off);
+    ranges.push_back(make_pair(off, sz));
+  }
+  // the middle
   while (++next != range.second) {
     if ((*cur)->Next() < (*next)->Offset()) {
       if ((*next)->Offset() > stop) {
@@ -210,7 +222,7 @@ ContentRangeDeque File::GetUnloadedRanges(off_t start, size_t size) const {
     }
     ++cur;
   }
-
+  // the ending
   if ((*cur)->Next() < stop) {
     off_t off = (*cur)->Next();
     size_t size = static_cast<size_t>(stop - off);
@@ -960,6 +972,15 @@ void File::DownloadRange(off_t offset, size_t size,
 tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
     off_t offset, size_t len, const char *buffer) {
   lock_guard<recursive_mutex> lock(m_mutex);
+
+  // remove dummy page at first
+  const char *dummy = "";
+  PageSetConstIterator it =
+      m_pages.find(shared_ptr<Page>(new Page(offset, 0, dummy)));
+  if (it != m_pages.end()) {
+    m_pages.erase(it);
+  }
+
   pair<PageSetConstIterator, bool> res;
   size_t addedSize = 0;
   size_t addedSizeInCache = 0;
@@ -988,6 +1009,15 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
 tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
     off_t offset, size_t len, const shared_ptr<iostream> &stream) {
   lock_guard<recursive_mutex> lock(m_mutex);
+
+  // remove dummy page at first
+  const char *dummy = "";
+  PageSetConstIterator it =
+      m_pages.find(shared_ptr<Page>(new Page(offset, 0, dummy)));
+  if (it != m_pages.end()) {
+    m_pages.erase(it);
+  }
+
   pair<PageSetConstIterator, bool> res;
   size_t addedSize = 0;
   size_t addedSizeInCache = 0;
