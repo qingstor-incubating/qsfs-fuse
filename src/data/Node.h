@@ -63,8 +63,7 @@ class Node : private boost::noncopyable {
   // or for some case the parent is cleared or still not set at the time
   Node()
       : m_entry(Entry()),
-        m_parent(boost::shared_ptr<Node>()),
-        m_hardLink(false) {}
+        m_parent(boost::shared_ptr<Node>()) {}
 
   Node(const Entry &entry,
        const boost::shared_ptr<Node> &parent = boost::make_shared<Node>());
@@ -85,7 +84,6 @@ class Node : private boost::noncopyable {
 
   bool IsDirectory() const { return m_entry && m_entry.IsDirectory(); }
   bool IsSymLink() const { return m_entry && m_entry.IsSymLink(); }
-  bool IsHardLink() const { return m_hardLink; }
 
  public:
   bool IsEmpty() const { return m_children.empty(); }
@@ -178,7 +176,6 @@ class Node : private boost::noncopyable {
   void SetEntry(const Entry &entry) { m_entry = entry; }
   void SetParent(const boost::shared_ptr<Node> &parent) { m_parent = parent; }
   void SetSymbolicLink(const std::string &symLnk) { m_symbolicLink = symLnk; }
-  void SetHardLink(bool isHardLink) { m_hardLink = isHardLink; }
 
   void IncreaseNumLink() {
     if (m_entry) {
@@ -192,7 +189,6 @@ class Node : private boost::noncopyable {
   mutable boost::mutex m_fileOpenLock;
   boost::weak_ptr<Node> m_parent;
   std::string m_symbolicLink;
-  bool m_hardLink;
   // Node will control the life of its children, so only Node hold a shared_ptr
   // to its children, others should use weak_ptr instead
   FilePathToNodeUnorderedMap m_children;

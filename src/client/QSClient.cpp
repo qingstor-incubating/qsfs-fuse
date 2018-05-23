@@ -170,10 +170,7 @@ ClientError<QSError::Value> QSClient::DeleteFile(
   assert(dirTree && cache);
   shared_ptr<Node> node = dirTree->Find(filePath);
   if (node && *node) {
-    // In case of hard links, multiple node have the same file, do not delete
-    // the file for a hard link.
-    if (node->IsHardLink() ||
-        (!node->IsDirectory() && node->GetNumLink() >= 2)) {
+    if (!node->IsDirectory() && node->GetNumLink() >= 2) {
       dirTree->Remove(filePath, QS::Data::RemoveNodeType::SelfOnly);
       return ClientError<QSError::Value>(QSError::GOOD, false);
     }

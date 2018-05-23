@@ -45,14 +45,14 @@ using std::string;
 
 // --------------------------------------------------------------------------
 Node::Node(const Entry &entry, const shared_ptr<Node> &parent)
-    : m_entry(entry), m_parent(parent), m_hardLink(false) {
+    : m_entry(entry), m_parent(parent) {
   m_children.clear();
 }
 
 // --------------------------------------------------------------------------
 Node::Node(const Entry &entry, const shared_ptr<Node> &parent,
            const string &symbolicLink)
-    : m_entry(entry), m_parent(parent), m_hardLink(false) {
+    : m_entry(entry), m_parent(parent) {
   // must use m_entry instead of entry which is moved to m_entry now
   if (m_entry && m_entry.GetFileSize() <= symbolicLink.size()) {
     m_symbolicLink = string(symbolicLink, 0, m_entry.GetFileSize());
@@ -63,7 +63,7 @@ Node::Node(const Entry &entry, const shared_ptr<Node> &parent,
 Node::~Node() {
   if (!m_entry) return;
 
-  if (IsDirectory() || IsHardLink()) {
+  if (IsDirectory()) {
     shared_ptr<Node> parent = m_parent.lock();
     if (parent) {
       parent->GetEntry().DecreaseNumLink();
