@@ -74,7 +74,7 @@ size_t Cache::GetNumFile() const {
 
 // --------------------------------------------------------------------------
 uint64_t Cache::GetSize() const {
-  lock_guard<mutex> locker(m_sizeLock);
+  lock_guard<recursive_mutex> locker(m_mutex);
   return m_size;
 }
 
@@ -278,13 +278,13 @@ void Cache::MakeFileMostRecentlyUsed(const string &filePath) {
 
 // --------------------------------------------------------------------------
 void Cache::AddSize(uint64_t delta) {
-  lock_guard<mutex> locker(m_sizeLock);
+  lock_guard<recursive_mutex> locker(m_mutex);
   m_size += delta;
 }
 
 // --------------------------------------------------------------------------
 void Cache::SubtractSize(uint64_t delta) {
-  lock_guard<mutex> locker(m_sizeLock);
+  lock_guard<recursive_mutex> locker(m_mutex);
   m_size -= delta;
 }
 

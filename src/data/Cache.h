@@ -169,7 +169,6 @@ class Cache : private boost::noncopyable {
  private:
   // Record sum of the cache files' size, not including disk file
   uint64_t m_size;
-  mutable boost::mutex m_sizeLock;
 
   uint64_t m_capacity;  // in bytes
 
