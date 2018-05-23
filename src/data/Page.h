@@ -144,9 +144,6 @@ class Page {
   bool Refresh(off_t offset, size_t len, const char *buffer,
                const std::string &diskfile = std::string());
 
-  // Refresh the page's entire content with bytes from buffer,
-  // without checking.
-  // For internal use only.
   // Refresh the page's entire content
   //
   // @param  : buffer

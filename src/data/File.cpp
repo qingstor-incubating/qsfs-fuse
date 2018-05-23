@@ -489,20 +489,19 @@ tuple<bool, size_t, size_t> File::DoWrite(off_t offset, size_t len,
       len_ -= lenNewPage;
     } else {  // Refresh the overlapped page's content.
       if (len_ <= static_cast<size_t>(page->Next() - offset_)) {
-        // refresh parital content of page
         return make_tuple(page->Refresh(offset_, len_, buffer + start_),
                           addedSizeInCache, addedSize);
       } else {
-        // refresh entire page
-        bool refresh = page->Refresh(buffer + start_);
+        size_t refLen = page->Next() - offset_;
+        bool refresh = page->Refresh(offset_, refLen, buffer + start_);
         if (!refresh) {
           success = false;
           return make_tuple(false, addedSizeInCache, addedSize);
         }
 
-        offset_ = page->Next();
-        start_ += page->m_size;
-        len_ -= page->m_size;
+        offset_ += refLen;
+        start_ += refLen;
+        len_ -= refLen;
         ++it1;
       }
     }
@@ -537,31 +536,12 @@ tuple<bool, size_t, size_t> File::DoWrite(off_t offset, size_t len,
         GetFilePath() + ", len:" + to_string(len) + "]");
     return make_tuple(false, 0, 0);
   }
-  if (m_pages.empty()) {
-    tuple<PageSetConstIterator, bool, size_t, size_t> res =
-        UnguardedAddPage(offset, len, stream);
-    return make_tuple(boost::get<1>(res), boost::get<2>(res),
-                      boost::get<3>(res));
-  } else {
-    PageSetConstIterator it = LowerBoundPage(offset);
-    const shared_ptr<Page> &page = *it;
-    if (it == m_pages.end()) {
-      tuple<PageSetConstIterator, bool, size_t, size_t> res =
-          UnguardedAddPage(offset, len, stream);
-      return make_tuple(boost::get<1>(res), boost::get<2>(res),
-                        boost::get<3>(res));
-    } else if (page->Offset() == offset && page->Size() == len) {
-      // replace old stream
-      page->SetStream(stream);
-      return make_tuple(true, 0, 0);
-    } else {
-      scoped_ptr<vector<char> > buf(new vector<char>(len));
-      stream->seekg(0, std::ios_base::beg);
-      stream->read(&(*buf)[0], len);
 
-      return DoWrite(offset, len, &(*buf)[0]);
-    }
-  }
+  scoped_ptr<vector<char> > buf(new vector<char>(len));
+  stream->seekg(0, std::ios_base::beg);
+  stream->read(&(*buf)[0], len);
+
+  return DoWrite(offset, len, &(*buf)[0]);
 }
 
 // --------------------------------------------------------------------------

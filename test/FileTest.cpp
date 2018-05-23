@@ -269,6 +269,68 @@ class FileTest : public Test {
     EXPECT_TRUE(range4.second == file1.EndPage());
   }
 
+  void TestWriteOverlapped(bool useDisk) {
+    string filename = "File_TestWriteOverlapped";
+    string filepath =
+        AppendPathDelim(
+            QS::Configure::Options::Instance().GetDiskCacheDirectory()) +
+        filename;
+    File file1(filepath);  // empty file
+    if (useDisk) {
+      file1.SetUseDiskFile(true);
+    }
+
+    const char *page1 = "012";
+    size_t len1 = strlen(page1);
+    off_t off1 = 0;
+    file1.DoWrite(off1, len1, page1);
+    EXPECT_EQ(file1.GetSize(), len1);
+    EXPECT_EQ(file1.GetDataSize(), len1);
+    if (useDisk) {
+      EXPECT_EQ(file1.GetCachedSize(), 0u);
+    } else {
+      EXPECT_EQ(file1.GetCachedSize(), len1);
+    }
+
+    const char *data2 = "abc";
+    size_t len2 = strlen(data2);
+    off_t off2 = 0;
+    shared_ptr<stringstream> page2 = make_shared<stringstream>(data2);
+    file1.DoWrite(off2, len2, page2);
+    EXPECT_EQ(file1.GetSize(), off2 + len2);
+    EXPECT_EQ(file1.GetDataSize(), off2 + len2);
+    if (useDisk) {
+      EXPECT_EQ(file1.GetCachedSize(), 0u);
+    } else {
+      EXPECT_EQ(file1.GetCachedSize(), off2 + len2);
+    }
+
+    const char *data3 = "ABC";
+    size_t len3 = strlen(data3);
+    off_t off3 = 1;
+    shared_ptr<stringstream> page3 = make_shared<stringstream>(data3);
+    file1.DoWrite(off3, len3, page3);
+    EXPECT_EQ(file1.GetSize(), off3 + len3);
+    EXPECT_EQ(file1.GetDataSize(), off3 + len3);
+    if (useDisk) {
+      EXPECT_EQ(file1.GetCachedSize(), 0u);
+    } else {
+      EXPECT_EQ(file1.GetCachedSize(), off3 + len3);
+    }
+
+    const char *page4 = "XYZ";
+    size_t len4 = strlen(page4);
+    off_t off4 = 1;
+    file1.DoWrite(off4, len4, page4);
+    EXPECT_EQ(file1.GetSize(), off4 + len4);
+    EXPECT_EQ(file1.GetDataSize(), off4 + len4);
+    if (useDisk) {
+      EXPECT_EQ(file1.GetCachedSize(), 0u);
+    } else {
+      EXPECT_EQ(file1.GetCachedSize(), off4 + len4);
+    }
+  }
+
   void TestRead(bool useDisk) {
     string filename = "File_TestRead";
     string filepath =
@@ -485,9 +547,17 @@ TEST_F(FileTest, Default) {
   EXPECT_EQ(file1.GetNumPages(), 0u);
 }
 
+TEST_F(FileTest, UnloadedPages) { TestUnloadedPages(); }
+
+TEST_F(FileTest, UnguardedAddPages) { TestUnguardedAddPages(); }
+
 TEST_F(FileTest, Write) { TestWrite(false); }
 
 TEST_F(FileTest, WriteDiskFile) { TestWrite(true); }
+
+TEST_F(FileTest, WriteOverlapped) { TestWriteOverlapped(false); }
+
+TEST_F(FileTest, WriteDiskFileOverlapped) { TestWriteOverlapped(true); }
 
 TEST_F(FileTest, Read) { TestRead(false); }
 
@@ -496,10 +566,6 @@ TEST_F(FileTest, ReadDiskFile) { TestRead(true); }
 TEST_F(FileTest, Resize) { TestResize(false); }
 
 TEST_F(FileTest, ResizeDiskFile) { TestResize(true); }
-
-TEST_F(FileTest, UnloadedPages) { TestUnloadedPages(); }
-
-TEST_F(FileTest, UnguardedAddPages) { TestUnguardedAddPages();}
 
 }  // namespace Data
 }  // namespace QS
