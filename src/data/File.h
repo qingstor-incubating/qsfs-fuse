@@ -142,7 +142,7 @@ class File : private boost::noncopyable {
       boost::shared_ptr<QS::Client::TransferManager> transferManager,
       boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
       boost::shared_ptr<QS::Data::Cache> cache,
-      boost::shared_ptr<QS::Client::Client> client);
+      boost::shared_ptr<QS::Client::Client> client, bool async = false);
 
   // For internal use
   // Read from the cache with no load

@@ -522,8 +522,8 @@ void Drive::OpenFile(const string &filePath, bool async) {
 // --------------------------------------------------------------------------
 size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
                        char *buf, bool async) {
-  DebugInfo("Start read [offset:" + to_string(offset) + ", size:" +
-            to_string(size) + "] " + FormatPath(filePath));
+  DebugInfo("Start read [offset:" + to_string(offset) +
+            ", size:" + to_string(size) + "] " + FormatPath(filePath));
   // read is only called if the file has been opend with the correct flags
   // no need to head it for latest meta
   shared_ptr<Node> node = GetNodeSimple(filePath);
@@ -532,43 +532,14 @@ size_t Drive::ReadFile(const string &filePath, off_t offset, size_t size,
     return 0;
   }
 
-  // Ajust size or calculate remaining size
-  uint64_t readSize = size;
-  int64_t remainingSize = 0;
-  if (offset + size > node->GetFileSize()) {
-    readSize = node->GetFileSize() - offset;
-    DebugInfo("Overflow [file size:" + to_string(node->GetFileSize()) + "] " +
-              " ajust read size to " + to_string(readSize) +
-              FormatPath(filePath));
-  } else {
-    remainingSize = node->GetFileSize() - (offset + size);
-  }
-
-  if (readSize == 0) {
-    return 0;
-  }
-
   shared_ptr<File> file = m_cache->FindFile(filePath);
   if (file) {
-    pair<size_t, ContentRangeDeque> outcome = file->Read(
-        offset, readSize, buf, m_transferManager, m_directoryTree, m_cache, m_client);
-    if (outcome.first == 0) {
-      DebugWarning("Read no bytes [offset:" + to_string(offset) + ", len:" +
-                   to_string(size) + "] " + FormatPath(filePath));
-    }
+    pair<size_t, ContentRangeDeque> outcome =
+        file->Read(offset, size, buf, m_transferManager, m_directoryTree,
+                   m_cache, m_client, async);
     if (!outcome.second.empty()) {
       DebugWarning("Unloaded ranges " +
                    ContentRangeDequeToString(outcome.second));
-    }
-    if (remainingSize > 0) {  // prefecth
-      off_t off = offset + size;
-      size_t transferBufSz =
-          QS::Configure::Options::Instance().GetTransferBufferSizeInMB() *
-          QS::Size::MB1;
-      size_t len =
-          remainingSize > transferBufSz ? transferBufSz : remainingSize;
-      file->Load(off, len, m_transferManager, m_directoryTree, m_cache, m_client,
-                 async);
     }
     return outcome.first;
   } else {

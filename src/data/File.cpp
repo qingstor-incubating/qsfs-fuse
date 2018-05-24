@@ -34,6 +34,7 @@
 #include "boost/tuple/tuple.hpp"
 
 #include "base/LogMacros.h"
+#include "base/Size.h"
 #include "base/StringUtils.h"
 #include "base/ThreadPool.h"
 #include "base/Utils.h"
@@ -265,12 +266,51 @@ pair<size_t, ContentRangeDeque> File::Read(
     off_t offset, size_t len, char *buf,
     shared_ptr<TransferManager> transferManager,
     shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
-    shared_ptr<Client> client) {
+    shared_ptr<Client> client, bool async) {
   lock_guard<recursive_mutex> lock(m_mutex);
   DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
             FormatPath(GetFilePath()));
-  Load(offset, len, transferManager, dirTree, cache, client, false);
-  return ReadNoLoad(offset, len, buf);
+  shared_ptr<Node> node = dirTree->Find(GetFilePath());
+  if (!node) {
+    Error("Not found node in directory tree " + FormatPath(GetFilePath()));
+    ContentRangeDeque unloadedRanges;
+    unloadedRanges.push_back(make_pair(offset, len));
+    return make_pair(0, unloadedRanges);
+  }
+
+  // ajust size and calculate remaining size
+  uint64_t fileSize = node->GetFileSize();
+  uint64_t readSize = len;
+  int64_t remainingSize = 0;
+  if (offset + len > fileSize) {
+    readSize = fileSize - offset;
+    DebugInfo("Overflow [file size:" + to_string(fileSize) + "] " +
+              " ajust read size to " + to_string(readSize) +
+              FormatPath(GetFilePath()));
+  } else {
+    remainingSize = fileSize - (offset + len);
+  }
+
+  if (readSize == 0) {
+    ContentRangeDeque unloadedRanges;
+    return make_pair(0, unloadedRanges);
+  }
+
+  // load and read
+  Load(offset, readSize, transferManager, dirTree, cache, client, false);
+  pair<size_t, ContentRangeDeque> outcome = ReadNoLoad(offset, readSize, buf);
+
+  // prefectch
+  if (remainingSize > 0) {
+    off_t off = offset + len;
+    size_t transferBufSz =
+        QS::Configure::Options::Instance().GetTransferBufferSizeInMB() *
+        QS::Size::MB1;
+    size_t len = remainingSize > transferBufSz ? transferBufSz : remainingSize;
+    Load(off, len, transferManager, dirTree, cache, client, async);
+  }
+
+  return outcome;
 }
 
 // --------------------------------------------------------------------------

@@ -72,18 +72,12 @@ class QSClient : public Client {
   //
   // @param  : file path
   // @return : ClientError
-  // As qs sdk doesn't return the created file meta data in PutObjectOutput,
-  // So we cannot grow the directory tree here, instead we need to call
-  // Stat to head the object again in Drive::MakeFile;
   ClientError<QSError::Value> MakeFile(const std::string &filePath);
 
   // Create a directory
   //
   // @param  : dir path
   // @return : ClientError
-  // As qs sdk doesn't return the created dir meta data in PutObjectOutput,
-  // So we cannot grow the directory tree here, instead we need to call
-  // Stat to head the object again in Drive::MakeDirectory;
   ClientError<QSError::Value> MakeDirectory(const std::string &dirPath);
 
   // Move file
