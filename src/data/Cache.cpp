@@ -57,6 +57,7 @@ using std::vector;
 
 // --------------------------------------------------------------------------
 bool Cache::HasFreeSpace(size_t size) const {
+  lock_guard<recursive_mutex> locker(m_mutex);
   return GetSize() + size <= GetCapacity();
 }
 
@@ -176,9 +177,9 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
 // --------------------------------------------------------------------------
 bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
                                const string &fileUnfreeable) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   assert(diskfolder ==
          QS::Configure::Options::Instance().GetDiskCacheDirectory());
-  lock_guard<recursive_mutex> locker(m_mutex);
   // diskfolder should be cache disk dir
   if (IsSafeDiskSpace(diskfolder, size)) {
     return true;
@@ -238,11 +239,11 @@ CacheListIterator Cache::Erase(const string &fileId) {
 
 // --------------------------------------------------------------------------
 void Cache::Rename(const string &oldFileId, const string &newFileId) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   if (oldFileId == newFileId) {
     DebugInfo("File exists, no rename " + FormatPath(oldFileId));
     return;
   }
-  lock_guard<recursive_mutex> locker(m_mutex);
   CacheMapIterator iter = m_map.find(newFileId);
   if (iter != m_map.end()) {
     DebugWarning("File exist, Just remove it from cache " +
@@ -290,6 +291,7 @@ void Cache::SubtractSize(uint64_t delta) {
 
 // --------------------------------------------------------------------------
 CacheListIterator Cache::UnguardedNewEmptyFile(const string &fileId) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   m_cache.push_front(make_pair(fileId, make_shared<File>(fileId)));
   if (m_cache.begin()->first == fileId) {  // insert to cache sucessfully
     pair<CacheMapIterator, bool> res = m_map.emplace(fileId, m_cache.begin());
@@ -308,6 +310,7 @@ CacheListIterator Cache::UnguardedNewEmptyFile(const string &fileId) {
 // --------------------------------------------------------------------------
 CacheListIterator Cache::UnguardedErase(
     FileIdToCacheListIteratorMap::iterator pos) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   CacheListIterator cachePos = pos->second;
   shared_ptr<File> &file = cachePos->second;
   SubtractSize(file->GetCachedSize());
@@ -320,6 +323,7 @@ CacheListIterator Cache::UnguardedErase(
 // --------------------------------------------------------------------------
 CacheListIterator Cache::UnguardedMakeFileMostRecentlyUsed(
     CacheListIterator pos) {
+  lock_guard<recursive_mutex> locker(m_mutex);
   m_cache.splice(m_cache.begin(), m_cache, pos);
   // no iterators or references become invalidated, so no need to update m_map.
   return m_cache.begin();
