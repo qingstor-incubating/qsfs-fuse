@@ -612,11 +612,10 @@ struct FlushCallback {
              FormatPath(filePath));
         // update meta
         if (updateMeta) {
-          ClientError<QS::Client::QSError::Value> err =
-              client->Stat(handle->GetObjectKey(), dirTree);
-          ErrorIf(!QS::Client::IsGoodQSError(err),
-                  QS::Client::GetMessageForQSError(err));
-        }  // update Meta
+          if(dirTree) {
+            dirTree->Grow(client->GetObjectMeta(handle->GetObjectKey()));
+          }
+        }
       } else {
         if (handle->IsMultipart()) {
           transferManager->m_unfinishedMultipartUploadHandles.emplace(

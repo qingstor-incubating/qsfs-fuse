@@ -54,6 +54,7 @@ namespace Data {
 class FileMetaData;
 class FileMetaDataManager;
 class Node;
+struct FlushCallback;
 
 typedef boost::unordered_map<std::string, boost::shared_ptr<Node>,
                              HashUtils::StringHash>
@@ -183,6 +184,7 @@ class DirectoryTree : private boost::noncopyable {
   friend class QS::Data::FileMetaDataManager;
   friend class QS::FileSystem::Drive;
   friend class QS::FileSystem::MakeDirCallback;
+  friend struct QS::Data::FlushCallback;
   friend struct QS::FileSystem::MakeFileCallback;
   friend struct QS::FileSystem::RenameDirCallback;
   friend struct QS::FileSystem::RemoveFileCallback;

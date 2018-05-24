@@ -461,8 +461,7 @@ shared_ptr<Node> DirectoryTree::Rename(const string &oldFilePath,
 }
 
 // --------------------------------------------------------------------------
-void DirectoryTree::Remove(const string &path,
-                                      RemoveNodeType::Value type) {
+void DirectoryTree::Remove(const string &path, RemoveNodeType::Value type) {
   if (IsRootDirectory(path)) {
     DebugWarning("Unable to remove root");
     return;

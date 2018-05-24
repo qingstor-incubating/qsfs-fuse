@@ -442,15 +442,6 @@ ClientError<QSError::Value> QSClient::UploadFile(const string &filePath,
   PutObjectOutcome outcome = GetQSClientImpl()->PutObject(filePath, &input);
 
   if (outcome.IsSuccess()) {
-    // As sdk doesn't return the created file meta data in PutObjectOutput,
-    // So we cannot grow the directory tree here, instead we need to call
-    // Stat to head the object again in Drive::MakeFile;
-    //
-    // auto &drive = Drive::Instance();
-    // auto &dirTree = Drive::Instance().GetDirectoryTree();
-    // if (dirTree) {
-    //   dirTree->Grow(PutObjectOutputToFileMeta());  // no implementation
-    // }
     DebugInfo("Uploaded file " + FormatPath(filePath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {
@@ -470,15 +461,6 @@ ClientError<QSError::Value> QSClient::SymLink(const string &filePath,
   PutObjectOutcome outcome = GetQSClientImpl()->PutObject(linkPath, &input);
 
   if (outcome.IsSuccess()) {
-    // As sdk doesn't return the created file meta data in PutObjectOutput,
-    // So we cannot grow the directory tree here, instead we need to call
-    // Stat to head the object again in Drive::MakeFile;
-    //
-    // auto &drive = Drive::Instance();
-    // auto &dirTree = Drive::Instance().GetDirectoryTree();
-    // if (dirTree) {
-    //   dirTree->Grow(PutObjectOutputToFileMeta());  // no implementation
-    // }
     DebugInfo("Created symlink " + FormatPath(filePath, linkPath));
     return ClientError<QSError::Value>(QSError::GOOD, false);
   } else {

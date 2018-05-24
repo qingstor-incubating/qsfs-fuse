@@ -338,7 +338,7 @@ void Drive::Chmod(const std::string &filePath, mode_t mode) {
   Warning("chmod not supported");
   // TODO(jim): wait for sdk api of meta data
   // change meta mode: x-qs-meta-mode
-  // call Stat to update meta locally
+  // update meta locally
 }
 
 // --------------------------------------------------------------------------
@@ -346,7 +346,7 @@ void Drive::Chown(const std::string &filePath, uid_t uid, gid_t gid) {
   Warning("chown not supported");
   // TODO(jim): wait for sdk api of meta
   // change meta uid gid; x-qs-meta-uid, x-qs-meta-gid
-  // call Stat to update meta locally
+  // update meta locally
 }
 
 // --------------------------------------------------------------------------
@@ -697,13 +697,8 @@ void Drive::SymLink(const string &filePath, const string &linkPath) {
     return;
   }
 
-  // QSClient::Symlink doesn't update directory tree (refer it for details)
-  // with the created symlink node, So we call Stat synchronizely.
-  err = GetClient()->Stat(linkPath, m_directoryTree);
-  if (!IsGoodQSError(err)) {
-    Error(GetMessageForQSError(err));
-    return;
-  }
+  // update directory tree
+  m_directoryTree->Grow(GetClient()->GetObjectMeta(linkPath));
 
   shared_ptr<Node> lnkNode = GetNodeSimple(linkPath);
   if (lnkNode && *lnkNode) {
@@ -780,7 +775,7 @@ void Drive::Utimens(const string &path, time_t mtime) {
   // x-qs-meta-mtime
   // x-qs-copy-source
   // x-qs-metadata-directive = REPLACE
-  // call Stat to update meta locally
+  // update meta locally
   // NOTE just do this with put object copy (this will delete orginal file
   // then create a copy of it)
 }
