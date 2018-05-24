@@ -60,7 +60,7 @@ ClientError<QSError::Value> NullClient::MoveFile(const string &filePath,
 }
 
 ClientError<QSError::Value> NullClient::MoveDirectory(
-    const string &sourceDirPath, const string &targetDirPath, bool async) {
+    const string &sourceDirPath, const string &targetDirPath) {
   return GoodState();
 }
 

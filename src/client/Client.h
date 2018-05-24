@@ -109,11 +109,8 @@ class Client : private boost::noncopyable {
   //
   // @param  : source path, target path
   // @return : ClientError
-  //
-  // MoveDirectory will invoke dirTree and Cache renaming
   virtual ClientError<QSError::Value> MoveDirectory(
-      const std::string &sourceDirPath, const std::string &targetDirPath,
-      bool async = false) = 0;
+      const std::string &sourceDirPath, const std::string &targetDirPath) = 0;
 
   // Download file
   //

@@ -95,8 +95,7 @@ class QSClient : public Client {
   // MoveDirectory move dir, subdirs and subfiles recursively.
   // Notes: MoveDirectory will do nothing on dir tree and cache.
   ClientError<QSError::Value> MoveDirectory(const std::string &sourceDirPath,
-                                            const std::string &targetDirPath,
-                                            bool async = false);
+                                            const std::string &targetDirPath);
 
   // Download file
   //

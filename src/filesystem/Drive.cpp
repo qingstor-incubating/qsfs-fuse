@@ -361,13 +361,13 @@ struct RemoveFileCallback {
 
   void operator() (const ClientError<QSError::Value> &err) {
     if (IsGoodQSError(err)) {
-      DebugInfo("Deleted file " + FormatPath(filePath));
       if (dirTree) {
         dirTree->Remove(filePath, QS::Data::RemoveNodeType::SelfOnly);
       }
       if (cache) {
         cache->Erase(filePath);
       }
+      DebugInfo("Deleted file " + FormatPath(filePath));
     } else {
       Error(GetMessageForQSError(err));
     }
@@ -406,13 +406,13 @@ struct MakeFileCallback {
   
   void operator() (const ClientError<QSError::Value> &err) {
     if(IsGoodQSError(err)) {
-      DebugInfo("Created file" + FormatPath(path));
       if (dirTree && client) {
         dirTree->Grow(client->GetObjectMeta(path));
       }
       if (cache) {
         cache->MakeFile(path);
       }
+      DebugInfo("Created file" + FormatPath(path));
     } else {
       Error(GetMessageForQSError(err));
     }
@@ -470,10 +470,10 @@ struct MakeDirCallback {
 
   void operator()(const ClientError<QSError::Value> &err) {
     if (IsGoodQSError(err)) {
-      DebugInfo("Created folder " + FormatPath(path));
       if (dirTree && client) {
         dirTree->Grow(client->GetObjectMeta(path));
       }
+      DebugInfo("Created folder " + FormatPath(path));
     } else {
       Error(GetMessageForQSError(err));
     }
@@ -589,6 +589,7 @@ struct RenameFileCallback {
       // we update the node meta just after rename with the renamed file (which
       // is empty), this will set the file size to 0, which results in flushing
       // renamed file with empty data.
+      DebugInfo("Renamed file " + FormatPath(path, newpath));
     } else {
       Error(GetMessageForQSError(err));
     }
@@ -656,6 +657,7 @@ struct RenameDirCallback {
       if (dirTree) {
         dirTree->Rename(dirPath, newDirPath);
       }
+      DebugInfo("Renamed folder " + FormatPath(dirPath, newDirPath));
     } else {
       Error(GetMessageForQSError(err));
     }
@@ -669,18 +671,14 @@ void Drive::RenameDir(const string &dirPath, const string &newDirPath,
   // Do Renaming
   RenameDirCallback receivedHandler(dirPath, newDirPath, m_directoryTree,
                                     m_cache, this);
-
-  // When submit asynchronize task, and task itself should be run
-  // in threadpool synchronizely.
-  // So invoke Client::MoveDirectory with async=false
   if (async) {
     GetClient()->GetExecutor()->SubmitAsyncPrioritized(
         bind(boost::type<void>(), receivedHandler, _1),
         bind(boost::type<ClientError<QSError::Value> >(),
-             &QS::Client::Client::MoveDirectory, m_client.get(), _1, _2, false),
+             &QS::Client::Client::MoveDirectory, m_client.get(), _1, _2),
         dirPath, newDirPath);
   } else {
-    receivedHandler(GetClient()->MoveDirectory(dirPath, newDirPath, false));
+    receivedHandler(GetClient()->MoveDirectory(dirPath, newDirPath));
   }
 }
 

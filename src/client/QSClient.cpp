@@ -212,10 +212,8 @@ ClientError<QSError::Value> QSClient::MoveFile(const string &sourceFilePath,
 }
 
 // --------------------------------------------------------------------------
-// Notes: MoveDirectory will do nothing on dir tree and cache.
 ClientError<QSError::Value> QSClient::MoveDirectory(const string &sourceDirPath,
-                                                    const string &targetDirPath,
-                                                    bool async) {
+                                                    const string &targetDirPath) {
   string sourceDir = AppendPathDelim(sourceDirPath);
   ListObjectsInput listObjInput;
   listObjInput.SetLimit(Constants::BucketListObjectsLimit);
@@ -249,15 +247,7 @@ ClientError<QSError::Value> QSClient::MoveDirectory(const string &sourceDirPath,
       string sourceSubFile = "/" + const_cast<KeyType &>(key).GetKey();
       string targetSubFile = targetDir + sourceSubFile.substr(lenSourceDir);
 
-      if (async) {  // asynchronously
-        GetExecutor()->SubmitAsync(
-            bind(boost::type<void>(), receivedHandler, _1),
-            bind(boost::type<ClientError<QSError::Value> >(),
-                 &QSClient::MoveObject, this, _1, _2),
-            sourceSubFile, targetSubFile);
-      } else {  // synchronizely
-        receivedHandler(MoveObject(sourceSubFile, targetSubFile));
-      }
+      receivedHandler(MoveObject(sourceSubFile, targetSubFile));
     }
   }
 
@@ -268,30 +258,13 @@ ClientError<QSError::Value> QSClient::MoveDirectory(const string &sourceDirPath,
       string sourceSubDir = AppendPathDelim("/" + commonPrefix);
       string targetSubDir = targetDir + sourceSubDir.substr(lenSourceDir);
 
-      if (async) {  // asynchronously
-        GetExecutor()->SubmitAsync(
-            bind(boost::type<void>(), receivedHandler, _1),
-            bind(boost::type<ClientError<QSError::Value> >(),
-                 &QSClient::MoveDirectory, this, _1, _2, false),
-            sourceSubDir, targetSubDir);
-
-      } else {  // synchronizely
-        receivedHandler(MoveDirectory(sourceSubDir, targetSubDir));
-      }
+      receivedHandler(MoveDirectory(sourceSubDir, targetSubDir));
     }
   }
 
   // move dir itself
-  if (async) {  // asynchronously
-    GetExecutor()->SubmitAsync(bind(boost::type<void>(), receivedHandler, _1),
-                               bind(boost::type<ClientError<QSError::Value> >(),
-                                    &QSClient::MoveObject, this, _1, _2),
-                               sourceDir, targetDir);
-  } else {  // synchronizely
-    receivedHandler(MoveObject(sourceDir, targetDir));
-  }
+  receivedHandler(MoveObject(sourceDir, targetDir));
 
-  DebugInfo("Renamed dir " + FormatPath(sourceDirPath, targetDirPath));
   return ClientError<QSError::Value>(QSError::GOOD, false);
 }
 
