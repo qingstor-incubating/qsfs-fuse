@@ -54,10 +54,8 @@ ClientError<QSError::Value> NullClient::MakeDirectory(const string &dirPath) {
   return GoodState();
 }
 
-ClientError<QSError::Value> NullClient::MoveFile(
-    const string &filePath, const string &newFilePath,
-    const shared_ptr<QS::Data::DirectoryTree> &dirTree,
-    const shared_ptr<QS::Data::Cache> &cache) {
+ClientError<QSError::Value> NullClient::MoveFile(const string &filePath,
+                                                 const string &newFilePath) {
   return GoodState();
 }
 

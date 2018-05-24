@@ -206,45 +206,9 @@ ClientError<QSError::Value> QSClient::MakeDirectory(const string &dirPath) {
 }
 
 // --------------------------------------------------------------------------
-ClientError<QSError::Value> QSClient::MoveFile(
-    const string &sourceFilePath, const string &destFilePath,
-    const shared_ptr<DirectoryTree> &dirTree, const shared_ptr<Cache> &cache) {
-  assert(dirTree && cache);
-
-  ClientError<QSError::Value> err = MoveObject(sourceFilePath, destFilePath);
-  if (IsGoodQSError(err)) {
-    if (dirTree && dirTree->Has(sourceFilePath)) {
-      dirTree->Rename(sourceFilePath, destFilePath);
-    }
-
-    if (cache && cache->HasFile(sourceFilePath)) {
-      cache->Rename(sourceFilePath, destFilePath);
-    }
-    DebugInfo("Renamed file" + FormatPath(sourceFilePath, destFilePath));
-  } else {
-    // Handle following special case
-    // As for object storage, there is no concept of directory.
-    // For some case, such as
-    //   an object of "/abc/tst.txt" can exist without existing
-    //   object of "/abc/"
-    // In this case, putobject(move) with objKey of "/abc/" will not success.
-    // So, we need to create it.
-    string sourceFilePath1 = RTrim(sourceFilePath, ' ');
-    bool isDir = sourceFilePath1[sourceFilePath1.size() - 1] == '/';
-    if (err.GetError() == QSError::NOT_FOUND && isDir) {
-      ClientError<QSError::Value> err1 = MakeDirectory(destFilePath);
-      if (IsGoodQSError(err1)) {
-        if (dirTree && dirTree->Has(sourceFilePath)) {
-          dirTree->Rename(sourceFilePath, destFilePath);
-        }
-      } else {
-        Info("Object not created : " + GetMessageForQSError(err1) +
-             FormatPath(destFilePath));
-      }
-    }
-  }
-
-  return err;
+ClientError<QSError::Value> QSClient::MoveFile(const string &sourceFilePath,
+                                               const string &destFilePath) {
+  return MoveObject(sourceFilePath, destFilePath);
 }
 
 // --------------------------------------------------------------------------

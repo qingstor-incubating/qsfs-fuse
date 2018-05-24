@@ -45,6 +45,7 @@ class QSClient;
 namespace FileSystem {
 class Drive;
 struct RenameDirCallback;
+struct RenameFileCallback;
 struct RemoveFileCallback;
 }  // namespace FileSystem
 
@@ -184,6 +185,7 @@ class Cache : private boost::noncopyable {
   friend class QS::Client::QSClient;
   friend class QS::FileSystem::Drive;
   friend struct QS::FileSystem::RenameDirCallback;
+  friend struct QS::FileSystem::RenameFileCallback;
   friend struct QS::FileSystem::RemoveFileCallback;
   friend class CacheTest;
 };

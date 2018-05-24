@@ -562,20 +562,52 @@ void Drive::ReadSymlink(const std::string &linkPath) {
 }
 
 // --------------------------------------------------------------------------
-void Drive::RenameFile(const string &filePath, const string &newFilePath) {
-  DebugInfo(FormatPath(filePath, newFilePath));
-  // Do Renaming
-  ClientError<QSError::Value> err =
-      GetClient()->MoveFile(filePath, newFilePath, m_directoryTree, m_cache);
+struct RenameFileCallback {
+  string path;
+  string newpath;
+  shared_ptr<DirectoryTree> dirTree;
+  shared_ptr<Cache> cache;
 
-  // Fix failure of function test RenameFileBeforeClose
-  // fuse invoking operation in following sequence:
-  //   make file -> flush file -> write file -> rename file -> flush renamed file
-  // so before rename the data is write in cache and still not flushed, if we
-  // update the node meta just after rename with the renamed file (which is empty),
-  // this will set the file size to 0, which results in flushing renamed file
-  // with empty data.
-  ErrorIf(!IsGoodQSError(err), GetMessageForQSError(err));
+  RenameFileCallback(const string &path_, const string &newpath_,
+                     const shared_ptr<DirectoryTree> &dirTree_,
+                     const shared_ptr<Cache> &cache_)
+      : path(path_), newpath(newpath_), dirTree(dirTree_), cache(cache_) {}
+
+  void operator()(const ClientError<QSError::Value> &err) {
+    if (IsGoodQSError(err)) {
+      if (dirTree && dirTree->Has(path)) {
+        dirTree->Rename(path, newpath);
+      }
+      if (cache && cache->HasFile(path)) {
+        cache->Rename(path, newpath);
+      }
+      // No need to update meta, as function test RenameFileBeforeClose could
+      // invoking operation in following sequence:
+      //   make file -> flush file -> write file -> rename file -> flush renamed
+      //   file
+      // so before rename the data is write in cache and still not flushed, if
+      // we update the node meta just after rename with the renamed file (which
+      // is empty), this will set the file size to 0, which results in flushing
+      // renamed file with empty data.
+    } else {
+      Error(GetMessageForQSError(err));
+    }
+  }
+};
+
+// --------------------------------------------------------------------------
+void Drive::RenameFile(const string &filePath, const string &newFilePath, bool async) {
+  DebugInfo(FormatPath(filePath, newFilePath));
+  RenameFileCallback receivedHandler(filePath, newFilePath, m_directoryTree, m_cache);
+  if (async) {
+    GetClient()->GetExecutor()->SubmitAsyncPrioritized(
+        bind(boost::type<void>(), receivedHandler, _1),
+        bind(boost::type<ClientError<QSError::Value> >(),
+             &QS::Client::Client::MoveFile, m_client.get(), _1, _2),
+        filePath, newFilePath);
+  } else {
+    receivedHandler(GetClient()->MoveFile(filePath, newFilePath));
+  }
 }
 
 // --------------------------------------------------------------------------

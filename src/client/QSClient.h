@@ -82,14 +82,10 @@ class QSClient : public Client {
 
   // Move file
   //
-  // @param  : file path, new file path, directory tree, cache
+  // @param  : file path, new file path
   // @return : ClientError
-  //
-  // MoveFile will invoke dirTree and Cache renaming.
-  ClientError<QSError::Value> MoveFile(
-      const std::string &sourcefilePath, const std::string &destFilePath,
-      const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
-      const boost::shared_ptr<QS::Data::Cache> &cache);
+  ClientError<QSError::Value> MoveFile(const std::string &sourcefilePath,
+                                       const std::string &destFilePath);
 
   // Move directory
   //

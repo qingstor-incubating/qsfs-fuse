@@ -198,7 +198,8 @@ class Drive : public Singleton<Drive> {
   //
   // @param  : file path, new file path
   // @return : void
-  void RenameFile(const std::string &filePath, const std::string &newFilePath);
+  void RenameFile(const std::string &filePath, const std::string &newFilePath,
+                  bool async = false);
 
   // Rename a directory
   //

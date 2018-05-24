@@ -100,14 +100,10 @@ class Client : private boost::noncopyable {
 
   // Move file
   //
-  // @param  : file path, new file path, dir tree, cache
-  // @return : ClientError
-  //
-  // MoveFile will invoke dirTree and Cache renaming.
+  // @param  : file path, new file path
+  // @return : ClientError.
   virtual ClientError<QSError::Value> MoveFile(
-      const std::string &filePath, const std::string &newFilePath,
-      const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
-      const boost::shared_ptr<QS::Data::Cache> &cache) = 0;
+      const std::string &filePath, const std::string &newFilePath) = 0;
 
   // Move directory
   //

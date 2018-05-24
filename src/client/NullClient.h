@@ -45,10 +45,8 @@ class NullClient : public Client {
   ClientError<QSError::Value> DeleteFile(const std::string &filePath);
   ClientError<QSError::Value> MakeFile(const std::string &filePath);
   ClientError<QSError::Value> MakeDirectory(const std::string &dirPath);
-  ClientError<QSError::Value> MoveFile(
-      const std::string &filePath, const std::string &newFilePath,
-      const boost::shared_ptr<QS::Data::DirectoryTree> &dirTree,
-      const boost::shared_ptr<QS::Data::Cache> &cache);
+  ClientError<QSError::Value> MoveFile(const std::string &filePath,
+                                       const std::string &newFilePath);
   ClientError<QSError::Value> MoveDirectory(const std::string &sourceDirPath,
                                             const std::string &targetDirPath,
                                             bool async = false);

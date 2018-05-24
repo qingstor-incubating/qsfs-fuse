@@ -46,6 +46,7 @@ struct MakeDirCallback;
 struct MakeFileCallback;
 struct RenameDirCallback;
 struct RemoveFileCallback;
+struct RenameFileCallback;
 }  // namespace FileSystem
 
 namespace Data {
@@ -185,6 +186,7 @@ class DirectoryTree : private boost::noncopyable {
   friend struct QS::FileSystem::MakeFileCallback;
   friend struct QS::FileSystem::RenameDirCallback;
   friend struct QS::FileSystem::RemoveFileCallback;
+  friend struct QS::FileSystem::RenameFileCallback;
   friend class DirectoryTreeTest;
 };
 
