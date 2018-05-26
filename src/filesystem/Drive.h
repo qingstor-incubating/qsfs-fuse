@@ -285,6 +285,8 @@ class Drive : public Singleton<Drive> {
 
   bool m_connect;  // denote if drive connected to storage
 
+  std::string m_diskCacheFolder;
+
   boost::shared_ptr<QS::Client::Client> m_client;
   boost::shared_ptr<QS::Client::TransferManager> m_transferManager;
   boost::shared_ptr<QS::Data::Cache> m_cache;

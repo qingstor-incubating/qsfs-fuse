@@ -117,6 +117,8 @@ Drive::Drive()
     : m_mountable(true),
       m_cleanup(false),
       m_connect(false),
+      m_diskCacheFolder(
+          QS::Configure::Options::Instance().GetDiskCacheDirectory()),
       m_client(ClientFactory::Instance().MakeClient()),
       m_transferManager(
           TransferManagerFactory::Create(TransferManagerConfigure())) {
@@ -150,11 +152,9 @@ void Drive::CleanUp() {
   if (!GetCleanup()) {
     // remove disk cache folder if existing
     // log off, to avoid dead reference to log (a singleton)
-    string diskfolder =
-        QS::Configure::Options::Instance().GetDiskCacheDirectory();
-    if (QS::Utils::FileExists(diskfolder) &&
-            QS::Utils::IsDirectory(diskfolder).first) {
-      DeleteFilesInDirectory(diskfolder, true);  // delete folder itself
+    if (QS::Utils::FileExists(m_diskCacheFolder) &&
+        QS::Utils::IsDirectory(m_diskCacheFolder).first) {
+      DeleteFilesInDirectory(m_diskCacheFolder, true);  // delete folder itself
     }
 
     m_client.reset();
