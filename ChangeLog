@@ -1,3 +1,12 @@
+* Sat May 26 2018 - Yunify Inc.
+
+- qsfs: version 1.0.4
+- Refactor to ensure file ops (read, write, truncate, .etc) thread safe
+- Partially remove Clinet dependency on DirectoryTree and Cache
+- Add individual folder for each integration test to decrease the coupling among them
+- Replace static dynamic container (set, map) with array
+- Fix issue of failure to pass host to sdk
+
 * Fri Apr 13 2018 - Yunify Inc.
 
 - qsfs: version 1.0.3
