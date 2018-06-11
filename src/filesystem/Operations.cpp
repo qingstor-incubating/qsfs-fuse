@@ -271,8 +271,8 @@ void InitializeFUSECallbacks(struct fuse_operations* fuseOps) {
   fuseOps->symlink = qsfs_symlink;
   fuseOps->rename = qsfs_rename;
   // fuseOps->link = NULL;
-  // fuseOps->chmod = qsfs_chmod;  // TODO(jim):
-  // fuseOps->chown = qsfs_chown;  // TODO(jim):
+  fuseOps->chmod = qsfs_chmod;  // TODO(jim):
+  fuseOps->chown = qsfs_chown;  // TODO(jim):
   fuseOps->truncate = qsfs_truncate;
   fuseOps->open = qsfs_open;
   fuseOps->read = qsfs_read;
@@ -785,6 +785,9 @@ int qsfs_link(const char* path, const char* linkpath) {
 // --------------------------------------------------------------------------
 // Change the permission bits of a file
 int qsfs_chmod(const char* path, mode_t mode) {
+  // fake this is implmented
+  // TODO<jim>: implement when skd ready
+  return 0;
   Info("Change permisions to " + ModeToString(mode) + " for path" +
        FormatPath(path));
   if (!IsValidPath(path)) {
@@ -840,6 +843,9 @@ int qsfs_chmod(const char* path, mode_t mode) {
 // --------------------------------------------------------------------------
 // Change the owner and group of a file
 int qsfs_chown(const char* path, uid_t uid, gid_t gid) {
+  // fake this is implmented
+  // TODO<jim>: implement when skd ready
+  return 0;
   Info("[uid=" + to_string(uid) + ", gid=" + to_string(gid) + "] " +
        FormatPath(path));
   if (!IsValidPath(path)) {
@@ -1705,6 +1711,7 @@ int qsfs_lock(const char* path, struct fuse_file_info* fi, int cmd,
 // See the utimensat(2) man page for details.
 int qsfs_utimens(const char* path, const struct timespec tv[2]) {
   // to mute fuse warning, just return currently
+  // TODO<jim>: implement when skd ready
   return 0;
 
   Info(FormatPath(path));
