@@ -413,7 +413,7 @@ int qsfs_readlink(const char* path, char* link, size_t size) {
     memcpy(link, symlink.c_str(), size_);
     link[size_] = '\0';
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -467,7 +467,7 @@ int qsfs_mknod(const char* path, mode_t mode, dev_t dev) {
     drive.MakeFile(path,
                    mode | QS::Configure::Options::Instance().GetFileMode());
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -522,7 +522,7 @@ int qsfs_mkdir(const char* path, mode_t mode) {
     // Create the directory
     drive.MakeDir(AppendPathDelim(path), mode | S_IFDIR);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -569,7 +569,7 @@ int qsfs_unlink(const char* path) {
       drive.RemoveFile(path, async);
     }
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -625,7 +625,7 @@ int qsfs_rmdir(const char* path) {
     // Do delete empty directory
     drive.RemoveFile(path_);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -683,7 +683,7 @@ int qsfs_symlink(const char* path, const char* link) {
     // Create a symbolic link
     drive.SymLink(path, link);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -764,7 +764,7 @@ int qsfs_rename(const char* path, const char* newpath) {
       Drive::Instance().RenameFile(path_, newpath);
     }
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -830,7 +830,7 @@ int qsfs_chmod(const char* path, mode_t mode) {
     // Change the file permission
     drive.Chmod(path_, mode);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -885,7 +885,7 @@ int qsfs_chown(const char* path, uid_t uid, gid_t gid) {
     // Change owner and group
     drive.Chown(path_, uid, gid);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -936,7 +936,7 @@ int qsfs_truncate(const char* path, off_t newsize) {
     // Do truncating
     drive.TruncateFile(path, newsize);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1014,7 +1014,7 @@ int qsfs_open(const char* path, struct fuse_file_info* fi) {
       drive.OpenFile(path, false);  // load file synchronizely if not exist
     }
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1082,7 +1082,7 @@ int qsfs_read(const char* path, char* buf, size_t size, off_t offset,
       throw;           // rethrow
     }
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     return readSize;
   }
 
@@ -1137,7 +1137,7 @@ int qsfs_write(const char* path, const char* buf, size_t size, off_t offset,
       throw;           // rethrow
     }
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     return writeSize;
   }
 
@@ -1174,7 +1174,7 @@ int qsfs_statfs(const char* path, struct statvfs* statv) {
       throw QSException("No such file or directory " + FormatPath(path));
     }
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1226,12 +1226,12 @@ int qsfs_flush(const char* path, struct fuse_file_info* fi) {
       bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
       Drive::Instance().FlushFile(path_, releasefile, updatemeta, async);
     } catch (const QSException& err) {
-      Error(err.get());
+      Warning(err.get());
       return -EAGAIN;  // Try again
     }
 
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1282,7 +1282,7 @@ int qsfs_release(const char* path, struct fuse_file_info* fi) {
 
     Drive::Instance().ReleaseFile(path_);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1316,12 +1316,12 @@ int qsfs_fsync(const char* path, int datasync, struct fuse_file_info* fi) {
       bool async = !QS::Configure::Options::Instance().IsQsfsSingleThread();
       Drive::Instance().FlushFile(path_, releasefile, updatemeta, async);
     } catch (const QSException& err) {
-      Error(err.get());
+      Warning(err.get());
       return -EAGAIN;  // Try again
     }
 
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1406,7 +1406,7 @@ int qsfs_opendir(const char* path, struct fuse_file_info* fi) {
 
     drive.GetNode(dirPath, true, true);  // update dir synchronizely
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1483,7 +1483,7 @@ int qsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
       }
     }
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1602,7 +1602,7 @@ int qsfs_access(const char* path, int mask) {
                         ") for path " + FormatPath(path_));
     }
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1653,7 +1653,7 @@ int qsfs_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
     // Create the new node
     drive.MakeFile(path, mode);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
@@ -1751,7 +1751,7 @@ int qsfs_utimens(const char* path, const struct timespec tv[2]) {
     time_t mtime = tv[1].tv_sec;
     Drive::Instance().Utimens(path_, mtime);
   } catch (const QSException& err) {
-    Error(err.get());
+    Warning(err.get());
     if (ret == 0) {
       ret = -errno;
     }
