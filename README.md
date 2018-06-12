@@ -110,7 +110,7 @@ Supported general options are listed as following,
 | -t | --maxstat     | integer | N | Specify max count (K) of cached stat entrys, default value is `2 K`
 | -e | --statexpire  | integer | N | Specify expire time (minutes) for stat entries, negative value will disable stat expire, default is no expire
 | -i | --maxlist     | integer | N | Specify max count of files of ls operation. A value of zero will list all files, default is to list all files
-| -y | --fscap       | integer | N | Specify filesystem capacity (GB), default value is 1PB
+| -y | --fscap       | integer | N | Specify filesystem capacity (GB), default value is `1PB`
 | -n | --numtransfer | integer | N | Specify max number file tranfers to run in parallel, you can increase the value when transfer large files, default value is `5`
 | -b | --bufsize     | integer | N | Specify file transfer buffer size (MB), this should be larger than 8MB, default value is `10 MB`
 | -H | --host        | string  | N | Specify host name, default value is `qingstor.com`

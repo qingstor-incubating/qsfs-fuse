@@ -1,3 +1,9 @@
+* Tue Jun 12 2018 - Yunify Inc.
+
+-qsfs: version 1.0.5
+- Add option to specify file system size (capacity)
+- Add null implementation for meta related api (such as chmod, chown and utimens)
+
 * Sat May 26 2018 - Yunify Inc.
 
 - qsfs: version 1.0.4
