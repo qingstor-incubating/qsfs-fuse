@@ -63,6 +63,7 @@ using QS::Configure::Default::GetDefaultPort;
 using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultParallelTransfers;
 using QS::Configure::Default::GetDefaultTransferBufSize;
+using QS::Configure::Default::GetFsCapacity;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
@@ -103,7 +104,8 @@ static struct options {
   int retries;           // transaction retries
   int reqtimeout;    // in ms
   int maxcache;      // in MB
-  const char *diskdir;
+  int fscap;         // specify drive capacity in GB
+  const char *diskdir;  // path for file cache
   int maxstat;       // in K
   int maxlist;       // max file count for ls
   int statexpire;    // in mins, negative value disable state expire
@@ -152,6 +154,7 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-t=%i", maxstat),        OPTION("--maxstat=%i",     maxstat),
     OPTION("-i=%i", maxlist),        OPTION("--maxlist=%i",     maxlist),
     OPTION("-e=%i", statexpire),     OPTION("--statexpire=%i",  statexpire),
+    OPTION("-y=%i", fscap),          OPTION("--fscap",          fscap),
     OPTION("-n=%i", numtransfer),    OPTION("--numtransfer=%i", numtransfer),
     OPTION("-b=%i", bufsize),        OPTION("--bufsize=%i",     bufsize),
     OPTION("-T=%i", threads),        OPTION("--threads=%i",     threads),
@@ -250,8 +253,9 @@ void Parse(int argc, char **argv) {
   options.maxcache       = GetMaxCacheSize() / QS::Size::MB1;
   options.diskdir        = strdup(GetDefaultDiskCacheDirectory().c_str());
   options.maxstat        = GetMaxStatCount() / QS::Size::K1;
-  options.maxlist        = GetMaxListObjectsCount();
   options.statexpire     =  -1;
+  options.maxlist        = GetMaxListObjectsCount();
+  options.fscap          = GetFsCapacity() / QS::Size::GB1;
   options.numtransfer    = GetDefaultParallelTransfers();
   options.bufsize        = GetDefaultTransferBufSize() / QS::Size::MB1;
   options.threads        = GetClientDefaultPoolSize();
@@ -341,6 +345,14 @@ void Parse(int argc, char **argv) {
 
   qsOptions.SetMaxListCount(options.maxlist);
   qsOptions.SetStatExpireInMin(options.statexpire);
+
+  if (options.fscap<= 0) {
+    PrintWarnMsg("-y|--fscap", options.fscap,
+                 GetFsCapacity() / QS::Size::GB1);
+    qsOptions.SetFsCapacityInGB(GetFsCapacity() / QS::Size::GB1);
+  } else {
+    qsOptions.SetFsCapacityInGB(options.fscap);
+  }
 
   if (options.numtransfer <= 0) {
     PrintWarnMsg("-n|--numtransfer", options.numtransfer,

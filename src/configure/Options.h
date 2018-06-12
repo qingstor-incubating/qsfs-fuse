@@ -70,6 +70,7 @@ class Options : public Singleton<Options> {
   uint16_t GetRetries() const { return m_retries; }
   uint32_t GetRequestTimeOut() const { return m_requestTimeOut; }
   uint32_t GetMaxCacheSizeInMB() const { return m_maxCacheSizeInMB; }
+  uint32_t GetFsCapacityinGB() const { return m_fsCapacityInGB; }
   const std::string &GetDiskCacheDirectory() const { return m_diskCacheDir; }
   uint32_t GetMaxStatCountInK() const { return m_maxStatCountInK; }
   int32_t GetMaxListCount() const { return m_maxListCount; }
@@ -123,6 +124,7 @@ class Options : public Singleton<Options> {
   void SetRetries(unsigned retries) { m_retries = retries; }
   void SetRequestTimeOut(uint32_t timeout) { m_requestTimeOut = timeout; }
   void SetMaxCacheSizeInMB(uint32_t maxcache) { m_maxCacheSizeInMB = maxcache; }
+  void SetFsCapacityInGB(uint32_t fscap) { m_fsCapacityInGB = fscap; }
   void SetDiskCacheDirectory(const char *diskdir) { m_diskCacheDir = diskdir; }
   void SetMaxStatCountInK(uint32_t maxstat) { m_maxStatCountInK = maxstat; }
   void SetMaxListCount(int32_t maxlist) { m_maxListCount = maxlist; }
@@ -146,7 +148,7 @@ class Options : public Singleton<Options> {
     m_qsfsSingleThread = singleThread;
   }
   void SetDebug(bool debug) { m_debug = debug; }
-  void SetDebugFuse (bool debug) { m_debugFuse = debug; }
+  void SetDebugFuse(bool debug) { m_debugFuse = debug; }
   void SetDebugCurl(bool debug) { m_debugCurl = debug; }
   void SetShowHelp(bool showHelp) { m_showHelp = showHelp; }
   void SetShowVerion(bool showVersion) { m_showVersion = showVersion; }
@@ -174,6 +176,7 @@ class Options : public Singleton<Options> {
   uint16_t m_retries;         // transaction retries
   uint32_t m_requestTimeOut;  // in milliseconds
   uint32_t m_maxCacheSizeInMB;
+  uint32_t m_fsCapacityInGB;
   std::string m_diskCacheDir;
   uint32_t m_maxStatCountInK;
   int32_t m_maxListCount;        // negative value will list all files for ls

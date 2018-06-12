@@ -14,8 +14,6 @@
 // | limitations under the License.
 // +-------------------------------------------------------------------------
 
-#define __STDC_LIMIT_MACROS  // for UINT64_MAX always put at first
-
 #include "client/QSClientConverter.h"
 
 #include <assert.h>
@@ -37,6 +35,7 @@
 
 #include "qingstor/HttpCommon.h"
 
+#include "base/Size.h"
 #include "base/TimeUtils.h"
 #include "base/Utils.h"
 #include "configure/Default.h"
@@ -54,20 +53,20 @@ using boost::make_shared;
 using boost::shared_ptr;
 using QingStor::GetBucketStatisticsOutput;
 using QingStor::HeadObjectOutput;
-using QingStor::Http::HttpResponseCode;
 using QingStor::ListObjectsOutput;
-using QS::Data::BuildDefaultDirectoryMeta;
-using QS::Data::FileMetaData;
-using QS::Data::FileType;
+using QingStor::Http::HttpResponseCode;
 using QS::Configure::Default::GetBlockSize;
 using QS::Configure::Default::GetFragmentSize;
 using QS::Configure::Default::GetNameMaxLen;
+using QS::Data::BuildDefaultDirectoryMeta;
+using QS::Data::FileMetaData;
+using QS::Data::FileType;
 using QS::FileSystem::GetDirectoryMimeType;
 using QS::FileSystem::GetSymlinkMimeType;
 using QS::TimeUtils::RFC822GMTToSeconds;
 using QS::Utils::AppendPathDelim;
-using QS::Utils::GetProcessEffectiveUserID;
 using QS::Utils::GetProcessEffectiveGroupID;
+using QS::Utils::GetProcessEffectiveUserID;
 using std::string;
 using std::vector;
 
@@ -92,7 +91,10 @@ void GetBucketStatisticsOutputToStatvfs(
       const_cast<GetBucketStatisticsOutput &>(bucketStatsOutput);
   uint64_t numObjs = output.GetCount();
   uint64_t bytesUsed = output.GetSize();
-  uint64_t bytesTotal = UINT64_MAX;  // object storage is unlimited
+  QS::Configure::Options &options = QS::Configure::Options::Instance();
+  uint64_t bytesTotal = options.GetFsCapacityinGB() * QS::Size::GB1 < bytesUsed
+                            ? bytesUsed
+                            : options.GetFsCapacityinGB() * QS::Size::GB1;
   uint64_t bytesFree = bytesTotal - bytesUsed;
 
   statv->f_bsize = GetBlockSize();      // Filesystem block size

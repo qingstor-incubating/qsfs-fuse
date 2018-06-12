@@ -98,6 +98,10 @@ blkcnt_t GetBlocks(off_t size) {
   return size / 512 + 1;
 }
 
+uint64_t GetFsCapacity() {
+  return QS::Size::PB1;
+}
+
 uint64_t GetMaxCacheSize() {
   return QS::Size::MB200;  // default value
 }
@@ -107,7 +111,7 @@ size_t GetMaxStatCount() {
 }
 
 uint16_t GetMaxListObjectsCount() {
-  //return QS::Size::K1;  // default value
+  // return QS::Size::K1;  // default value
   return 0;  // to list all object
 }
 
