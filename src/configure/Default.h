@@ -32,6 +32,7 @@ namespace Configure {
 namespace Default {
 
 const char* GetProgramName();
+std::string GetProgramNameAndVersion();
 
 std::string GetDefaultCredentialsFile();
 std::string GetDefaultDiskCacheDirectory();

@@ -52,6 +52,7 @@ namespace {
 using boost::to_string;
 using QS::Configure::Default::GetClientDefaultPoolSize;
 using QS::Configure::Default::GetDefaultCredentialsFile;
+using QS::Configure::Default::GetDefaultConnectTimeOut;
 using QS::Configure::Default::GetDefaultDiskCacheDirectory;
 using QS::Configure::Default::GetDefaultDirMode;
 using QS::Configure::Default::GetDefaultFileMode;
@@ -67,7 +68,7 @@ using QS::Configure::Default::GetFsCapacity;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
-using QS::Configure::Default::GetDefaultConnectTimeOut;
+using QS::Configure::Default::GetProgramNameAndVersion;
 using QS::Utils::GetProcessEffectiveUserID;
 using QS::Utils::GetProcessEffectiveGroupID;
 using std::string;
@@ -115,7 +116,7 @@ static struct options {
   const char *host;
   const char *protocol;
   int port;
-  const char *addtionalAgent;
+  const char *addtionalAgent;  // set to fixed value 'qsfs'
   int contentMD5;          // default not enable content MD5
   int clearLogDir;         // default not clear log dir
   int foreground;          // default not foreground
@@ -161,7 +162,8 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-H=%s", host),           OPTION("--host=%s",        host),
     OPTION("-p=%s", protocol),       OPTION("--protocol=%s",    protocol),
     OPTION("-P=%i", port),           OPTION("--port=%i",        port),
-    OPTION("-a=%s", addtionalAgent), OPTION("--agent=%s",       addtionalAgent),
+    // Set to fixed value of "qsfs", and not export
+    // OPTION("-a=%s", addtionalAgent), OPTION("--agent=%s",       addtionalAgent),
     OPTION("-m",    contentMD5),     OPTION("--contentMD5",     contentMD5),
     OPTION("-C",    clearLogDir),    OPTION("--clearlogdir",    clearLogDir),
     OPTION("-f",    foreground),     OPTION("--foreground",     foreground),
@@ -262,7 +264,7 @@ void Parse(int argc, char **argv) {
   options.host           = strdup(GetDefaultHostName().c_str());
   options.protocol       = strdup(GetDefaultProtocolName().c_str());
   options.port           = GetDefaultPort(GetDefaultProtocolName());
-  options.addtionalAgent = strdup("");
+  options.addtionalAgent = strdup(GetProgramNameAndVersion().c_str());
   options.contentMD5     = 0;
   options.clearLogDir    = 0;
   options.foreground     = 0;

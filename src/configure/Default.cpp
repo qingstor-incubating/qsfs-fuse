@@ -25,6 +25,7 @@
 
 #include "base/Size.h"
 #include "base/StringUtils.h"
+#include "configure/Version.h"
 
 namespace QS {
 
@@ -48,6 +49,13 @@ static const int CLIENT_DEFAULT_POOL_SIZE = 5;
 static const char* QS_SDK_LOG_DIR_BASE_NAME = "sdk.log";  // qs sdk log
 
 const char* GetProgramName() { return PROGRAM_NAME; }
+
+string GetProgramNameAndVersion() {
+  string name = PROGRAM_NAME;
+  name.append("-");
+  name.append(QS::Configure::Version::GetVersionString());
+  return name;
+}
 
 string GetDefaultCredentialsFile() { return QSFS_DEFAULT_CREDENTIALS; }
 string GetDefaultDiskCacheDirectory() { return QSFS_DEFAULT_DISK_CACHE_DIR; }
@@ -98,9 +106,7 @@ blkcnt_t GetBlocks(off_t size) {
   return size / 512 + 1;
 }
 
-uint64_t GetFsCapacity() {
-  return QS::Size::PB1;
-}
+uint64_t GetFsCapacity() { return QS::Size::PB1; }
 
 uint64_t GetMaxCacheSize() {
   return QS::Size::MB200;  // default value

@@ -67,6 +67,7 @@ add_library(
   base/Utils.cpp
   base/StringUtils.cpp
   configure/Default.cpp
+  configure/Version.cpp
 )
 
 add_library(

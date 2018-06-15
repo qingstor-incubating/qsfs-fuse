@@ -144,6 +144,7 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[max stat(K): " << to_string(opts.m_maxStatCountInK) << "] "
          << "[max list: " << to_string(opts.m_maxListCount) << "] "
          << "[stat expire(min): " << to_string(opts.m_statExpireInMin) << "] "
+         << "[filesystem size(GB): " << to_string(opts.m_fsCapacityInGB) << "] "
          << "[num transfers: " << to_string(opts.m_parallelTransfers) << "] "
          << "[transfer buf(MB): " << to_string(opts.m_transferBufferSizeInMB) <<"] "  // NOLINT
          << "[pool size: " << to_string(opts.m_clientPoolSize) << "] "

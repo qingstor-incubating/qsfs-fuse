@@ -116,7 +116,6 @@ Supported general options are listed as following,
 | -H | --host        | string  | N | Specify host name, default value is `qingstor.com`
 | -p | --protocol    | string  | N | Specify protocol (https or http) default value is `https`
 | -P | --port        | integer | N | Specify port, default is 443 for https and 80 for http
-| -a | --agent       | string  | N | Specify additional user agent, default is empty
 
 Supported miscellaneous options are list as following,
 

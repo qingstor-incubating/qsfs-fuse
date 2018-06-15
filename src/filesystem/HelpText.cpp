@@ -114,7 +114,7 @@ void ShowQSFSHelp() {
   "  -p, --protocol     Protocol could be https or http, default value is " <<
                                               GetDefaultProtocolName() << "\n" <<
   "  -P, --port         Specify port, default is 443 for https and 80 for http\n"
-  "  -a, --agent        Additional user agent\n"
+  //"  -a, --agent        Additional user agent\n"
   "\n"
   " Miscellaneous Options:\n"
   "  -m, --contentMD5   Enable writes with MD5 hashs to ensure data integrity\n"
@@ -149,7 +149,7 @@ void ShowQSFSUsage() {
   "       [-y|--fscap=[value]]\n"
   "       [-n|--numtransfer=[value]] [-b|--bufsize=value]]\n"
   "       [-H|--host=[value]] [-p|--protocol=[value]]\n"
-  "       [-P|--port=[value]] [-a|--agent=[value]]\n"
+  "       [-P|--port=[value]]\n"
   "       [-m|--contentMD5]\n"
   "       [-C|--clearlogdir]\n"
   "       [-f|--foreground]\n"
