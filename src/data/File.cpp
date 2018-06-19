@@ -300,15 +300,15 @@ pair<size_t, ContentRangeDeque> File::Read(
   Load(offset, readSize, transferManager, dirTree, cache, client, false);
   pair<size_t, ContentRangeDeque> outcome = ReadNoLoad(offset, readSize, buf);
 
-  // prefectch
-  if (remainingSize > 0) {
-    off_t off = offset + len;
-    size_t transferBufSz =
-        QS::Configure::Options::Instance().GetTransferBufferSizeInMB() *
-        QS::Size::MB1;
-    size_t len = remainingSize > transferBufSz ? transferBufSz : remainingSize;
-    Load(off, len, transferManager, dirTree, cache, client, async);
-  }
+  // no prefetch
+  // if (remainingSize > 0) {
+  //   off_t off = offset + len;
+  //   size_t transferBufSz =
+  //       QS::Configure::Options::Instance().GetTransferBufferSizeInMB() *
+  //       QS::Size::MB1;
+  //   size_t len = remainingSize > transferBufSz ? transferBufSz : remainingSize;
+  //   Load(off, len, transferManager, dirTree, cache, client, async);
+  // }
 
   return outcome;
 }
@@ -683,8 +683,7 @@ void File::Load(off_t offset, size_t size,
   size_t sizeT = relSize > size ? size : relSize;
   ContentRangeDeque ranges = GetUnloadedRanges(offset, sizeT);
   if (!ranges.empty()) {
-    DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges) +
-              ", file:" + ToString());
+    DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges));
     DownloadRanges(ranges, transferManager, dirTree, cache, async);
   }
 

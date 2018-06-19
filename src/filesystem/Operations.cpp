@@ -1037,8 +1037,8 @@ int qsfs_open(const char* path, struct fuse_file_info* fi) {
 // Read are only called if the file has been opend with the correct flags.
 int qsfs_read(const char* path, char* buf, size_t size, off_t offset,
               struct fuse_file_info* fi) {
-  Info("[size=" + to_string(size) + "] [offset=" + to_string(offset) +
-       "] " + FormatPath(path));
+  Info("[offset:" + to_string(offset) + ", size:" + to_string(size) + "] " +
+       FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     errno = EINVAL;

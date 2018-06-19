@@ -23,7 +23,7 @@
 
 #include "base/Exception.h"
 #include "base/Logging.h"
-#include "base/UtilsWithLog.h"
+#include "base/Utils.h"
 #include "client/ClientConfiguration.h"
 #include "client/Credentials.h"
 #include "configure/Default.h"
@@ -44,7 +44,7 @@ using QS::Configure::Default::GetMimeFiles;
 using QS::FileSystem::Initializer;
 using QS::FileSystem::Priority;
 using QS::FileSystem::PriorityInitFuncPair;
-using QS::UtilsWithLog::FileExists;
+using QS::Utils::FileExists;
 using std::string;
 
 // --------------------------------------------------------------------------
