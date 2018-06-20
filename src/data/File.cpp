@@ -673,32 +673,36 @@ void File::Load(off_t offset, size_t size,
   }
 
   // head real size
-  uint64_t relSize;
+  uint64_t fileSz;
   shared_ptr<FileMetaData> fileMeta = client->GetObjectMeta(GetFilePath());
   if (fileMeta) {
-    relSize = fileMeta->m_fileSize;
+    fileSz = fileMeta->m_fileSize;
+  }
+  if (offset > 0 && fileSz <= offset) {
+    return;
   }
 
   // download unloaded ranges
-  size_t sizeT = relSize > size ? size : relSize;
+  size_t sizeT = fileSz > offset + size ? size : fileSz - offset;
   ContentRangeDeque ranges = GetUnloadedRanges(offset, sizeT);
   if (!ranges.empty()) {
     DebugInfo("Download unloaded ranges:" + ContentRangeDequeToString(ranges));
     DownloadRanges(ranges, transferManager, dirTree, cache, async);
   }
 
-  // if size surpass real size, fill it
-  if (size > relSize) {
-    ContentRangeDeque ranges = GetUnloadedRanges(sizeT, size - sizeT);
+  // if surpass real file size, fill it
+  if (offset + size > fileSz) {
+    ContentRangeDeque ranges =
+        GetUnloadedRanges(fileSz, offset + size - fileSz);
     if (!ranges.empty()) {
       BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
-        off_t offset = range.first;
-        size_t len = range.second;
+        off_t off = range.first;
+        size_t len = range.second; 
         // fill hole
         vector<char> hole(len);  // value initialization with '\0'
-        DebugInfo("Fill hole [offset:" + to_string(offset) +
+        DebugInfo("Fill hole [offset:" + to_string(off) +
                   ", len:" + to_string(len) + "] " + FormatPath(GetFilePath()));
-        Write(offset, len, &hole[0], dirTree, cache);
+        Write(off, len, &hole[0], dirTree, cache);
       }
     }
   }
