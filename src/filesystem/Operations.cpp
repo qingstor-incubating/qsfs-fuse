@@ -308,7 +308,7 @@ void InitializeFUSECallbacks(struct fuse_operations* fuseOps) {
 // Similar to stat(). The 'st_dev' and 'st_blksize' fields are ignored. The
 // 'st_ino' filed is ignored except if the 'use_ino' mount option is given.
 int qsfs_getattr(const char* path, struct stat* statbuf) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -360,7 +360,7 @@ int qsfs_getattr(const char* path, struct stat* statbuf) {
 // The arguments is already verified
 // Readlink is only called with an existing symlink.
 int qsfs_readlink(const char* path, char* link, size_t size) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -430,7 +430,7 @@ int qsfs_readlink(const char* path, char* link, size_t size) {
 // If the filesystem defines a create() method, then for regular files that
 // will be called instead.
 int qsfs_mknod(const char* path, mode_t mode, dev_t dev) {
-  Info(FormatPath(path));
+  DebugInfo("[mode:" + QS::StringUtils::ModeToString(mode) +"]" + FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -484,7 +484,7 @@ int qsfs_mknod(const char* path, mode_t mode, dev_t dev) {
 // S_ISDIR(mode) can be false. To obtain the correct directory type bits use
 // mode|S_IFDIR.
 int qsfs_mkdir(const char* path, mode_t mode) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -535,7 +535,7 @@ int qsfs_mkdir(const char* path, mode_t mode) {
 // --------------------------------------------------------------------------
 // Remove a file
 int qsfs_unlink(const char* path) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -582,7 +582,7 @@ int qsfs_unlink(const char* path) {
 // --------------------------------------------------------------------------
 // Remove a directory
 int qsfs_rmdir(const char* path) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -643,7 +643,7 @@ int qsfs_rmdir(const char* path) {
 // Symlink is only called if there isn't already another object with the
 // requested linkname.
 int qsfs_symlink(const char* path, const char* link) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path, link));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -700,7 +700,7 @@ int qsfs_symlink(const char* path, const char* link) {
 // not overwrite new file name and return an error (ENOTEMPTY) instead.
 // Otherwise, the filesystem will replace the new file name.
 int qsfs_rename(const char* path, const char* newpath) {
-  Info(FormatPath(path, newpath));
+  DebugInfo(FormatPath(path, newpath));
   if (!IsValidPath(path) || !IsValidPath(newpath)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -788,7 +788,7 @@ int qsfs_chmod(const char* path, mode_t mode) {
   // fake this is implmented
   // TODO<jim>: implement when skd ready
   return 0;
-  Info("Change permisions to " + ModeToString(mode) + " for path" +
+  DebugInfo("Change permisions to " + ModeToString(mode) + " for path" +
        FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
@@ -846,7 +846,7 @@ int qsfs_chown(const char* path, uid_t uid, gid_t gid) {
   // fake this is implmented
   // TODO<jim>: implement when skd ready
   return 0;
-  Info("[uid=" + to_string(uid) + ", gid=" + to_string(gid) + "] " +
+  DebugInfo("[uid=" + to_string(uid) + ", gid=" + to_string(gid) + "] " +
        FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
@@ -898,7 +898,7 @@ int qsfs_chown(const char* path, uid_t uid, gid_t gid) {
 // --------------------------------------------------------------------------
 // Change the size of a file
 int qsfs_truncate(const char* path, off_t newsize) {
-  Info("[size=" + to_string(newsize) + "]" + FormatPath(path));
+  DebugInfo("[size=" + to_string(newsize) + "]" + FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -962,7 +962,7 @@ int qsfs_truncate(const char* path, off_t newsize) {
 // filehandle in the fuse_file_info structure, which will be
 // passed to all file operations.
 int qsfs_open(const char* path, struct fuse_file_info* fi) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -1037,7 +1037,7 @@ int qsfs_open(const char* path, struct fuse_file_info* fi) {
 // Read are only called if the file has been opend with the correct flags.
 int qsfs_read(const char* path, char* buf, size_t size, off_t offset,
               struct fuse_file_info* fi) {
-  Info("[offset:" + to_string(offset) + ", size:" + to_string(size) + "] " +
+  DebugInfo("[offset:" + to_string(offset) + ", size:" + to_string(size) + "] " +
        FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
@@ -1100,8 +1100,8 @@ int qsfs_read(const char* path, char* buf, size_t size, off_t offset,
 // Write is only called if the file has been opened with the correct flags.
 int qsfs_write(const char* path, const char* buf, size_t size, off_t offset,
                struct fuse_file_info* fi) {
-  Info("[size=" + to_string(size) +
-       "] [offset=" + to_string(offset) + "] " + FormatPath(path));
+  DebugInfo("[offset:" + to_string(offset) + ", size:" + to_string(size) + "] " +
+       FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     errno = EINVAL;
@@ -1149,7 +1149,7 @@ int qsfs_write(const char* path, const char* buf, size_t size, off_t offset,
 //
 // The 'f_frsize', 'f_favail', 'f_fsid' and 'f_flag' fields are ignored.
 int qsfs_statfs(const char* path, struct statvfs* statv) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -1198,7 +1198,7 @@ int qsfs_statfs(const char* path, struct statvfs* statv) {
 // Filesystes shouldn't assume that flush will always be called after some
 // writes, or that if will be called at all.
 int qsfs_flush(const char* path, struct fuse_file_info* fi) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   int mask = O_RDONLY != (fi->flags & O_ACCMODE) ? W_OK : R_OK;
   int ret = 0;
   try {
@@ -1253,7 +1253,7 @@ int qsfs_flush(const char* path, struct fuse_file_info* fi) {
 // than once, in which case only the last release will mean, that no more
 // reads/writes will happen on the file.
 int qsfs_release(const char* path, struct fuse_file_info* fi) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -1298,7 +1298,7 @@ int qsfs_release(const char* path, struct fuse_file_info* fi) {
 // If the datasync parameter is non-zero, then only the user data should be
 // flushed, not the meta data.
 int qsfs_fsync(const char* path, int datasync, struct fuse_file_info* fi) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   int ret = 0;
   try {
     // Check whether path existing
@@ -1369,7 +1369,7 @@ int qsfs_removexattr(const char* path, const char* name) {
 // return an arbitrary file handle in the fuse_file_info structure, which will
 // be passed to readdir, closedir and fsyncdir.
 int qsfs_opendir(const char* path, struct fuse_file_info* fi) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -1427,7 +1427,7 @@ int qsfs_opendir(const char* path, struct fuse_file_info* fi) {
 // Readdir is only called with an existing directory name
 int qsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
                  off_t offset, struct fuse_file_info* fi) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -1576,7 +1576,7 @@ void qsfs_destroy(void* userdata) {
 //
 // This method is not called under Linux kernel versions 2.4.x
 int qsfs_access(const char* path, int mask) {
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -1621,7 +1621,7 @@ int qsfs_access(const char* path, int mask) {
 // If this method is not implemented or under Linux Kernal verions earlier
 // than 2.6.15, the mknod() and open() methods will be called instead.
 int qsfs_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
-  Info( FormatPath(path));
+  DebugInfo( FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;
@@ -1714,7 +1714,7 @@ int qsfs_utimens(const char* path, const struct timespec tv[2]) {
   // TODO<jim>: implement when skd ready
   return 0;
 
-  Info(FormatPath(path));
+  DebugInfo(FormatPath(path));
   if (!IsValidPath(path)) {
     Error("Null path parameter from fuse");
     return -EINVAL;

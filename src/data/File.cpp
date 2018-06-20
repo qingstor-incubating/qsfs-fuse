@@ -269,8 +269,6 @@ pair<size_t, ContentRangeDeque> File::Read(
     shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
     shared_ptr<Client> client, bool async) {
   lock_guard<recursive_mutex> lock(m_mutex);
-  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
-            FormatPath(GetFilePath()));
   shared_ptr<Node> node = dirTree->Find(GetFilePath());
   if (!node) {
     Error("Not found node in directory tree " + FormatPath(GetFilePath()));
@@ -310,8 +308,6 @@ pair<size_t, ContentRangeDeque> File::Read(
 pair<size_t, ContentRangeDeque> File::ReadNoLoad(off_t offset, size_t len,
                                                  char *buf) const {
   lock_guard<recursive_mutex> lock(m_mutex);
-  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
-            FormatPath(GetFilePath()));
   if (buf != NULL) {
     memset(buf, 0, len);
   }
@@ -383,8 +379,6 @@ tuple<bool, size_t, size_t> File::Write(
     off_t offset, size_t len, const char *buffer,
     const shared_ptr<DirectoryTree> &dirTree, const shared_ptr<Cache> &cache) {
   lock_guard<recursive_mutex> lock(m_mutex);
-  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
-            FormatPath(GetFilePath()));
   if (PreWrite(len, cache)) {
     tuple<bool, size_t, size_t> res = DoWrite(offset, len, buffer);
     bool success = boost::get<0>(res);
@@ -402,8 +396,6 @@ tuple<bool, size_t, size_t> File::Write(
     off_t offset, size_t len, const shared_ptr<iostream> &stream,
     const shared_ptr<DirectoryTree> &dirTree, const shared_ptr<Cache> &cache) {
   lock_guard<recursive_mutex> lock(m_mutex);
-  DebugInfo("[offset:" + to_string(offset) + ", len:" + to_string(len) + "] " +
-            FormatPath(GetFilePath()));
   if (PreWrite(len, cache)) {
     tuple<bool, size_t, size_t> res = DoWrite(offset, len, stream);
     bool success = boost::get<0>(res);
