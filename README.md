@@ -113,6 +113,7 @@ Supported general options are listed as following,
 | -y | --fscap       | integer | N | Specify filesystem capacity (GB), default value is `1PB`
 | -n | --numtransfer | integer | N | Specify max number file tranfers to run in parallel, you can increase the value when transfer large files, default value is `5`
 | -b | --bufsize     | integer | N | Specify file transfer buffer size (MB), this should be larger than 8MB, default value is `10 MB`
+| -j | --prefetchsize| integer | N | Specify file read max prefetch size (MB), default value is `20 MB`
 | -H | --host        | string  | N | Specify host name, default value is `qingstor.com`
 | -p | --protocol    | string  | N | Specify protocol (https or http) default value is `https`
 | -P | --port        | integer | N | Specify port, default is 443 for https and 80 for http
@@ -121,6 +122,7 @@ Supported miscellaneous options are list as following,
 
 | short | full | type | required | usage |
 | ----- |------|:------:|:----------:|------ |
+| -J | --prefetch    | bool | N | Enable read prefetch
 | -m | --contentMD5  | bool | N | Enable writes with MD5 hashs to ensure data integrity
 | -C | --clearlogdir | bool | N | Clear log directory at beginning
 | -f | --forground   | bool | N | Turn on log to STDERR and enable FUSE foreground mode

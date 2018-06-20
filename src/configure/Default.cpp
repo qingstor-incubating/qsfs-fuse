@@ -145,6 +145,10 @@ uint64_t GetDefaultTransferBufSize() {
   return QS::Size::MB10;
 }
 
+uint16_t GetDefaultPrefetchSizeInMB() {
+  return 20;  // 20MB
+}
+
 uint64_t GetUploadMultipartMinPartSize() {
   // qs qingstor sepcific
   return QS::Size::MB4;

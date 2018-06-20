@@ -44,6 +44,7 @@ using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultParallelTransfers;
 using QS::Configure::Default::GetDefaultTransactionRetries;
 using QS::Configure::Default::GetDefaultTransferBufSize;
+using QS::Configure::Default::GetDefaultPrefetchSizeInMB;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
@@ -110,6 +111,7 @@ void ShowQSFSHelp() {
   "  -b, --bufsize      File transfer buffer size (MB), this should be larger than 8 MB,\n"
   "                     default value is " 
                         << to_string(GetDefaultTransferBufSize() / QS::Size::MB1) << " MB\n"
+  "  -j, --prefetchsize Read prefetch size (MB), default value is " << GetDefaultPrefetchSizeInMB() << " MB\n"
   "  -H, --host         Host name, default value is " << GetDefaultHostName() << "\n" <<
   "  -p, --protocol     Protocol could be https or http, default value is " <<
                                               GetDefaultProtocolName() << "\n" <<
@@ -117,6 +119,7 @@ void ShowQSFSHelp() {
   //"  -a, --agent        Additional user agent\n"
   "\n"
   " Miscellaneous Options:\n"
+  "  -J, --prefetch     Enable prefetch at read\n"
   "  -m, --contentMD5   Enable writes with MD5 hashs to ensure data integrity\n"
   "  -C, --clearlogdir  Clear log directory at beginning\n"
   "  -f, --forground    Turn on log to STDERR and enable FUSE foreground mode\n"

@@ -79,11 +79,15 @@ class Options : public Singleton<Options> {
   uint32_t GetTransferBufferSizeInMB() const {
     return m_transferBufferSizeInMB;
   }
+  uint16_t GetPrefetchSizeInMB() const {
+    return m_prefetchSizeInMB;
+  }
   uint16_t GetClientPoolSize() const { return m_clientPoolSize; }
   const std::string &GetHost() const { return m_host; }
   const std::string &GetProtocol() const { return m_protocol; }
   uint16_t GetPort() const { return m_port; }
   const std::string &GetAdditionalAgent() const { return m_additionalAgent; }
+  bool IsEnablePrefetch() const {return m_enablePrefetch; }
   bool IsEnableContentMD5() const { return m_enableContentMD5; }
   bool IsClearLogDir() const { return m_clearLogDir; }
   bool IsForeground() const { return m_foreground; }
@@ -135,11 +139,15 @@ class Options : public Singleton<Options> {
   void SetTransferBufferSizeInMB(uint32_t bufsize) {
     m_transferBufferSizeInMB = bufsize;
   }
+  void SetPrefetchSizeInMB(uint16_t size) {
+    m_prefetchSizeInMB = size;
+  }
   void SetClientPoolSize(uint32_t poolsize) { m_clientPoolSize = poolsize; }
   void SetHost(const char *host) { m_host = host; }
   void SetProtocol(const char *protocol) { m_protocol = protocol; }
   void SetPort(unsigned port) { m_port = port; }
   void SetAdditionalAgent(const char *agent) { m_additionalAgent = agent; }
+  void SetEnablePrefetch(bool prefetch) { m_enablePrefetch = prefetch; }
   void SetEnableContentMD5(bool contentMD5) { m_enableContentMD5 = contentMD5; }
   void SetClearLogDir(bool clearLogDir) { m_clearLogDir = clearLogDir; }
   void SetForeground(bool foreground) { m_foreground = foreground; }
@@ -183,11 +191,13 @@ class Options : public Singleton<Options> {
   int32_t m_statExpireInMin;     //  negative value will disable state expire
   uint16_t m_parallelTransfers;  // count of file transfers in parallel
   uint32_t m_transferBufferSizeInMB;
+  uint16_t m_prefetchSizeInMB;
   uint16_t m_clientPoolSize;
   std::string m_host;
   std::string m_protocol;
   uint16_t m_port;
   std::string m_additionalAgent;
+  bool m_enablePrefetch;
   bool m_enableContentMD5;
   bool m_clearLogDir;
   bool m_foreground;        // FUSE foreground option

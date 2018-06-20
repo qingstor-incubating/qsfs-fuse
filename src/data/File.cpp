@@ -74,10 +74,10 @@ using QS::Data::DirectoryTree;
 using QS::Data::IOStream;
 using QS::Data::Node;
 using QS::Data::StreamUtils::GetStreamSize;
-using QS::StringUtils::PointerAddress;
 using QS::StringUtils::BoolToString;
 using QS::StringUtils::ContentRangeDequeToString;
 using QS::StringUtils::FormatPath;
+using QS::StringUtils::PointerAddress;
 using QS::UtilsWithLog::CreateDirectoryIfNotExists;
 using QS::UtilsWithLog::IsSafeDiskSpace;
 using std::iostream;
@@ -113,6 +113,7 @@ File::File(const string &filePath, size_t size)
       m_dataSize(size),
       m_cacheSize(size),
       m_useDiskFile(false),
+      m_inPrefetching(false),
       m_open(false) {}
 
 // --------------------------------------------------------------------------
@@ -300,16 +301,8 @@ pair<size_t, ContentRangeDeque> File::Read(
   Load(offset, readSize, transferManager, dirTree, cache, client, false);
   pair<size_t, ContentRangeDeque> outcome = ReadNoLoad(offset, readSize, buf);
 
-  // no prefetch
-  // if (remainingSize > 0) {
-  //   off_t off = offset + len;
-  //   size_t transferBufSz =
-  //       QS::Configure::Options::Instance().GetTransferBufferSizeInMB() *
-  //       QS::Size::MB1;
-  //   size_t len = remainingSize > transferBufSz ? transferBufSz : remainingSize;
-  //   Load(off, len, transferManager, dirTree, cache, client, async);
-  // }
-
+  // Prefetch
+  Prefetch(transferManager, dirTree, cache, client, async);
   return outcome;
 }
 
@@ -612,7 +605,7 @@ struct FlushCallback {
              FormatPath(filePath));
         // update meta
         if (updateMeta) {
-          if(dirTree) {
+          if (dirTree) {
             dirTree->Grow(client->GetObjectMeta(handle->GetObjectKey()));
           }
         }
@@ -706,6 +699,42 @@ void File::Load(off_t offset, size_t size,
       }
     }
   }
+}
+
+// --------------------------------------------------------------------------
+void File::Prefetch(shared_ptr<TransferManager> transferManager,
+                    shared_ptr<DirectoryTree> dirTree, shared_ptr<Cache> cache,
+                    shared_ptr<Client> client, bool async) {
+  lock_guard<recursive_mutex> lock(m_mutex);
+  QS::Configure::Options &opts = QS::Configure::Options::Instance();
+  if (!opts.IsEnablePrefetch() || m_inPrefetching) {
+    return;
+  }
+  m_inPrefetching = true;
+  // head real size
+  uint64_t relSize;
+  shared_ptr<FileMetaData> fileMeta = client->GetObjectMeta(GetFilePath());
+  if (fileMeta) {
+    relSize = fileMeta->m_fileSize;
+  }
+  ContentRangeDeque ranges = GetUnloadedRanges(0, relSize);
+  if (ranges.empty()) {
+    return;
+  }
+  // prefetch ranges
+  int64_t remaining = opts.GetPrefetchSizeInMB() * QS::Size::MB1;
+  BOOST_FOREACH (const ContentRangeDeque::value_type &range, ranges) {
+    if (remaining <= 0) {
+      break;
+    }
+    off_t off = range.first;
+    // to avoid leave small range
+    size_t len =
+        range.second < remaining + QS::Size::MB1 ? range.second : remaining;
+    DownloadRange(off, len, transferManager, dirTree, cache, false);
+    remaining -= len;
+  }
+  m_inPrefetching = false;
 }
 
 // --------------------------------------------------------------------------
@@ -910,10 +939,10 @@ struct DownloadRangeCallback {
         if (file) {
           tuple<bool, size_t, size_t> res =
               file->Write(offset, downloadSize, stream, dirTree, cache);
-          ErrorIf(!boost::get<0>(res),
-                  "Fail to write cache [file:" + filePath +
-                      ", offset:" + to_string(offset) +
-                      ", len:" + to_string(downloadSize) + "]");
+          ErrorIf(!boost::get<0>(res), "Fail to write cache [file:" + filePath +
+                                           ", offset:" + to_string(offset) +
+                                           ", len:" + to_string(downloadSize) +
+                                           "]");
         }
       } else {
         string msg = "Fail to download [offset:" + to_string(offset) +

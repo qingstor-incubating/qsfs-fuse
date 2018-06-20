@@ -41,7 +41,7 @@ namespace Client {
 class Client;
 class TransferManager;
 class QSTransferManager;
-}
+}  // namespace Client
 
 namespace FileSystem {
 class Drive;
@@ -66,7 +66,7 @@ class File : private boost::noncopyable {
   // Should be last page->Next()
   size_t GetSize() const;
 
-  std::string GetFilePath() const { 
+  std::string GetFilePath() const {
     boost::lock_guard<boost::recursive_mutex> locker(m_mutex);
     return m_filePath;
   }
@@ -196,13 +196,19 @@ class File : private boost::noncopyable {
              boost::shared_ptr<QS::Client::TransferManager> transferManager,
              boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
              boost::shared_ptr<QS::Data::Cache> cache,
-             boost::shared_ptr<QS::Client::Client> client,
-             bool releaseFile, bool updateMeta, bool async = false);
+             boost::shared_ptr<QS::Client::Client> client, bool releaseFile,
+             bool updateMeta, bool async = false);
   void Load(off_t offset, size_t size,
             boost::shared_ptr<QS::Client::TransferManager> transferManager,
             boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
             boost::shared_ptr<QS::Data::Cache> cache,
             boost::shared_ptr<QS::Client::Client> client, bool async = false);
+
+  void Prefetch(boost::shared_ptr<QS::Client::TransferManager> transferManager,
+                boost::shared_ptr<QS::Data::DirectoryTree> dirTree,
+                boost::shared_ptr<QS::Data::Cache> cache,
+                boost::shared_ptr<QS::Client::Client> client,
+                bool async = false);
 
   // Truncate
   void Truncate(
@@ -288,11 +294,11 @@ class File : private boost::noncopyable {
                        // stored in cache not including disk file
 
   bool m_useDiskFile;  // use disk file when no free cache space
-
-  bool m_open;         // file open/close state
+  bool m_inPrefetching;
+  bool m_open;  // file open/close state
 
   mutable boost::recursive_mutex m_mutex;
-  PageSet m_pages;              // a set of pages suppose to be successive
+  PageSet m_pages;  // a set of pages suppose to be successive
 
   friend class Cache;  // for Rename
   friend class FileTest;

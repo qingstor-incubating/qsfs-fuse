@@ -47,6 +47,7 @@ using QS::Configure::Default::GetDefaultPort;
 using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultParallelTransfers;
 using QS::Configure::Default::GetDefaultTransferBufSize;
+using QS::Configure::Default::GetDefaultPrefetchSizeInMB;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
@@ -80,11 +81,14 @@ Options::Options()
       m_parallelTransfers(GetDefaultParallelTransfers()),
       m_transferBufferSizeInMB(GetDefaultTransferBufSize() /
                                QS::Size::MB1),
+      m_prefetchSizeInMB(GetDefaultPrefetchSizeInMB()),
       m_clientPoolSize(GetClientDefaultPoolSize()),
       m_host(GetDefaultHostName()),
       m_protocol(GetDefaultProtocolName()),
       m_port(GetDefaultPort(GetDefaultProtocolName())),
       m_additionalAgent(),
+      m_enablePrefetch(false),
+      m_enableContentMD5(false),
       m_clearLogDir(false),
       m_foreground(false),
       m_singleThread(false),
@@ -147,12 +151,14 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[filesystem size(GB): " << to_string(opts.m_fsCapacityInGB) << "] "
          << "[num transfers: " << to_string(opts.m_parallelTransfers) << "] "
          << "[transfer buf(MB): " << to_string(opts.m_transferBufferSizeInMB) <<"] "  // NOLINT
+         << "[prefetch size(MB): " << to_string(opts.m_prefetchSizeInMB) << "] "
          << "[pool size: " << to_string(opts.m_clientPoolSize) << "] "
          << "[host: " << opts.m_host << "] "
          << "[protocol: " << opts.m_protocol << "] "
          << "[port: " << to_string(opts.m_port) << "] "
          << "[additional agent: " << opts.m_additionalAgent << "] "
          << std::boolalpha
+         << "[enable prefetch: " << opts.m_enablePrefetch << "] "
          << "[enable content md5: " << opts.m_enableContentMD5 << "] "
          << "[clear logdir: " << opts.m_clearLogDir << "] "
          << "[foreground: " << opts.m_foreground << "] "

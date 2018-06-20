@@ -64,6 +64,7 @@ using QS::Configure::Default::GetDefaultPort;
 using QS::Configure::Default::GetDefaultProtocolName;
 using QS::Configure::Default::GetDefaultParallelTransfers;
 using QS::Configure::Default::GetDefaultTransferBufSize;
+using QS::Configure::Default::GetDefaultPrefetchSizeInMB;
 using QS::Configure::Default::GetFsCapacity;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
@@ -111,12 +112,14 @@ static struct options {
   int maxlist;       // max file count for ls
   int statexpire;    // in mins, negative value disable state expire
   int numtransfer;
-  int bufsize;       // in MB
+  int bufsize;       // transfer buffer in MB
+  int prefetchsize;  // prefetch size in MB
   int threads;
   const char *host;
   const char *protocol;
   int port;
   const char *addtionalAgent;  // set to fixed value 'qsfs'
+  int prefetch;            // default prefetch is off
   int contentMD5;          // default not enable content MD5
   int clearLogDir;         // default not clear log dir
   int foreground;          // default not foreground
@@ -159,11 +162,13 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-n=%i", numtransfer),    OPTION("--numtransfer=%i", numtransfer),
     OPTION("-b=%i", bufsize),        OPTION("--bufsize=%i",     bufsize),
     OPTION("-T=%i", threads),        OPTION("--threads=%i",     threads),
+    OPTION("-j=%i", prefetchsize),   OPTION("--prefetchsize=%i", prefetchsize),
     OPTION("-H=%s", host),           OPTION("--host=%s",        host),
     OPTION("-p=%s", protocol),       OPTION("--protocol=%s",    protocol),
     OPTION("-P=%i", port),           OPTION("--port=%i",        port),
     // Set to fixed value of "qsfs", and not export
     // OPTION("-a=%s", addtionalAgent), OPTION("--agent=%s",       addtionalAgent),
+    OPTION("-J",    prefetch),       OPTION("--prefetch",       prefetch),
     OPTION("-m",    contentMD5),     OPTION("--contentMD5",     contentMD5),
     OPTION("-C",    clearLogDir),    OPTION("--clearlogdir",    clearLogDir),
     OPTION("-f",    foreground),     OPTION("--foreground",     foreground),
@@ -260,11 +265,13 @@ void Parse(int argc, char **argv) {
   options.fscap          = GetFsCapacity() / QS::Size::GB1;
   options.numtransfer    = GetDefaultParallelTransfers();
   options.bufsize        = GetDefaultTransferBufSize() / QS::Size::MB1;
+  options.prefetchsize   = GetDefaultPrefetchSizeInMB();
   options.threads        = GetClientDefaultPoolSize();
   options.host           = strdup(GetDefaultHostName().c_str());
   options.protocol       = strdup(GetDefaultProtocolName().c_str());
   options.port           = GetDefaultPort(GetDefaultProtocolName());
   options.addtionalAgent = strdup(GetProgramNameAndVersion().c_str());
+  options.prefetch       = 0;
   options.contentMD5     = 0;
   options.clearLogDir    = 0;
   options.foreground     = 0;
@@ -373,6 +380,14 @@ void Parse(int argc, char **argv) {
     qsOptions.SetTransferBufferSizeInMB(options.bufsize);
   }
 
+  if(options.prefetchsize <=0) {
+    PrintWarnMsg("-j|--prefetchsize", options.prefetchsize,
+                 GetDefaultPrefetchSizeInMB());
+    qsOptions.SetPrefetchSizeInMB(GetDefaultPrefetchSizeInMB());
+  } else {
+    qsOptions.SetPrefetchSizeInMB(options.prefetchsize);
+  }
+
   if (options.threads <= 0) {
     PrintWarnMsg("-T|--threads", options.threads, GetClientDefaultPoolSize());
     qsOptions.SetClientPoolSize(GetClientDefaultPoolSize());
@@ -392,6 +407,7 @@ void Parse(int argc, char **argv) {
   }
 
   qsOptions.SetAdditionalAgent(options.addtionalAgent);
+  qsOptions.SetEnablePrefetch(options.prefetch != 0);
   qsOptions.SetEnableContentMD5(options.contentMD5 !=0);
   qsOptions.SetClearLogDir(options.clearLogDir != 0);
   qsOptions.SetForeground(options.foreground != 0);

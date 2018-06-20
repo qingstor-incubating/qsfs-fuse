@@ -67,6 +67,7 @@ const char* GetSDKLogFolderBaseName();
 size_t GetDefaultParallelTransfers();
 uint64_t GetDefaultTransferMaxBufHeapSize();
 uint64_t GetDefaultTransferBufSize();
+uint16_t GetDefaultPrefetchSizeInMB();
 
 uint64_t GetUploadMultipartMinPartSize();
 uint64_t GetUploadMultipartMaxPartSize();
