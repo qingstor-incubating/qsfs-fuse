@@ -25,7 +25,7 @@ source "$current_path/common.sh"
 
 # 1. clean run dir
 echo "remove qsfs run dir [path=$QSFS_TEST_RUN_DIR]"
-#rm -rf $QSFS_TEST_RUN_DIR
+rm -rf $QSFS_TEST_RUN_DIR
 
 # 2. stop qsfs
 MOUNT_POINT=$(dirname "${QSFS_TEST_RUN_DIR}")
