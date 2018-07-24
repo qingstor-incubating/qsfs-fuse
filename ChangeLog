@@ -1,6 +1,12 @@
+* Tue Jul 24 2018 - Yunify Inc.
+
+- qsfs: version 1.0.6
+- Fix memory leak when download file.
+- Change log default path to /var/log/qsfs.
+
 * Tue Jun 12 2018 - Yunify Inc.
 
--qsfs: version 1.0.5
+- qsfs: version 1.0.5
 - Add option to specify file system size (capacity)
 - Add null implementation for meta related api (such as chmod, chown and utimens)
 - Set user agent to fixed value of qsfs-version.number
