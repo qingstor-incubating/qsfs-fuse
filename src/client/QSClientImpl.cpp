@@ -18,6 +18,7 @@
 
 #include <assert.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,8 @@
 #include "qingstor/QsConfig.h"
 #include "qingstor/QsErrors.h"  // for sdk QsError
 #include "qingstor/Types.h"     // for sdk QsOutput
+
+#include "boost/scope_exit.hpp"
 
 #include "base/LogMacros.h"
 #include "client/ClientConfiguration.h"
@@ -67,6 +70,7 @@ using QingStor::QsOutput;
 using QingStor::UploadMultipartInput;
 using QingStor::UploadMultipartOutput;
 using QS::Client::Utils::ParseRequestContentRange;
+using std::iostream;
 using std::string;
 using std::vector;
 
@@ -276,6 +280,13 @@ GetObjectOutcome QSClientImpl::GetObject(const string &objKey,
     }
     return GetObjectOutcome(output);
   } else {
+    iostream *bodyStream = output.GetBody();
+    BOOST_SCOPE_EXIT((bodyStream)) {
+      if (bodyStream != NULL) {
+        delete bodyStream;
+      }
+    }
+    BOOST_SCOPE_EXIT_END
     return GetObjectOutcome(BuildQSError(sdkErr, exceptionName, output,
                                          SDKShouldRetry(sdkErr, responseCode)));
   }

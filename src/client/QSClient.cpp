@@ -38,6 +38,7 @@
 #include "boost/exception/to_string.hpp"
 #include "boost/foreach.hpp"
 #include "boost/make_shared.hpp"
+#include "boost/scope_exit.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/thread/once.hpp"
 
@@ -308,6 +309,13 @@ ClientError<QSError::Value> QSClient::DownloadFile(const string &filePath,
   if (outcome.IsSuccess()) {
     GetObjectOutput &res = outcome.GetResult();
     iostream *bodyStream = res.GetBody();
+    BOOST_SCOPE_EXIT((bodyStream)) {
+      if(bodyStream != NULL) {
+        delete bodyStream;
+      }
+    }
+    BOOST_SCOPE_EXIT_END
+
     bodyStream->seekg(0, std::ios_base::beg);
     buffer->seekp(0, std::ios_base::beg);
     (*buffer) << bodyStream->rdbuf();
