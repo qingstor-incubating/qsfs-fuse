@@ -39,7 +39,7 @@ using std::vector;
 static const char* const PROGRAM_NAME = "qsfs";
 static const char* const QSFS_DEFAULT_CREDENTIALS = "/etc/qsfs.cred";
 static const char* const QSFS_DEFAULT_DISK_CACHE_DIR = "/tmp/qsfs_cache/";
-static const char* const QSFS_DEFAULT_LOG_DIR = "/tmp/qsfs_log/";
+static const char* const QSFS_DEFAULT_LOG_DIR = "/var/log/qsfs/";
 static const char* const QSFS_DEFAULT_LOGLEVEL_NAME = "WARN";
 static const char* const QSFS_DEFAULT_HOST = "qingstor.com";
 static const char* const QSFS_DEFAULT_PROTOCOL = "https";
