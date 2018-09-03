@@ -141,7 +141,7 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
 
   CacheList::reverse_iterator it = m_cache.rbegin();
   // Discards the least recently used File first, which is put at back.
-  while (it != m_cache.rend() && !HasFreeSpace(size)) {
+  while (!m_cache.empty() && it != m_cache.rend() && !HasFreeSpace(size)) {
     // Notice do NOT store a reference of the File supposed to be removed.
     string fileId = it->first;
     if (fileId != fileUnfreeable && it->second && !it->second->IsOpen()) {
@@ -191,7 +191,8 @@ bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
 
   CacheList::reverse_iterator it = m_cache.rbegin();
   // Discards the least recently used File first, which is put at back.
-  while (it != m_cache.rend() && !IsSafeDiskSpace(diskfolder, size)) {
+  while (!m_cache.empty() && it != m_cache.rend() &&
+         !IsSafeDiskSpace(diskfolder, size)) {
     // Notice do NOT store a reference of the File supposed to be removed.
     string fileId = it->first;
     if (fileId != fileUnfreeable && it->second && !it->second->IsOpen()) {
