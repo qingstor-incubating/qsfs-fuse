@@ -1,5 +1,8 @@
 * Tue Jul 24 2018 - Yunify Inc.
 
+- qsfs: version 1.0.7
+- Fix Cache::Free list::erase segment fault.
+
 - qsfs: version 1.0.6
 - Fix memory leak when download file.
 - Change log default path to /var/log/qsfs.
