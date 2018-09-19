@@ -136,5 +136,10 @@ void Log::ClearLogDirectory() const {
   }
 }
 
+// --------------------------------------------------------------------------
+Log::~Log() {
+  google::ShutdownGoogleLogging();
+}
+
 }  // namespace Logging
 }  // namespace QS

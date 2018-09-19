@@ -52,6 +52,8 @@ class Log : public Singleton<Log> {
   // @return : none
   void Initialize(const std::string &logdir = std::string());
 
+  ~Log();
+
  private:
   void SetLogLevel(LogLevel::Value level);
   void SetDebug(bool debug) { m_isDebug = debug; }
@@ -63,7 +65,7 @@ class Log : public Singleton<Log> {
       : m_logLevel(LogLevel::Info),
         m_logDirectory(std::string()),
         m_isDebug(false) {}
-
+  
   LogLevel::Value m_logLevel;
   std::string m_logDirectory;  // log to console if it's empty
   bool m_isDebug;
