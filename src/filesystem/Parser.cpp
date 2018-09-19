@@ -121,7 +121,7 @@ static struct options {
   const char *addtionalAgent;  // set to fixed value 'qsfs'
   int prefetch;            // default prefetch is off
   int contentMD5;          // default not enable content MD5
-  int clearLogDir;         // default not clear log dir
+  int keepLogDir;          // default not keep log dir content
   int foreground;          // default not foreground
   int singleThread;        // default FUSE multi-thread
   int qsSingleThread;      // default qsfs single-thread
@@ -170,7 +170,7 @@ static const struct fuse_opt optionSpec[] = {
     // OPTION("-a=%s", addtionalAgent), OPTION("--agent=%s",       addtionalAgent),
     OPTION("-J",    prefetch),       OPTION("--prefetch",       prefetch),
     OPTION("-m",    contentMD5),     OPTION("--contentMD5",     contentMD5),
-    OPTION("-C",    clearLogDir),    OPTION("--clearlogdir",    clearLogDir),
+    OPTION("-K",    keepLogDir),     OPTION("--keeplogdir",     keepLogDir),
     OPTION("-f",    foreground),     OPTION("--foreground",     foreground),
     OPTION("-s",    singleThread),   OPTION("--single",         singleThread),
     OPTION("-S",    qsSingleThread), OPTION("--Single",         qsSingleThread),
@@ -273,7 +273,7 @@ void Parse(int argc, char **argv) {
   options.addtionalAgent = strdup(GetProgramNameAndVersion().c_str());
   options.prefetch       = 0;
   options.contentMD5     = 0;
-  options.clearLogDir    = 0;
+  options.keepLogDir     = 0;  // default not keep log dir content
   options.foreground     = 0;
   options.singleThread   = 0;
   options.qsSingleThread = 1;  // default qsfs single
@@ -409,7 +409,7 @@ void Parse(int argc, char **argv) {
   qsOptions.SetAdditionalAgent(options.addtionalAgent);
   qsOptions.SetEnablePrefetch(options.prefetch != 0);
   qsOptions.SetEnableContentMD5(options.contentMD5 !=0);
-  qsOptions.SetClearLogDir(options.clearLogDir != 0);
+  qsOptions.SetClearLogDir(options.keepLogDir == 0);
   qsOptions.SetForeground(options.foreground != 0);
   qsOptions.SetSingleThread(options.singleThread != 0);
   qsOptions.SetQsfsSingleThread(options.qsSingleThread != 0);
