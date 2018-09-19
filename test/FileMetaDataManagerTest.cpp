@@ -20,6 +20,7 @@
 
 #include "base/Logging.h"
 #include "base/Utils.h"
+#include "configure/Options.h"
 #include "data/FileMetaData.h"
 #include "data/FileMetaDataManager.h"
 
@@ -44,17 +45,18 @@ gid_t gid_ = 1000U;
 mode_t fileMode_ = S_IRWXU | S_IRWXG | S_IROTH;
 
 size_t maxcount = 2;
-FileMetaDataManager &manager = FileMetaDataManager::Instance();
 
 class FileMetaDataManagerTest : public Test {
  protected:
   static void SetUpTestCase() {
     InitLog();
+    FileMetaDataManager &manager = FileMetaDataManager::Instance();
     // just for test
     manager.m_maxCount = maxcount;
   }
 
   void TestDefault() {
+    FileMetaDataManager &manager = FileMetaDataManager::Instance();
     EXPECT_EQ(manager.GetMaxCount(), maxcount);
     EXPECT_TRUE(manager.HasFreeSpace(maxcount));
     EXPECT_TRUE(manager.Get("") == manager.End());
@@ -65,6 +67,7 @@ class FileMetaDataManagerTest : public Test {
   }
 
   void TestAddRemove() {
+    FileMetaDataManager &manager = FileMetaDataManager::Instance();
     FileMetaData file1("file1", 2, mtime_, mtime_, uid_, gid_, fileMode_,
                        FileType::File);
     manager.Add(make_shared<FileMetaData>(file1));
@@ -96,6 +99,7 @@ class FileMetaDataManagerTest : public Test {
   }
 
   void TestRename() {
+    FileMetaDataManager &manager = FileMetaDataManager::Instance();
     FileMetaData file1("file1", 2, mtime_, mtime_, uid_, gid_, fileMode_,
                        FileType::File);
     manager.Add(make_shared<FileMetaData>(file1));
@@ -106,6 +110,7 @@ class FileMetaDataManagerTest : public Test {
   }
 
   void TestOverflow() {
+    FileMetaDataManager &manager = FileMetaDataManager::Instance();
     FileMetaData file1("file1", 2, mtime_, mtime_, uid_, gid_, fileMode_,
                        FileType::File);
     FileMetaData file2("file2", 2, mtime_, mtime_, uid_, gid_, fileMode_,
@@ -123,7 +128,7 @@ class FileMetaDataManagerTest : public Test {
     EXPECT_TRUE(*(manager.Begin()->second) == file2);
     EXPECT_TRUE(manager.Has("file2"));
     EXPECT_TRUE(manager.Has("folder1/"));
-    //EXPECT_FALSE(manager.Has("file1"));
+    // EXPECT_FALSE(manager.Has("file1"));
 
     manager.Clear();
   }
