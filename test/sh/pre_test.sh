@@ -39,7 +39,6 @@ qsfs ${QSFS_TEST_BUCKET} ${MOUNT_POINT} \
   -z=${QSFS_TEST_ZONE} \
   -l=/tmp/qsfs_integration_test_log \
   -L=INFO \
-  -C \
   -d \
   -o allow_other
 if [ -z "$(df | grep ${MOUNT_POINT})" ]; then
