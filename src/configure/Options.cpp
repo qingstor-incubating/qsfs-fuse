@@ -51,6 +51,7 @@ using QS::Configure::Default::GetDefaultPrefetchSizeInMB;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
+using QS::Configure::Default::GetMaxLogSize;
 using QS::Configure::Default::GetDefaultConnectTimeOut;
 using QS::Logging::GetLogLevelName;
 using QS::Logging::GetLogLevelByName;
@@ -68,6 +69,7 @@ Options::Options()
       m_credentialsFile(GetDefaultCredentialsFile()),
       m_logDirectory(GetDefaultLogDirectory()),
       m_logLevel(GetLogLevelByName(GetDefaultLogLevelName())),
+      m_maxLogSize(GetMaxLogSize()),
       m_fileMode(GetDefaultFileMode()),
       m_dirMode(GetDefaultDirMode()),
       m_umaskMountPoint(0),
@@ -138,6 +140,7 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[credentials: " << opts.m_credentialsFile << "] "
          << "[log directory: " << opts.m_logDirectory << "] "
          << "[log level: " << GetLogLevelName(opts.m_logLevel) << "] "
+         << "[max log size(MB): " << GetMaxLogSize() << "] "
          << "[file mode: " << std::oct << opts.m_fileMode << "] "
          << "[dir mode: " << opts.m_dirMode << "] "
          << "[umask mp: " << opts.m_umaskMountPoint << std::dec << "] "

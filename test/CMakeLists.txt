@@ -65,11 +65,11 @@ if (BUILD_TESTING)
   add_executable(
     FileMetaDataManagerTest
     FileMetaDataManagerTest.cpp
-    $<TARGET_OBJECTS:qsfsFileMetaData>
     ${QSFS_SOURCE_DIR}/data/DirectoryTree.cpp
     ${QSFS_SOURCE_DIR}/data/Node.cpp
     ${QSFS_SOURCE_DIR}/data/Entry.cpp
     ${QSFS_SOURCE_DIR}/base/TimeUtils.cpp
+    $<TARGET_OBJECTS:qsfsFileMetaData>
     $<TARGET_OBJECTS:qsfsLogging>
   )
   if (APPLE)
@@ -102,9 +102,9 @@ if (BUILD_TESTING)
     $<TARGET_OBJECTS:qsfsLogging>
   )
   if (APPLE)
-    target_link_libraries(LoggingTest osxboost_thread)
+    target_link_libraries(LoggingTest osxfuse osxboost_thread)
   elseif (UNIX)
-    target_link_libraries(LoggingTest boost_thread)
+    target_link_libraries(LoggingTest fuse boost_thread)
   endif ()
   target_link_libraries(LoggingTest gtest glog gflags ${CMAKE_THREAD_LIBS_INIT})
   add_test(NAME qsfs_logging COMMAND LoggingTest)
@@ -114,7 +114,6 @@ if (BUILD_TESTING)
     PageTest.cpp
    ${QSFS_SOURCE_DIR}/data/Page.cpp
    ${QSFS_SOURCE_DIR}/base/UtilsWithLog.cpp
-   ${QSFS_SOURCE_DIR}/configure/Options.cpp
     $<TARGET_OBJECTS:qsfsStream>
     $<TARGET_OBJECTS:qsfsLogging>
   )
@@ -154,7 +153,6 @@ if (BUILD_TESTING)
     ${QSFS_SOURCE_DIR}/base/ThreadPool.cpp
     ${QSFS_SOURCE_DIR}/base/TaskHandle.cpp
     ${QSFS_SOURCE_DIR}/base/ThreadPoolInitializer.cpp
-    ${QSFS_SOURCE_DIR}/configure/Options.cpp
     $<TARGET_OBJECTS:qsfsStream>
     $<TARGET_OBJECTS:qsfsLogging>
   )
@@ -211,9 +209,9 @@ if (BUILD_TESTING)
     $<TARGET_OBJECTS:qsfsLogging>
   )
   if (APPLE)
-    target_link_libraries(ResourceManagerTest osxboost_thread)
+    target_link_libraries(ResourceManagerTest osxfuse osxboost_thread)
   elseif (UNIX)
-    target_link_libraries(ResourceManagerTest boost_thread)
+    target_link_libraries(ResourceManagerTest fuse boost_thread)
   endif ()
   target_link_libraries(ResourceManagerTest gtest glog gflags ${CMAKE_THREAD_LIBS_INIT})
   add_test(NAME qsfs_resource_manager COMMAND ResourceManagerTest)
@@ -225,9 +223,9 @@ if (BUILD_TESTING)
     $<TARGET_OBJECTS:qsfsLogging>
   )
   if (APPLE)
-    target_link_libraries(StreamTest osxboost_thread)
+    target_link_libraries(StreamTest osxfuse osxboost_thread)
   elseif (UNIX)
-    target_link_libraries(StreamTest boost_thread)
+    target_link_libraries(StreamTest fuse boost_thread)
   endif ()
   target_link_libraries(StreamTest gtest glog gflags ${CMAKE_THREAD_LIBS_INIT})
   add_test(NAME qsfs_stream COMMAND StreamTest)

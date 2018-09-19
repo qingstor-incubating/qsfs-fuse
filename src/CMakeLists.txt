@@ -57,7 +57,6 @@ add_library(
   qsfsFileMetaData OBJECT
   data/FileMetaData.cpp
   data/FileMetaDataManager.cpp
-  configure/Options.cpp
 )
 
 add_library(
@@ -68,6 +67,7 @@ add_library(
   base/StringUtils.cpp
   configure/Default.cpp
   configure/Version.cpp
+  configure/Options.cpp
 )
 
 add_library(

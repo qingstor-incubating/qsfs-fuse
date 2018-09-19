@@ -69,6 +69,7 @@ using QS::Configure::Default::GetFsCapacity;
 using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
+using QS::Configure::Default::GetMaxLogSize;
 using QS::Configure::Default::GetProgramNameAndVersion;
 using QS::Utils::GetProcessEffectiveUserID;
 using QS::Utils::GetProcessEffectiveGroupID;
@@ -100,6 +101,7 @@ static struct options {
   const char *credentials;
   const char *logDirectory;
   const char *logLevel;  // INFO, WARN, ERROR, FATAL
+  int maxlogsize;        // max log size in MB
   mode_t fileMode;       // Mode of file
   mode_t dirMode;        // Mode of directory
   mode_t umaskmp;        // umask of mount point
@@ -148,6 +150,7 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-c=%s", credentials),    OPTION("--credentials=%s", credentials),
     OPTION("-l=%s", logDirectory),   OPTION("--logdir=%s",      logDirectory),
     OPTION("-L=%s", logLevel),       OPTION("--loglevel=%s",    logLevel),
+    OPTION("-A=%i", maxlogsize),     OPTION("--maxlogsize=%i",  maxlogsize),
     OPTION("-F=%o", fileMode),       OPTION("--filemode=%o",    fileMode),
     OPTION("-D=%o", dirMode),        OPTION("--dirmode=%o",     dirMode),
     OPTION("-u=%o", umaskmp),        OPTION("--umaskmp=%o",     umaskmp),
@@ -252,6 +255,7 @@ void Parse(int argc, char **argv) {
   options.credentials    = strdup(GetDefaultCredentialsFile().c_str());
   options.logDirectory   = strdup(GetDefaultLogDirectory().c_str());
   options.logLevel       = strdup(GetDefaultLogLevelName().c_str());
+  options.maxlogsize     = GetMaxLogSize();  // default 1024 MB
   options.fileMode       = GetDefaultFileMode();
   options.dirMode        = GetDefaultDirMode();
   options.umaskmp        = 0;  // default 0000
@@ -304,6 +308,12 @@ void Parse(int argc, char **argv) {
   qsOptions.SetCredentialsFile(options.credentials);
   qsOptions.SetLogDirectory(options.logDirectory);
   qsOptions.SetLogLevel(QS::Logging::GetLogLevelByName(options.logLevel));
+  if (options.maxlogsize <= 0) {
+    PrintWarnMsg("-A|--maxlogsize", options.maxlogsize, GetMaxLogSize());
+    qsOptions.SetMaxLogSize(GetMaxLogSize());
+  } else {
+    qsOptions.SetMaxLogSize(options.maxlogsize);
+  }
   options.fileMode &= (S_IRWXU | S_IRWXG | S_IRWXO);
   qsOptions.SetFileMode(options.fileMode);
   options.dirMode &= (S_IRWXU | S_IRWXG | S_IRWXO);

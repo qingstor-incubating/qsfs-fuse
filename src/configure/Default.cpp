@@ -121,6 +121,10 @@ uint16_t GetMaxListObjectsCount() {
   return 0;  // to list all object
 }
 
+uint16_t GetMaxLogSize() {
+  return 1024;  // in MB
+}
+
 uint16_t GetDefaultTransactionRetries() {
   return QSFS_DEFAULT_TRANSACTION_RETRIES;
 }

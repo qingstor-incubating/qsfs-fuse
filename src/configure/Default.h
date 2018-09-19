@@ -59,6 +59,8 @@ uint64_t GetMaxCacheSize();         // File data cache size in bytes
 size_t GetMaxStatCount();           // File meta data cache max count
 uint16_t GetMaxListObjectsCount();  // max count for list operation
 
+uint16_t GetMaxLogSize();           // max log size in MB
+
 uint16_t GetDefaultTransactionRetries();
 uint32_t GetDefaultConnectTimeOut();  // in seconds
 int GetClientDefaultPoolSize();

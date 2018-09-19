@@ -61,6 +61,7 @@ class Options : public Singleton<Options> {
   const std::string &GetCredentialsFile() const { return m_credentialsFile; }
   const std::string &GetLogDirectory() const { return m_logDirectory; }
   LogLevel::Value GetLogLevel() const { return m_logLevel; }
+  uint16_t GetMaxLogSize() const {return m_maxLogSize; }
   mode_t GetFileMode() const { return m_fileMode; }
   mode_t GetDirMode() const { return m_dirMode; }
   mode_t GetUmaskMountPoint() const { return m_umaskMountPoint; }
@@ -122,6 +123,7 @@ class Options : public Singleton<Options> {
   void SetCredentialsFile(const char *file) { m_credentialsFile = file; }
   void SetLogDirectory(const std::string &path) { m_logDirectory = path; }
   void SetLogLevel(LogLevel::Value level) { m_logLevel = level; }
+  void SetMaxLogSize(uint16_t size) { m_maxLogSize = size; }
   void SetFileMode(mode_t fileMode) { m_fileMode = fileMode; }
   void SetDirMode(mode_t dirMode) { m_dirMode = dirMode; }
   void SetUmaskMountPoint(mode_t umask) { m_umaskMountPoint = umask; }
@@ -178,6 +180,7 @@ class Options : public Singleton<Options> {
   std::string m_credentialsFile;
   std::string m_logDirectory;
   LogLevel::Value m_logLevel;
+  uint16_t m_maxLogSize;  // in MB
   mode_t m_fileMode;
   mode_t m_dirMode;
   mode_t m_umaskMountPoint;

@@ -35,6 +35,7 @@
 #include "base/LogLevel.h"
 #include "base/Utils.h"
 #include "configure/Default.h"
+#include "configure/Options.h"
 
 namespace {
 const char *programFile = "/usr/local/bin/qsfs";
@@ -105,7 +106,8 @@ void Log::DoInitialize(const string &logdir) {
     // FLAGS_*. The exceptions are the flags related to desination files.
     // So need to set FLAGS_log_dir before calling google::InitGoogleLogging.
     FLAGS_log_dir = logdir.c_str();
-    FLAGS_max_log_size = 1024;  // 1GB
+    const QS::Configure::Options &opts = QS::Configure::Options::Instance();
+    FLAGS_max_log_size = opts.GetMaxLogSize();
     FLAGS_stop_logging_if_full_disk = true;
 
     if (!QS::Utils::CreateDirectoryIfNotExists(logdir)) {
