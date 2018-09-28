@@ -124,7 +124,7 @@ Supported miscellaneous options are list as following,
 | ----- |------|:------:|:----------:|------ |
 | -J | --prefetch    | bool | N | Enable read prefetch
 | -m | --contentMD5  | bool | N | Enable writes with MD5 hashs to ensure data integrity
-| -C | --keeplogdir  | bool | N | Do not clear log directory at beginning
+| -K | --keeplogdir  | bool | N | Do not clear log directory at beginning
 | -f | --forground   | bool | N | Turn on log to STDERR and enable FUSE foreground mode
 | -s | --single      | bool | N | Turn on FUSE single threaded option - disable multi-threaded
 | -d | --debug       | bool | N | Turn on debug messages to log

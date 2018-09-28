@@ -59,7 +59,7 @@ while true; do
     fi
   fi
   let TRY_COUNT--
-  if [ TRY_COUNT -le 0 ]; then
+  if [ $TRY_COUNT -le 0 ]; then
     echo "Error: Could not create directory ${QSFS_TEST_RUN_DIR}"
     exit 1
   fi
