@@ -1,5 +1,10 @@
 * Tue Jul 24 2018 - Yunify Inc.
 
+- qsfs: version 1.0.8
+- Fix Cache::Free to avoid list::erase invalid iterator.
+- Add option max log size.
+- Other bugfix.
+
 - qsfs: version 1.0.7
 - Fix Cache::Free list::erase segment fault.
 
