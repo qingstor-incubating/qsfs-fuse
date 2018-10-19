@@ -144,19 +144,30 @@ bool Cache::Free(size_t size, const string &fileUnfreeable) {
   while (!m_cache.empty() && it != m_cache.rend() && !HasFreeSpace(size)) {
     // Notice do NOT store a reference of the File supposed to be removed.
     string fileId = it->first;
+    CacheList::iterator iit = m_cache.end();
     if (fileId != fileUnfreeable && it->second && !it->second->IsOpen()) {
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
       freedDiskSpace += it->second->GetDataSize() - fileCacheSz;
       SubtractSize(fileCacheSz);
       it->second->Clear();
-      m_cache.erase((++it).base());
-      m_map.erase(fileId);
+      iit = (++it).base();
+      if (iit != m_cache.end()) {
+        m_cache.erase(iit);
+        m_map.erase(fileId);
+      } else {
+        DebugWarning("Invalid iterator" + FormatPath(fileId));
+      }
     } else {
       if (!it->second) {
         DebugInfo("file in cache is null " + FormatPath(fileId));
-        m_cache.erase((++it).base());
-        m_map.erase(fileId);
+        iit = (++it).base();
+        if (iit != m_cache.end()) {
+          m_cache.erase(iit);
+          m_map.erase(fileId);
+        } else {
+          DebugWarning("Invalid iterator" + FormatPath(fileId));
+        }
       } else {
         ++it;
       }
@@ -195,19 +206,30 @@ bool Cache::FreeDiskCacheFiles(const string &diskfolder, size_t size,
          !IsSafeDiskSpace(diskfolder, size)) {
     // Notice do NOT store a reference of the File supposed to be removed.
     string fileId = it->first;
+    CacheList::iterator iit = m_cache.end();
     if (fileId != fileUnfreeable && it->second && !it->second->IsOpen()) {
       size_t fileCacheSz = it->second->GetCachedSize();
       freedSpace += fileCacheSz;
       freedDiskSpace += it->second->GetDataSize() - fileCacheSz;
       SubtractSize(fileCacheSz);
       it->second->Clear();
-      m_cache.erase((++it).base());
-      m_map.erase(fileId);
+      iit = (++it).base();
+      if (iit != m_cache.end()) {
+        m_cache.erase(iit);
+        m_map.erase(fileId);
+      } else {
+        DebugWarning("Invalid iterator" + FormatPath(fileId));
+      }
     } else {
       if (!it->second) {
         DebugInfo("file in cache is null " + FormatPath(fileId));
-        m_cache.erase((++it).base());
-        m_map.erase(fileId);
+        iit = (++it).base();
+        if (iit != m_cache.end()) {
+          m_cache.erase(iit);
+          m_map.erase(fileId);
+        } else {
+          DebugWarning("Invalid iterator" + FormatPath(fileId));
+        }
       } else {
         ++it;
       }
