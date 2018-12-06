@@ -196,9 +196,10 @@ ListObjectsOutcome QSClientImpl::ListObjects(ListObjectsInput *input,
 
     HttpResponseCode responseCode = output.GetResponseCode();
     if (SDKResponseSuccess(sdkErr, responseCode)) {
+      uint64_t oldcount = count;
       count += output.GetKeys().size();
       count += output.GetCommonPrefixes().size();
-      responseTruncated = !output.GetNextMarker().empty();
+      responseTruncated = (oldcount != count || output.GetHasMore());
       if (responseTruncated) {
         input->SetMarker(output.GetNextMarker());
       }

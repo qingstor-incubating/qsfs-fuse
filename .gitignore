@@ -43,3 +43,5 @@ src/configure/VersionConfig.h
 third_party/install
 .vscode/
 .gdb_history
+.editorconfig
+cscope.*
