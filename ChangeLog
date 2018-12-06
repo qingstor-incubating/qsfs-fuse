@@ -3,7 +3,7 @@
 - qsfs: version 1.0.9
 - Update ListObjects.
 
-* Tue Jul 24 2018 - Yunify Inc.
+* Fri Oct 19 2018 - Yunify Inc.
 
 - qsfs: version 1.0.8
 - Fix Cache::Free to avoid list::erase invalid iterator.
