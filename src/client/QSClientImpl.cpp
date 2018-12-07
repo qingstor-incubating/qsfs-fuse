@@ -199,7 +199,7 @@ ListObjectsOutcome QSClientImpl::ListObjects(ListObjectsInput *input,
       uint64_t oldcount = count;
       count += output.GetKeys().size();
       count += output.GetCommonPrefixes().size();
-      responseTruncated = (oldcount != count || output.GetHasMore());
+      responseTruncated = (oldcount != count && output.GetHasMore());
       if (responseTruncated) {
         input->SetMarker(output.GetNextMarker());
       }
