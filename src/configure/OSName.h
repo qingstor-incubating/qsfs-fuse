@@ -14,10 +14,16 @@
 // | limitations under the License.
 // +-------------------------------------------------------------------------
 
-#ifndef QSFS_CONFIGURE_VERSIONCONFIG_H_
-#define QSFS_CONFIGURE_VERSIONCONFIG_H_
+#ifndef QSFS_CONFIGURE_OSNAME_H_
+#define QSFS_CONFIGURE_OSNAME_H_
 
-#define QSFS_VERSION_STRING "@PACKAGE_VERSION@-@PACKAGE_RELEASE@"
+namespace QS {
 
-#endif  // QSFS_CONFIGURE_VERSIONCONFIG_H_
+namespace Configure {
+
+const char* GetOSNameString();
+}  // namespace Configure
+}  // namespace QS
+
+#endif  // QSFS_CONFIGURE_OSNAME_H_
 

@@ -14,10 +14,14 @@
 // | limitations under the License.
 // +-------------------------------------------------------------------------
 
-#ifndef QSFS_CONFIGURE_VERSIONCONFIG_H_
-#define QSFS_CONFIGURE_VERSIONCONFIG_H_
+#include "configure/Architecture.h"
+#include "configure/ArchitectureConfig.h"
 
-#define QSFS_VERSION_STRING "@PACKAGE_VERSION@-@PACKAGE_RELEASE@"
+namespace QS {
 
-#endif  // QSFS_CONFIGURE_VERSIONCONFIG_H_
+namespace Configure {
+
+const char* GetArchitectureString() { return ARCHITECTURE_STRING; }
+}  // namespace Configure
+}  // namespace QFS
 

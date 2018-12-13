@@ -33,6 +33,7 @@ namespace Default {
 
 const char* GetProgramName();
 std::string GetProgramNameAndVersion();
+std::string GetAgentName();
 
 std::string GetDefaultCredentialsFile();
 std::string GetDefaultDiskCacheDirectory();

@@ -50,6 +50,7 @@ namespace Parser {
 namespace {
 
 using boost::to_string;
+using QS::Configure::Default::GetAgentName;
 using QS::Configure::Default::GetClientDefaultPoolSize;
 using QS::Configure::Default::GetDefaultCredentialsFile;
 using QS::Configure::Default::GetDefaultConnectTimeOut;
@@ -70,7 +71,6 @@ using QS::Configure::Default::GetMaxCacheSize;
 using QS::Configure::Default::GetMaxListObjectsCount;
 using QS::Configure::Default::GetMaxStatCount;
 using QS::Configure::Default::GetMaxLogSize;
-using QS::Configure::Default::GetProgramNameAndVersion;
 using QS::Utils::GetProcessEffectiveUserID;
 using QS::Utils::GetProcessEffectiveGroupID;
 using std::string;
@@ -274,7 +274,7 @@ void Parse(int argc, char **argv) {
   options.host           = strdup(GetDefaultHostName().c_str());
   options.protocol       = strdup(GetDefaultProtocolName().c_str());
   options.port           = GetDefaultPort(GetDefaultProtocolName());
-  options.addtionalAgent = strdup(GetProgramNameAndVersion().c_str());
+  options.addtionalAgent = strdup(GetAgentName().c_str());
   options.prefetch       = 0;
   options.contentMD5     = 0;
   options.keepLogDir     = 0;  // default not keep log dir content

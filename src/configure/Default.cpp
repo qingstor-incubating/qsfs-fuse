@@ -25,6 +25,8 @@
 
 #include "base/Size.h"
 #include "base/StringUtils.h"
+#include "configure/Architecture.h"
+#include "configure/OSName.h"
 #include "configure/Version.h"
 
 namespace QS {
@@ -55,6 +57,18 @@ string GetProgramNameAndVersion() {
   name.append("-");
   name.append(QS::Configure::Version::GetVersionString());
   return name;
+}
+
+
+string GetAgentName() {
+  string agent = PROGRAM_NAME;
+  agent.append("-");
+  agent.append(QS::Configure::Version::GetVersionString());
+  agent.append("_");
+  agent.append(QS::Configure::GetOSNameString());
+  agent.append("_");
+  agent.append(QS::Configure::GetArchitectureString());
+  return agent;
 }
 
 string GetDefaultCredentialsFile() { return QSFS_DEFAULT_CREDENTIALS; }

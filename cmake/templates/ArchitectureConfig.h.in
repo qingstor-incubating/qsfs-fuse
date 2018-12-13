@@ -14,10 +14,10 @@
 // | limitations under the License.
 // +-------------------------------------------------------------------------
 
-#ifndef QSFS_CONFIGURE_VERSIONCONFIG_H_
-#define QSFS_CONFIGURE_VERSIONCONFIG_H_
+#ifndef QSFS_CONFIGURE_ARCHITECTURECONFIG_H_
+#define QSFS_CONFIGURE_ARCHITECTURECONFIG_H_
 
-#define QSFS_VERSION_STRING "@PACKAGE_VERSION@-@PACKAGE_RELEASE@"
+#define ARCHITECTURE_STRING "@MACHINE_HARDWARE@"
 
-#endif  // QSFS_CONFIGURE_VERSIONCONFIG_H_
+#endif  // QSFS_CONFIGURE_ARCHITECTURECONFIG_H_
 

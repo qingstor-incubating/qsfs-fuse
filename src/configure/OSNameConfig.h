@@ -14,10 +14,10 @@
 // | limitations under the License.
 // +-------------------------------------------------------------------------
 
-#ifndef QSFS_CONFIGURE_VERSIONCONFIG_H_
-#define QSFS_CONFIGURE_VERSIONCONFIG_H_
+#ifndef QSFS_CONFIGURE_OSNAMECONFIG_H_
+#define QSFS_CONFIGURE_OSNAMECONFIG_H_
 
-#define QSFS_VERSION_STRING "@PACKAGE_VERSION@-@PACKAGE_RELEASE@"
+#define OS_NAME_VERSION_STRING "Ubuntu16.04"
 
-#endif  // QSFS_CONFIGURE_VERSIONCONFIG_H_
+#endif  // QSFS_CONFIGURE_OSNAMECONFIG_H_
 

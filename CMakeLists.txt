@@ -34,7 +34,7 @@ endif (BUILD_INTEGRATION_TESTING)
 #
 # system info
 #
-execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_HARDWARE)
+execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_HARDWARE OUTPUT_STRIP_TRAILING_WHITESPACE)
 if (MACHINE_HARDWARE MATCHES "x86_64" OR MACHINE_HARDWARE MATCHES "x64"
     OR MACHINE_HARDWARE MATCHES "amd64")
   set(IS_MACH_64 TRUE CACHE BOOL "Machine hardware is 64-bit")
@@ -116,6 +116,18 @@ endif ()
 configure_file (cmake/templates/VersionConfig.h.in
                 "${QSFS_SOURCE_DIR}/configure/VersionConfig.h")
 
+if (EXISTS ${QSFS_SOURCE_DIR}/configure/OSNameConfig.h)
+  FILE(REMOVE ${QSFS_SOURCE_DIR}/configure/OSNameConfig.h)
+endif ()
+configure_file (cmake/templates/OSNameConfig.h.in
+                "${QSFS_SOURCE_DIR}/configure/OSNameConfig.h")
+
+
+if (EXISTS ${QSFS_SOURCE_DIR}/configure/ArchitectureConfig.h)
+  FILE(REMOVE ${QSFS_SOURCE_DIR}/configure/ArchitectureConfig.h)
+endif ()
+configure_file (cmake/templates/ArchitectureConfig.h.in
+                "${QSFS_SOURCE_DIR}/configure/ArchitectureConfig.h")
 
 # 
 # dependencies
