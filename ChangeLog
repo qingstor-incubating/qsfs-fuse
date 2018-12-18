@@ -1,3 +1,8 @@
+* Mon Dec 18 2018 - Yunify Inc.
+
+- qsfs: version 1.0.10
+- Add·backward·compatiblility for ListObjects.
+
 * Thu Dec 6 2018 - Yunify Inc.
 
 - qsfs: version 1.0.9
