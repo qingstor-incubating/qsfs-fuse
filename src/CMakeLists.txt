@@ -68,6 +68,8 @@ add_library(
   configure/Default.cpp
   configure/Version.cpp
   configure/Options.cpp
+  configure/Architecture.cpp
+  configure/OSName.cpp
 )
 
 add_library(

@@ -36,6 +36,8 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 src/configure/VersionConfig.h
+src/configure/ArchitectureConfig.h
+src/configure/OSNameConfig.h
 
 #
 # Other folders
