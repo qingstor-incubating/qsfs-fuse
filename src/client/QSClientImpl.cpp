@@ -192,6 +192,12 @@ ListObjectsOutcome QSClientImpl::ListObjects(ListObjectsInput *input,
     }
 
     ListObjectsOutput output;
+    // sanity initialize
+    // To be compatible with old service which not provide HasMore
+    // and sdk currently not do initialization in ctor which could lead
+    // to a uncertiable default value. sdk will handle this issue
+    // soon, but we do this as a work aroud for now
+    output.SetHasMore(false);
     QsError sdkErr = m_bucket->ListObjects(*input, output);
 
     HttpResponseCode responseCode = output.GetResponseCode();
@@ -199,7 +205,9 @@ ListObjectsOutcome QSClientImpl::ListObjects(ListObjectsInput *input,
       uint64_t oldcount = count;
       count += output.GetKeys().size();
       count += output.GetCommonPrefixes().size();
-      responseTruncated = (oldcount != count && output.GetHasMore());
+      responseTruncated = (oldcount != count && 
+          (!output.GetNextMarker().empty()) &&
+          output.GetHasMore());
       if (responseTruncated) {
         input->SetMarker(output.GetNextMarker());
       }
