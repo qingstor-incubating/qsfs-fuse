@@ -1045,7 +1045,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
                ToStringLine(offset, len, buffer) + ToString());
   }
 
-  return make_tuple(res.first, res.second, addedSizeInCache, addedSize);
+  return boost::make_tuple(res.first, res.second, addedSizeInCache, addedSize);
 }
 
 // --------------------------------------------------------------------------
@@ -1081,7 +1081,7 @@ tuple<PageSetConstIterator, bool, size_t, size_t> File::UnguardedAddPage(
     DebugError("Fail to new a page from a stream " + ToStringLine(offset, len) +
                ToString());
   }
-  return make_tuple(res.first, res.second, addedSizeInCache, addedSize);
+  return boost::make_tuple(res.first, res.second, addedSizeInCache, addedSize);
 }
 
 }  // namespace Data
