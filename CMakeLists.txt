@@ -193,7 +193,7 @@ add_compile_options (-fPIC)
 
 # add_compile_options (-Wall)  # for dev
 # disable warnings for boost, this is only for gcc 4.8 or later
-# add_compile_options (-Wno-unused-local-typedefs -Wno-delete-non-virtual-dtor)
+add_compile_options (-Wno-deprecated-declarations -Wno-unused-local-typedefs -Wno-delete-non-virtual-dtor)
 # do not specify -g, instead specify -DCMAKE_BUILD_TYPE=Debug/Release in command line
 # add_compile_options (-g -o0 -fno-inline)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
