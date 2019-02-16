@@ -124,6 +124,7 @@ static struct options {
   int prefetch;            // default prefetch is off
   int contentMD5;          // default not enable content MD5
   int keepLogDir;          // default not keep log dir content
+  int noFileCache;         // default not clear file cache
   int foreground;          // default not foreground
   int singleThread;        // default FUSE multi-thread
   int qsSingleThread;      // default qsfs single-thread
@@ -174,6 +175,7 @@ static const struct fuse_opt optionSpec[] = {
     OPTION("-J",    prefetch),       OPTION("--prefetch",       prefetch),
     OPTION("-m",    contentMD5),     OPTION("--contentMD5",     contentMD5),
     OPTION("-K",    keepLogDir),     OPTION("--keeplogdir",     keepLogDir),
+    OPTION("-C",    noFileCache),    OPTION("--nofilecache",    noFileCache),
     OPTION("-f",    foreground),     OPTION("--foreground",     foreground),
     OPTION("-s",    singleThread),   OPTION("--single",         singleThread),
     OPTION("-S",    qsSingleThread), OPTION("--Single",         qsSingleThread),
@@ -278,6 +280,7 @@ void Parse(int argc, char **argv) {
   options.prefetch       = 0;
   options.contentMD5     = 0;
   options.keepLogDir     = 0;  // default not keep log dir content
+  options.noFileCache    = 0;  // default not clear file cache
   options.foreground     = 0;
   options.singleThread   = 0;
   options.qsSingleThread = 1;  // default qsfs single
@@ -420,6 +423,7 @@ void Parse(int argc, char **argv) {
   qsOptions.SetEnablePrefetch(options.prefetch != 0);
   qsOptions.SetEnableContentMD5(options.contentMD5 !=0);
   qsOptions.SetClearLogDir(options.keepLogDir == 0);
+  qsOptions.SetNoFileCache(options.noFileCache != 0);
   qsOptions.SetForeground(options.foreground != 0);
   qsOptions.SetSingleThread(options.singleThread != 0);
   qsOptions.SetQsfsSingleThread(options.qsSingleThread != 0);
