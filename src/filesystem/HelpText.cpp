@@ -122,7 +122,7 @@ void ShowQSFSHelp() {
   "  -J, --prefetch     Enable prefetch at read\n"
   "  -m, --contentMD5   Enable writes with MD5 hashs to ensure data integrity\n"
   "  -K, --keeplogdir   Do not clear log directory at beginning\n"
-  "  -C, --nofilecache  Clear the file cache\n"
+  "  -C, --nodatacache  Clear the file data cache\n"
   "  -f, --forground    Turn on log to STDERR and enable FUSE foreground mode\n"
   "  -s, --single       Turn on FUSE single threaded option - disable multi-threaded\n"
   //"  -S, --Single       Turn on qsfs single threaded option - disable multi-threaded\n"

@@ -755,7 +755,7 @@ void Drive::ReleaseFile(const string &filePath) {
   shared_ptr<File> file = m_cache->FindFile(filePath);
   if (file) {
     file->SetOpen(false, m_directoryTree);
-    if (QS::Configure::Options::Instance().IsNoFileCache()) {
+    if (QS::Configure::Options::Instance().IsNoDataCache()) {
        m_cache->Erase(filePath);
     }
   }

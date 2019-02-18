@@ -91,7 +91,7 @@ class Options : public Singleton<Options> {
   bool IsEnablePrefetch() const {return m_enablePrefetch; }
   bool IsEnableContentMD5() const { return m_enableContentMD5; }
   bool IsClearLogDir() const { return m_clearLogDir; }
-  bool IsNoFileCache() const { return m_nofilecache; }
+  bool IsNoDataCache() const { return m_noDataCache; }
   bool IsForeground() const { return m_foreground; }
   bool IsSingleThread() const { return m_singleThread; }
   bool IsQsfsSingleThread() const { return m_qsfsSingleThread; }
@@ -153,7 +153,7 @@ class Options : public Singleton<Options> {
   void SetEnablePrefetch(bool prefetch) { m_enablePrefetch = prefetch; }
   void SetEnableContentMD5(bool contentMD5) { m_enableContentMD5 = contentMD5; }
   void SetClearLogDir(bool clearLogDir) { m_clearLogDir = clearLogDir; }
-  void SetNoFileCache(bool noFileCache) { m_nofilecache = noFileCache; }
+  void SetNoDataCache(bool noDataCache) { m_noDataCache = noDataCache; }
   void SetForeground(bool foreground) { m_foreground = foreground; }
   void SetSingleThread(bool singleThread) { m_singleThread = singleThread; }
   void SetQsfsSingleThread(bool singleThread) {
@@ -205,7 +205,7 @@ class Options : public Singleton<Options> {
   bool m_enablePrefetch;
   bool m_enableContentMD5;
   bool m_clearLogDir;
-  bool m_nofilecache;
+  bool m_noDataCache;
   bool m_foreground;        // FUSE foreground option
   bool m_singleThread;      // FUSE single threaded option
   bool m_qsfsSingleThread;  // qsfs single threaded option

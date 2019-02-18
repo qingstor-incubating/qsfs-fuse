@@ -92,7 +92,7 @@ Options::Options()
       m_enablePrefetch(false),
       m_enableContentMD5(false),
       m_clearLogDir(false),
-      m_nofilecache(false),
+      m_noDataCache(false),
       m_foreground(false),
       m_singleThread(false),
       m_qsfsSingleThread(false),
@@ -165,7 +165,7 @@ ostream &operator<<(ostream &os, const Options &opts) {
          << "[enable prefetch: " << opts.m_enablePrefetch << "] "
          << "[enable content md5: " << opts.m_enableContentMD5 << "] "
          << "[clear logdir: " << opts.m_clearLogDir << "] "
-         << "[no filecache: " << opts.m_nofilecache << "]"
+         << "[no datacache: " << opts.m_noDataCache << "]"
          << "[foreground: " << opts.m_foreground << "] "
          << "[FUSE single thread: " << opts.m_singleThread << "] "
          << "[qsfs single thread: " << opts.m_qsfsSingleThread << "] "
