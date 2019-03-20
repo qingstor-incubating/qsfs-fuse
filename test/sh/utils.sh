@@ -163,7 +163,7 @@ function rm_test_file {
 # Returns:
 #   None
 function rm_test_file_parallel {
-  if [ $# ==0 ]; then
+  if [ $# -eq 0 ]; then
     COUNT=$TEST_TEXT_FILE_PARALLEL_CNT
     PREFIX=$TEST_TEXT_FILE_PARALLEL_PREFIX
   else
